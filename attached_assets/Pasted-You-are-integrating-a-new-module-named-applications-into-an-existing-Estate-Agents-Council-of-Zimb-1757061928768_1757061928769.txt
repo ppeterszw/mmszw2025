@@ -1,0 +1,291 @@
+You are integrating a new module named `applications` into an existing Estate Agents Council of Zimbabwe (EACZ) Management System with this stack:
+- Backend: Node.js + Express, TypeScript, Drizzle ORM (PostgreSQL/Neon), Passport sessions (local), scrypt hashing
+- Frontend: React 18 + Vite + TypeScript, Tailwind, shadcn/ui, React Query, React Hook Form + Zod, Wouter
+- Storage: Google Cloud Storage (GCS) via existing upload service (Uppy on the client)
+- Payments: Paynow (local) + Stripe (international)
+- Roles: admin, member_manager, case_manager, super_admin
+- Existing features: members, organizations, certificates with QR, payments, documents, etc.
+
+### GOAL
+Add a robust **Member Application & Tracking** module that supports:
+- **Individual** and **Organization** applications (separate tables & rules)
+- **Application IDs**: Individual `MBR-APP-XXXX`, Organization `ORG-APP-XXXX`
+- **Member numbers on acceptance** with YEAR series:
+  - Individual: `EAC-MBR-YY-XXXX`
+  - Organization: `EAC-ORG-YY-XXXX`
+  - Counter resets per calendar year (atomic, DB-backed).
+- **Mandatory application fee BEFORE submission**:
+  - Ask “Already paid?” → (a) Upload **Proof of Payment** (POP) OR (b) **Paynow** flow
+  - Submission blocked until Paynow is settled OR POP uploaded
+- **Save & Resume** using **Applicant Email + Application ID + OTP**
+- **Document uploads** (PDF/JPG/PNG ≤ 10MB), verification workflow
+- **State machine** with audit trail and public tracking
+- **On acceptance**: create Member + User, generate member_no in new series, email password-setup link
+- Works with existing RBAC, payments, uploads, and certificates
+
+Keep to existing patterns and conventions. Do not break current routes.
+
+---
+
+## 1) FILE STRUCTURE (suggested)
+
+backend/
+  src/
+    db/
+      schema/
+        applications.ts        # new tables & enums
+    services/
+      namingSeries.ts          # EAC-MBR/ORG year reset generator
+      paynow.ts                # Paynow adapter (init + IPN verify)
+      eligibility.ts           # business rule checks
+    middleware/
+      submissionGuard.ts       # requires fee before submit
+    routes/
+      applications.ts          # public + admin endpoints
+      payments.ts              # fee initiation, return, IPN, status poll
+      appSessions.ts           # Save & Resume (OTP issue/verify), app-scoped session
+  drizzle/
+    2025_09_05_applications.sql
+    2025_09_05_app_fee_and_otp.sql
+frontend/
+  src/
+    components/applications/
+      PaymentStep.tsx          # Paynow + POP uploader
+      UploadCenter.tsx         # reuse Uppy with doc-type
+      EligibilityChecklist.tsx
+      ProgressBar.tsx
+      Timeline.tsx
+      ResumeForm.tsx           # Email + Application ID + OTP
+    pages/
+      apply/
+        IndividualWizard.tsx
+        OrganizationWizard.tsx
+      track/
+        TrackPage.tsx
+      continue/
+        ContinuePage.tsx
+
+Wire routers in backend app entry; add Wouter routes on the frontend.
+
+---
+
+## 2) DATABASE (Drizzle + SQL Migrations)
+
+### Enums
+- application_status: Draft, Submitted, PreValidation, EligibilityReview, DocumentReview, NeedsApplicantAction, ReadyForRegistry, Accepted, Rejected
+- application_type: individual, organization
+- document_status: uploaded, verified, rejected
+- document_type: (individual) o_level_cert, a_level_cert, equivalent_cert, id_or_passport, birth_certificate
+                 (org) bank_trust_letter, certificate_incorporation, partnership_agreement, cr6, cr11, tax_clearance, annual_return_1, annual_return_2, annual_return_3, police_clearance_director
+                 (payments) application_fee_pop
+- decision: accepted, rejected
+
+### Tables (create new)
+- individual_applications
+  - id (uuid pk), application_id (unique, MBR-APP-XXXX), status (enum)
+  - personal jsonb { firstName, lastName, dob ISO, nationalId?, email, phone?, address? }
+  - o_level jsonb { subjects[], hasEnglish bool, hasMath bool, passesCount int }
+  - a_level jsonb nullable { subjects[], passesCount int }
+  - equivalent_qualification jsonb nullable { type, institution, levelMap, evidenceDocId? }
+  - mature_entry bool (computed at submission)
+  - fee_required bool default true
+  - fee_amount int, fee_currency varchar(8)
+  - fee_status varchar(16) default 'pending'  # none|pending|settled|failed|refunded
+  - fee_payment_id varchar(36), fee_proof_doc_id varchar(36)
+  - submitted_at, updated_at, created_by_user_id, member_id (on accept)
+
+- organization_applications
+  - id (uuid pk), application_id (unique, ORG-APP-XXXX), status (enum)
+  - org_profile jsonb { legalName, tradingName?, regNo?, taxNo?, address?, emails[], phones?[] }
+  - trust_account jsonb { bankName, branch?, accountNoMasked? }
+  - prea_member_id (FK → members.id), directors jsonb [{ name, nationalId?, memberId? }]
+  - same fee_* fields as above
+  - submitted_at, updated_at, created_by_user_id, member_id
+
+- uploaded_documents
+  - id (uuid pk), application_type (enum), application_id_fk (uuid), doc_type (enum)
+  - file_key, file_name, mime, size_bytes, sha256, status (enum), verifier_user_id, notes
+  - created_at, updated_at
+
+- status_history
+  - id serial pk, application_type, application_id_fk, from_status, to_status, actor_user_id, comment, created_at
+
+- registry_decisions
+  - id serial pk, application_type, application_id_fk, decision, reasons jsonb[], decided_by, decided_at
+
+- naming_series_counters  # YEAR-RESET member numbering
+  - series_code ('member_ind' | 'member_org'), year int(4), counter int
+  - PK(series_code, year)
+
+- app_login_tokens  # Save & Resume OTP
+  - id uuid pk, application_type, application_id_fk uuid, email, code char(6), attempts int, expires_at, created_at
+  - index (application_type, application_id_fk, email)
+
+**Keep existing members, users, documents, and payments tables; only extend as needed.**
+
+---
+
+## 3) ID GENERATION
+
+- Application IDs:
+  - Individual: `MBR-APP-` + zeroPad(4)
+  - Organization: `ORG-APP-` + zeroPad(4)
+  Use DB-backed counters or safe generator; uniqueness enforced at DB layer.
+
+- Member numbers on acceptance (atomic, year-based):
+  - Individual: `EAC-MBR-YY-XXXX`
+  - Organization: `EAC-ORG-YY-XXXX`
+  Implement `nextMemberNumber(kind)`:
+    - transactional lock on `naming_series_counters (series_code, year)`
+    - upsert row, `SELECT ... FOR UPDATE`, increment counter, format with two-digit year.
+
+---
+
+## 4) BUSINESS RULES
+
+### Individual (Normal vs Mature Entry)
+- Must have ≥5 O-Level passes including English & Mathematics.
+- If age < 27 at submission → require ≥2 A-Level passes OR equivalent qualification with certified evidence.
+- Required certified uploads: O-Level cert, ID/Passport, Birth Certificate (+ A-Level/equivalent as applicable).
+
+### Organization (Company/Firm/Estate Agency)
+Uploads/checks:
+1) Trust Account letter from Commercial Bank
+2) Principal Registered Estate Agent (PREA) declared
+3) 3 Annual return forms (collected by PREA)
+4) Certificate of Incorporation OR Partnership Agreement
+5) PREA is a Director (CR6)
+6) Certified CR11
+7) (Trust letter already covered)
+8) Tax Clearance Certificate
+9) Police Clearance letters for all Directors
+
+Automated checks:
+- PREA must be an existing **active** individual member
+- PREA listed among Directors (CR6/CR11)
+- Police Clearance for each director
+
+---
+
+## 5) STATE MACHINE (for both types)
+Draft → Submitted → PreValidation → EligibilityReview → DocumentReview → NeedsApplicantAction → ReadyForRegistry → Accepted / Rejected
+- All transitions write to `status_history` (actor, timestamp, comment).
+- “NeedsApplicantAction” allows editing only on requested fields/docs.
+
+---
+
+## 6) MANDATORY APPLICATION FEE (Paynow or POP)
+- New step in wizard: “Have you already paid?”
+  - YES → show `application_fee_pop` upload (PDF/JPG/PNG ≤ 10MB)
+  - NO → initiate Paynow: `POST /api/public/applications/:id/fee/initiate` → redirectUrl
+- IPN handler: `POST /api/system/paynow/ipn` → verify signature/hash, set `fee_status='settled'`
+- Poll payment status endpoint for UI
+- **Submission guard** (middleware): block submit unless `fee_status='settled'` OR `fee_proof_doc_id` present. Respond RFC7807 `{ code: 'FEE_REQUIRED' }`.
+
+---
+
+## 7) SAVE & RESUME (Email + Application ID + OTP)
+Routes:
+- `POST /api/public/sessions/app` { applicationId, email } → send 6-digit OTP; create `app_login_tokens` row (10-min TTL, rate limit)
+- `POST /api/public/sessions/app/verify` { applicationId, email, code } → issue short-lived app-scoped session cookie/JWT (30-min TTL) limited to that application
+- Middleware `appScopedSession` for draft write routes
+UI:
+- `/continue` page with Email + Application ID → OTP → resume wizard at last step
+Security:
+- 5 attempts max, resend cooldown, rate-limit by IP/email/applicationId
+
+---
+
+## 8) API ENDPOINTS
+
+### Public (no auth or app-scoped)
+- `POST /api/public/individual-applications[?submit=true]`  (create/update draft or submit; enforce fee on submit)
+- `POST /api/public/organization-applications[?submit=true]`
+- `GET  /api/public/applications/track?applicationId=...` OR `&email=...&dob=...` OR `&email=...&orgName=...`
+- `POST /api/public/applications/:id/fee/initiate`  (Paynow start)
+- `GET  /api/public/paynow/return`  (browser return)
+- `GET  /api/public/payments/:id/status`  (polling)
+- `POST /api/public/sessions/app`  (request OTP)
+- `POST /api/public/sessions/app/verify`  (verify OTP, set app cookie)
+- `POST /api/public/applications/:id/documents`  (multipart upload; includes `application_fee_pop`)
+
+### Admin/Staff (session + RBAC)
+- `GET  /api/admin/applications?type=&status=&assignedTo=&overdue=`
+- `GET  /api/admin/applications/:id`
+- `POST /api/admin/applications/:id/request-action`
+- `POST /api/admin/documents/:docId/verify`  (status=verified|rejected, notes)
+- `POST /api/admin/applications/:id/advance { to }`
+- `POST /api/admin/applications/:id/decision { decision, reasons[] }`  (on accepted → create Member + User + member_no in new series; send password setup)
+
+Errors use `application/problem+json` (RFC7807) with machine-friendly `code`.
+
+---
+
+## 9) FRONTEND (React + Vite)
+Routes (Wouter):
+- `/apply/individual` wizard: personal → education → uploads → **payment** → review → submit
+- `/apply/organization` wizard: profile → PREA & directors → uploads → **payment** → review → submit
+- `/track` tracking page: progress bar + timeline + outstanding actions
+- `/continue` Save & Resume (ResumeForm → OTP → resume draft)
+
+Components:
+- `UploadCenter` (Uppy) with doc-type tagging and per-document status chips
+- `PaymentStep` (Paynow initiate + status poll + POP upload)
+- `EligibilityChecklist`, `ProgressBar`, `Timeline`, `ResumeForm`
+
+Use React Hook Form + Zod schemas from shared validation. Show a payment status card on Review.
+
+---
+
+## 10) RBAC
+Map to existing roles:
+- View/advance/verify: admin, member_manager, case_manager, super_admin
+- Registry decision: admin, member_manager, super_admin
+- Configure counters: admin, super_admin
+Implement `requirePerm()` middleware that maps role → capabilities.
+
+---
+
+## 11) SERVICES
+
+- `eligibility.ts`
+  - `checkIndividualEligibility(input)` → { ok, mature?, reason? }
+  - `checkOrganizationEligibility(input, docMap, preaIsActive, preaIsDirector)` → { ok, reason? }
+
+- `namingSeries.ts`
+  - `nextMemberNumber('individual'|'organization')` → `EAC-MBR-YY-XXXX` / `EAC-ORG-YY-XXXX`
+  - Uses `naming_series_counters` with transactional row lock (`SELECT ... FOR UPDATE`)
+
+- `paynow.ts`
+  - `paynowInitiate({ amount, currency, reference, email, returnUrl, resultUrl })` → { redirectUrl, pollUrl?, providerRef? }
+  - `verifyPaynowIPN(payload)` → boolean (implement per Paynow docs; check hash/signature)
+
+---
+
+## 12) SUBMISSION GUARD
+Middleware `requireApplicationFee`:
+- If `fee_required=false` → allow
+- If `fee_status='settled'` → allow
+- If `fee_proof_doc_id IS NOT NULL` → allow (POP pending verification)
+- Else → 409 Problem+JSON `{ code: 'FEE_REQUIRED' }`
+
+Attach to `?submit=true` handlers.
+
+---
+
+## 13) NOTIFICATIONS
+- Email on submission, needs action, acceptance, rejection, password setup
+- OTP email for Save & Resume
+- Template vars: {{applicant_name}}, {{application_id}}, {{status}}, {{action_items}}, {{deadline}}, {{portal_link}}
+
+---
+
+## 14) DEDUP & SECURITY
+- De-dup on email, national ID/passport, name+DOB; warn on duplicates
+- Rate limit public endpoints (apply/OTP/payment)
+- Signed URLs for GCS downloads; validate MIME & size
+- Log status transitions; immutable `status_history`
+
+---
+
+## 15) ENV VARS

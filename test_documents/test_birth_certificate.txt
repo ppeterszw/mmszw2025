@@ -1,0 +1,19 @@
+TEST BIRTH CERTIFICATE
+======================
+
+This is a test birth certificate for form testing purposes.
+
+CERTIFICATE OF BIRTH
+
+Full Name: Peter Phillip
+Date of Birth: 13 September 2007
+Place of Birth: Harare, Zimbabwe
+Country of Birth: Zimbabwe
+
+Father's Name: Philip Peter Sr.
+Mother's Name: Mary Peter
+
+Registration Number: TEST-BC-789456123
+Date of Registration: 20 September 2007
+
+This document is for testing purposes only and is not a real birth certificate.

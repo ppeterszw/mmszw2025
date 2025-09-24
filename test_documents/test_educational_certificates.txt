@@ -1,0 +1,27 @@
+TEST EDUCATIONAL CERTIFICATES
+=============================
+
+This is a test educational certificate for form testing purposes.
+
+UNIVERSITY OF ZIMBABWE
+BACHELOR OF SCIENCE IN REAL ESTATE MANAGEMENT
+
+Student Name: Peter Phillip
+Student ID: UZ2020/123456
+Date of Birth: 13 September 2007
+
+ACADEMIC RECORD:
+- Year 1: Pass with Merit (2020-2021)
+- Year 2: Pass with Credit (2021-2022) 
+- Year 3: Pass with Distinction (2022-2023)
+- Year 4: Pass with Distinction (2023-2024)
+
+Final Grade: First Class Honours
+Date of Graduation: 15 May 2024
+Certificate Number: UZ-BSc-REM-2024-789
+
+PROFESSIONAL QUALIFICATIONS:
+- Real Estate Institute of Zimbabwe (REIZ) Certification - 2024
+- Property Valuation Certificate - 2024
+
+This document is for testing purposes only and is not a real educational certificate.
