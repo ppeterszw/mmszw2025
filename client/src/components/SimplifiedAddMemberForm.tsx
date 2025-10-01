@@ -79,11 +79,12 @@ export function SimplifiedAddMemberForm({ onSuccess }: SimplifiedAddMemberFormPr
 
   const createMemberMutation = useMutation({
     mutationFn: async (data: AddMemberFormData) => {
-      return apiRequest("POST", "/api/admin/members/simplified-add", data);
+      const response = await apiRequest("POST", "/api/admin/members/simplified-add", data);
+      return await response.json();
     },
-    onSuccess: (response) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/members"] });
-      setNewMember(response.member);
+      setNewMember(data.member);
       setIsOpen(false);
       setIsSuccessOpen(true);
       form.reset();

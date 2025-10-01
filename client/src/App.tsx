@@ -20,6 +20,7 @@ import CaseReporting from "@/pages/case-reporting";
 import MemberRegistration from "@/pages/member-registration";
 import OrganizationRegistration from "@/pages/organization-registration";
 import ApplicantRegistration from "@/pages/applicant-registration";
+import ApplicationChoicePage from "@/pages/application-choice";
 import IndividualApplicationChoice from "@/pages/individual-application-choice";
 import ApplicantLogin from "@/pages/applicant-login";
 import OrganizationApplicantRegistration from "@/pages/organization-applicant-registration";
@@ -33,6 +34,7 @@ import PaymentPage from "@/pages/payment-page";
 import CertificatePage from "@/pages/certificate-page";
 import VerificationPage from "@/pages/verification-page";
 import PaymentTestPage from "@/pages/payment-test";
+import PayNowTestPage from "@/pages/payment-test-paynow";
 import CaseTracking from "@/pages/case-tracking";
 import ApplicationTracking from "@/pages/application-tracking";
 import CpdTracking from "@/pages/cpd-tracking";
@@ -46,6 +48,7 @@ import AdminApplicationReview from "@/pages/admin/application-review";
 import AgentsApplicationsReview from "@/pages/admin/agents-applications";
 import FirmsApplicationsReview from "@/pages/admin/firms-applications";
 import AdminFinanceDashboard from "@/pages/admin/finance-dashboard";
+import EnhancedFinanceDashboard from "@/pages/admin/enhanced-finance-dashboard";
 import AdminSettings from "@/pages/admin/admin-settings";
 import UserManagement from "@/pages/admin/user-management";
 
@@ -55,6 +58,7 @@ import MemberDocuments from "@/pages/member/document-management";
 import MemberEvents from "@/pages/member/events";
 import MemberPayments from "@/pages/member/payment-history";
 import MemberCertificate from "@/pages/member/certificate";
+import MemberSubscriptions from "@/pages/member/subscriptions";
 
 // Organization Portal Pages
 import OrganizationProfile from "@/pages/organization/organization-profile";
@@ -80,10 +84,12 @@ function Router() {
       <ProtectedRoute path="/event-management" component={EventManagement} />
       <ProtectedRoute path="/payment" component={PaymentPage} />
       <ProtectedRoute path="/payment-test" component={PaymentTestPage} />
+      <Route path="/payment-test-paynow" component={PayNowTestPage} />
       <ProtectedRoute path="/certificate" component={CertificatePage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/verify" component={VerificationPage} />
       <Route path="/certificates/verify" component={VerificationPage} />
+      <Route path="/apply" component={ApplicationChoicePage} />
       <Route path="/applicant-registration" component={ApplicantRegistration} />
       <Route path="/applicant-login" component={ApplicantLogin} />
       <Route path="/organization-applicant-registration" component={OrganizationApplicantRegistration} />
@@ -112,6 +118,7 @@ function Router() {
       <ProtectedRoute path="/admin-dashboard/firms-applications" component={FirmsApplicationsReview} />
       <ProtectedRoute path="/admin-dashboard/users" component={UserManagement} />
       <ProtectedRoute path="/admin-dashboard/finance" component={AdminFinanceDashboard} />
+      <ProtectedRoute path="/admin-dashboard/finance-enhanced" component={EnhancedFinanceDashboard} />
       <ProtectedRoute path="/admin-dashboard/settings" component={AdminSettings} />
       
       {/* Member Portal Routes */}
@@ -119,6 +126,7 @@ function Router() {
       <ProtectedRoute path="/member/documents" component={MemberDocuments} />
       <ProtectedRoute path="/member/events" component={MemberEvents} />
       <ProtectedRoute path="/member/payments" component={MemberPayments} />
+      <ProtectedRoute path="/member/subscriptions" component={MemberSubscriptions} />
       <ProtectedRoute path="/member/certificate" component={MemberCertificate} />
       
       {/* Organization Portal Routes */}

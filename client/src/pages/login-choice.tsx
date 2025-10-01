@@ -11,13 +11,13 @@ export default function LoginChoice() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    // Redirect if user is not a principal agent
-    if (user && user.memberType !== "principal_real_estate_agent") {
+    // Redirect if user is not logged in
+    if (!user) {
       setLocation("/member-portal");
     }
   }, [user, setLocation]);
 
-  if (!user || user.memberType !== "principal_real_estate_agent") {
+  if (!user) {
     return null;
   }
 

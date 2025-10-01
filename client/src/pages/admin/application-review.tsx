@@ -134,10 +134,10 @@ export default function ApplicationReview() {
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-              {application.applicationType === "individual" ? (
-                <User className="w-5 h-5 text-primary" />
-              ) : (
+              {application.organizationId ? (
                 <Building2 className="w-5 h-5 text-primary" />
+              ) : (
+                <User className="w-5 h-5 text-primary" />
               )}
             </div>
             <div>
@@ -145,7 +145,7 @@ export default function ApplicationReview() {
                 {application.firstName} {application.lastName}
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                {application.applicationType} • {application.memberType.replace(/_/g, " ")}
+                {application.organizationId ? "Organization" : "Individual"} • {application.memberType?.replace(/_/g, " ") || "N/A"}
               </p>
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function ApplicationReview() {
                   </div>
 
                   {/* Review Notes */}
-                  {(application.status === "submitted" || application.currentStage === "eligibility_review") ? (
+                  {(application.status === "submitted" || application.currentStage === "initial_review") ? (
                     <div>
                       <h3 className="text-lg font-semibold mb-3">Review Notes</h3>
                       <Textarea
@@ -309,7 +309,7 @@ export default function ApplicationReview() {
                   )}
 
                   {/* Action Buttons */}
-                  {(application.status === "submitted" || application.currentStage === "eligibility_review") && (
+                  {(application.status === "submitted" || application.currentStage === "initial_review") && (
                     <div className="flex space-x-4 pt-4 border-t">
                       <Button 
                         className="gradient-button text-white border-0"

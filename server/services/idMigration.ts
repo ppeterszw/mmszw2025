@@ -110,7 +110,7 @@ export async function previewIdFormatMigration(): Promise<{
   const memberCountersByYear: Record<number, number> = {};
 
   for (const memberRow of memberRecords.rows) {
-    const member = memberRow as MemberRecord;
+    const member = memberRow as unknown as MemberRecord;
     if (isNewFormat(member.membership_number)) {
       continue; // Skip if already in new format
     }
@@ -139,7 +139,7 @@ export async function previewIdFormatMigration(): Promise<{
   const orgCountersByYear: Record<number, number> = {};
 
   for (const orgRow of orgRecords.rows) {
-    const org = orgRow as OrganizationRecord;
+    const org = orgRow as unknown as OrganizationRecord;
     if (isNewFormat(org.registration_number)) {
       continue; // Skip if already in new format
     }
@@ -312,8 +312,8 @@ export async function getMigrationStatus(): Promise<{
     AND NOT (registration_number ~ '^EAC-ORG-\\d{4}-\\d{4}$')
   `);
 
-  const oldMemberCount = parseInt(membersOldFormat.rows[0]?.count || '0');
-  const oldOrgCount = parseInt(orgsOldFormat.rows[0]?.count || '0');
+  const oldMemberCount = parseInt((membersOldFormat.rows[0] as any)?.count || '0');
+  const oldOrgCount = parseInt((orgsOldFormat.rows[0] as any)?.count || '0');
 
   return {
     completed,

@@ -11,7 +11,14 @@ import { FormHeader } from "@/components/ui/form-header";
 import { FormFooter } from "@/components/ui/form-footer";
 import { AdminHeader } from "@/components/AdminHeader";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
-import { BulkMemberImportDialog } from "@/components/BulkMemberImportDialog";
+import { BulkImportModal } from "@/components/BulkImportModal";
+import {
+  ReviewApplicationsModal,
+  ExportDataModal,
+  SendNotificationsModal,
+  ManageRenewalsModal,
+  ComplianceCheckModal
+} from "@/components/QuickActionsModals";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   Building2, Search, Plus, Edit, Eye, Download, 
@@ -33,6 +40,12 @@ export default function OrganizationManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [selectedOrg, setSelectedOrg] = useState<OrganizationWithMembers | null>(null);
+  const [bulkImportModalOpen, setBulkImportModalOpen] = useState(false);
+  const [reviewAppsModalOpen, setReviewAppsModalOpen] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
+  const [renewalsModalOpen, setRenewalsModalOpen] = useState(false);
+  const [complianceModalOpen, setComplianceModalOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
@@ -165,56 +178,102 @@ export default function OrganizationManagement() {
 
         {/* Quick Actions */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Quick Actions</h2>
+              <p className="text-sm text-muted-foreground mt-1">Streamline your organization management workflow</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
             <Button
               onClick={() => setLocation("/organization-registration")}
-              className="h-24 flex flex-col items-center justify-center bg-green-100 hover:bg-green-200 text-green-700 border-0"
+              className="group relative h-32 rounded-3xl bg-gradient-to-br from-emerald-400 via-emerald-300 to-teal-300 hover:from-emerald-500 hover:via-emerald-400 hover:to-teal-400 border-0 shadow-lg hover:shadow-xl hover:shadow-emerald-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
               data-testid="button-add-organization"
             >
-              <Building2 className="w-6 h-6 mb-2" />
-              <span className="text-sm">Register Organization</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-emerald-600/10 to-transparent" />
+              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
+                <Building2 className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Register Org</span>
+              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
             </Button>
-            <BulkMemberImportDialog onSuccess={() => {}} />
+
             <Button
-              onClick={() => setLocation("/admin-dashboard/firms-applications")}
-              className="h-24 flex flex-col items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-700 border-0"
+              onClick={() => setBulkImportModalOpen(true)}
+              className="group relative h-32 rounded-3xl bg-gradient-to-br from-purple-400 via-purple-300 to-pink-300 hover:from-purple-500 hover:via-purple-400 hover:to-pink-400 border-0 shadow-lg hover:shadow-xl hover:shadow-purple-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
+              data-testid="button-bulk-import"
+            >
+              <div className="absolute inset-0 bg-gradient-to-t from-purple-600/10 to-transparent" />
+              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
+                <Users className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Bulk Import</span>
+              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
+            </Button>
+
+            <Button
+              onClick={() => setReviewAppsModalOpen(true)}
+              className="group relative h-32 rounded-3xl bg-gradient-to-br from-blue-400 via-blue-300 to-sky-300 hover:from-blue-500 hover:via-blue-400 hover:to-sky-400 border-0 shadow-lg hover:shadow-xl hover:shadow-blue-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
               data-testid="button-review-applications"
             >
-              <FileText className="w-6 h-6 mb-2" />
-              <span className="text-sm">Review Applications</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-blue-600/10 to-transparent" />
+              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
+                <FileText className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Review Apps</span>
+              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
             </Button>
+
             <Button
-              onClick={exportOrganizations}
-              className="h-24 flex flex-col items-center justify-center bg-purple-100 hover:bg-purple-200 text-purple-700 border-0"
+              onClick={() => setExportModalOpen(true)}
+              className="group relative h-32 rounded-3xl bg-gradient-to-br from-violet-400 via-violet-300 to-fuchsia-300 hover:from-violet-500 hover:via-violet-400 hover:to-fuchsia-400 border-0 shadow-lg hover:shadow-xl hover:shadow-violet-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
               data-testid="button-export-organizations"
             >
-              <Download className="w-6 h-6 mb-2" />
-              <span className="text-sm">Export List</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-violet-600/10 to-transparent" />
+              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
+                <Download className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Export List</span>
+              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
             </Button>
+
             <Button
-              onClick={() => setLocation("/admin-dashboard/renewals")}
-              className="h-24 flex flex-col items-center justify-center bg-orange-100 hover:bg-orange-200 text-orange-700 border-0"
+              onClick={() => setRenewalsModalOpen(true)}
+              className="group relative h-32 rounded-3xl bg-gradient-to-br from-amber-400 via-orange-300 to-yellow-300 hover:from-amber-500 hover:via-orange-400 hover:to-yellow-400 border-0 shadow-lg hover:shadow-xl hover:shadow-amber-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
               data-testid="button-manage-renewals"
             >
-              <Calendar className="w-6 h-6 mb-2" />
-              <span className="text-sm">Manage Renewals</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-amber-600/10 to-transparent" />
+              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
+                <Calendar className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Renewals</span>
+              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
             </Button>
+
             <Button
-              onClick={() => toast({ title: "Feature Coming Soon", description: "Compliance monitoring feature will be available soon." })}
-              className="h-24 flex flex-col items-center justify-center bg-red-100 hover:bg-red-200 text-red-700 border-0"
+              onClick={() => setComplianceModalOpen(true)}
+              className="group relative h-32 rounded-3xl bg-gradient-to-br from-rose-400 via-red-300 to-pink-300 hover:from-rose-500 hover:via-red-400 hover:to-pink-400 border-0 shadow-lg hover:shadow-xl hover:shadow-rose-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
               data-testid="button-compliance-check"
             >
-              <AlertTriangle className="w-6 h-6 mb-2" />
-              <span className="text-sm">Compliance Check</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-rose-600/10 to-transparent" />
+              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
+                <AlertTriangle className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Compliance</span>
+              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
             </Button>
+
             <Button
-              onClick={() => toast({ title: "Feature Coming Soon", description: "Bulk email feature will be available soon." })}
-              className="h-24 flex flex-col items-center justify-center bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border-0"
+              onClick={() => setNotificationsModalOpen(true)}
+              className="group relative h-32 rounded-3xl bg-gradient-to-br from-cyan-400 via-sky-300 to-blue-300 hover:from-cyan-500 hover:via-sky-400 hover:to-blue-400 border-0 shadow-lg hover:shadow-xl hover:shadow-cyan-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
               data-testid="button-send-notifications"
             >
-              <Mail className="w-6 h-6 mb-2" />
-              <span className="text-sm">Send Notifications</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-cyan-600/10 to-transparent" />
+              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
+                <Mail className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Notifications</span>
+              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
             </Button>
           </div>
         </div>
@@ -522,7 +581,45 @@ export default function OrganizationManagement() {
           </Card>
         )}
       </div>
-      
+
+      {/* Quick Actions Modals */}
+      <BulkImportModal
+        open={bulkImportModalOpen}
+        onOpenChange={setBulkImportModalOpen}
+        type="organizations"
+        onSuccess={refetch}
+      />
+
+      <ReviewApplicationsModal
+        open={reviewAppsModalOpen}
+        onOpenChange={setReviewAppsModalOpen}
+        onSuccess={refetch}
+      />
+
+      <ExportDataModal
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        type="organizations"
+      />
+
+      <SendNotificationsModal
+        open={notificationsModalOpen}
+        onOpenChange={setNotificationsModalOpen}
+        onSuccess={refetch}
+      />
+
+      <ManageRenewalsModal
+        open={renewalsModalOpen}
+        onOpenChange={setRenewalsModalOpen}
+        onSuccess={refetch}
+      />
+
+      <ComplianceCheckModal
+        open={complianceModalOpen}
+        onOpenChange={setComplianceModalOpen}
+        onSuccess={refetch}
+      />
+
       <FormFooter />
     </div>
   );

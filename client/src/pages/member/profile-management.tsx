@@ -75,12 +75,12 @@ export default function ProfileManagement() {
     phone: "+263712345678",
     dateOfBirth: new Date("1985-06-15"),
     nationalId: "ID123456789",
-    memberType: "principal_agent",
+    memberType: "principal_real_estate_agent",
     membershipStatus: "active",
     joiningDate: new Date("2024-01-01"),
     expiryDate: new Date("2025-01-01"),
     cpdPoints: 35,
-    annualFee: 500.00,
+    annualFee: "500.00",
     isMatureEntry: false,
     organizationId: "org-1",
     createdAt: new Date("2024-01-01"),
@@ -137,14 +137,14 @@ export default function ProfileManagement() {
   ];
 
   // Mock payments data
-  const mockPayments: Payment[] = [
+  const mockPayments: any[] = [
     {
       id: "pay-1",
       memberId: "member-profile-test-id",
       organizationId: null,
-      amount: 500.00,
+      amount: "500.00",
       currency: "USD",
-      paymentMethod: "paynow",
+      paymentMethod: "paynow_ecocash",
       status: "completed",
       purpose: "membership",
       referenceNumber: "PAY-001-2024",
@@ -198,7 +198,7 @@ export default function ProfileManagement() {
     ...badge,
     id: `badge-${index + 1}`,
     createdAt: new Date()
-  }));
+  })) as any[];
 
   // Calculate badge progress
   const badgeProgress = BadgeService.calculateBadgeProgress(
@@ -241,8 +241,8 @@ export default function ProfileManagement() {
   const professionalForm = useForm<ProfessionalData>({
     resolver: zodResolver(professionalSchema),
     defaultValues: {
-      educationLevel: member?.educationLevel || "",
-      yearsOfExperience: member?.yearsOfExperience || 0,
+      educationLevel: "",
+      yearsOfExperience: 0,
       currentEmployer: "",
       jobTitle: "",
       specializations: "",
@@ -1004,7 +1004,7 @@ export default function ProfileManagement() {
                           </div>
                           <div className="text-center p-4 bg-white rounded-lg shadow-sm">
                             <div className="text-2xl font-bold text-blue-600">
-                              {earnedBadges.reduce((sum, badge) => sum + badge.points, 0)}
+                              {earnedBadges.reduce((sum, badge) => sum + (badge.points || 0), 0)}
                             </div>
                             <div className="text-sm text-gray-600">Total Points</div>
                           </div>

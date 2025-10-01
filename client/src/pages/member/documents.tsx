@@ -108,7 +108,7 @@ export default function MemberDocuments() {
     }
   };
 
-  const filteredDocuments = documents.filter(doc => {
+  const filteredDocuments = (documents as any[] || []).filter((doc: any) => {
     const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          doc.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === "all" || doc.type === filterType;
@@ -131,7 +131,7 @@ export default function MemberDocuments() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900">
-      <Sidebar items={sidebarItems} />
+      <Sidebar title="Member Portal" subtitle="Welcome back" items={sidebarItems} />
       <div className="ml-64 flex-1">
         <div className="p-6">
           <FormHeader

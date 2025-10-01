@@ -82,7 +82,7 @@ export function ApplicantAuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/applicant/current"], applicant);
       toast({
         title: "Login successful",
-        description: `Welcome back, ${applicant.fullName}!`,
+        description: `Welcome back, ${applicant.firstName} ${applicant.surname}!`,
       });
     },
     onError: (error: Error) => {

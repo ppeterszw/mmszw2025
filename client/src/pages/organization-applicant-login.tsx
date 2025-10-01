@@ -16,11 +16,11 @@ import { useToast } from "@/hooks/use-toast";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 
 const loginSchema = z.object({
-  applicantId: z.string()
-    .min(1, "Organization Applicant ID is required")
-    .regex(/^ORG-APP-\d{4}-\d{4}$/, "Applicant ID must be in format ORG-APP-YYYY-XXXX")
-    .transform(val => val.trim().toUpperCase()),
   email: z.string().email("Invalid email address").transform(val => val.trim().toLowerCase()),
+  password: z.string()
+    .min(1, "Password is required")
+    .regex(/^ORG-APP-\d{4}-\d{4}$/, "Password should be your Organization Applicant ID (format: ORG-APP-YYYY-XXXX)")
+    .transform(val => val.trim().toUpperCase()),
 });
 
 type LoginData = z.infer<typeof loginSchema>;
@@ -43,14 +43,19 @@ export default function OrganizationApplicantLogin() {
   const form = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      applicantId: "",
       email: "",
+      password: "",
     },
   });
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      const response = await apiRequest("POST", "/api/organization-applicants/login", data);
+      // Convert the password (applicant ID) to the expected API format
+      const loginData = {
+        email: data.email,
+        applicantId: data.password // The password is actually the applicant ID
+      };
+      const response = await apiRequest("POST", "/api/organization-applicants/login", loginData);
       return await response.json();
     },
     onSuccess: (response: OrganizationApplicantResponse) => {
@@ -166,20 +171,21 @@ export default function OrganizationApplicantLogin() {
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
                   <FormField
                     control={form.control}
-                    name="applicantId"
+                    name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Organization Applicant ID</FormLabel>
+                        <FormLabel>Email Address</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="ORG-APP-YYYY-XXXX" 
+                          <Input
+                            type="email"
+                            placeholder="company@example.com"
                             {...field}
-                            data-testid="input-applicant-id"
+                            data-testid="input-email"
                           />
                         </FormControl>
                         <FormMessage />
                         <p className="text-xs text-muted-foreground">
-                          Format: ORG-APP-YYYY-XXXX (e.g., ORG-APP-2024-0001)
+                          Use the same email address from your registration
                         </p>
                       </FormItem>
                     )}
@@ -187,19 +193,22 @@ export default function OrganizationApplicantLogin() {
 
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email Address</FormLabel>
+                        <FormLabel>Password (Your Organization Applicant ID)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="company@example.com" 
+                          <Input
+                            type="password"
+                            placeholder="ORG-APP-YYYY-XXXX"
                             {...field}
-                            data-testid="input-email"
+                            data-testid="input-password"
                           />
                         </FormControl>
                         <FormMessage />
+                        <p className="text-xs text-muted-foreground">
+                          Use your Organization Applicant ID that was sent to your email as your password
+                        </p>
                       </FormItem>
                     )}
                   />
@@ -207,9 +216,9 @@ export default function OrganizationApplicantLogin() {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h4 className="font-semibold text-blue-800 mb-2">Need Help?</h4>
                     <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• Use the Organization Applicant ID from your registration email</li>
+                      <li>• Use your Organization Applicant ID from your registration email as your password</li>
                       <li>• Ensure your email address is verified before logging in</li>
-                      <li>• Contact support if you've forgotten your Applicant ID</li>
+                      <li>• Contact support if you've forgotten your Organization Applicant ID password</li>
                     </ul>
                   </div>
 

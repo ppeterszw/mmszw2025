@@ -14,12 +14,25 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import type { Member, Organization } from "@shared/schema";
 
+type VerificationResult = {
+  type: "member" | "organization";
+  membershipNumber: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  memberType?: string;
+  organizationType?: string;
+  membershipStatus: string;
+  createdAt: string | Date;
+  expiryDate?: string | Date;
+};
+
 export default function PublicVerification() {
   const [membershipNumber, setMembershipNumber] = useState("");
   const [searchTrigger, setSearchTrigger] = useState("");
   const { toast } = useToast();
 
-  const { data: verificationResult, isLoading, error } = useQuery({
+  const { data: verificationResult, isLoading, error } = useQuery<VerificationResult>({
     queryKey: ["/api/public/verify", searchTrigger],
     enabled: !!searchTrigger,
     retry: false,
@@ -190,9 +203,9 @@ export default function PublicVerification() {
                         <div>
                           <Label className="text-sm font-medium text-gray-600">Registration Type</Label>
                           <p className="text-gray-900">
-                            {verificationResult.type === "member" 
-                              ? formatMemberType(verificationResult.memberType)
-                              : formatMemberType(verificationResult.organizationType)
+                            {verificationResult.type === "member"
+                              ? formatMemberType(verificationResult.memberType || "")
+                              : formatMemberType(verificationResult.organizationType || "")
                             }
                           </p>
                         </div>

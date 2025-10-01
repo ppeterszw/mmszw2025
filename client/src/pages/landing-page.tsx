@@ -78,17 +78,10 @@ export default function LandingPage() {
 
   const applicationOptions = [
     {
-      title: "Apply as Individual",
-      description: "Register as an individual estate agent",
+      title: "Apply for Membership",
+      description: "Individual or Organization Registration",
       icon: UserPlus,
-      action: () => setLocation("/apply/individual"),
-      featured: true
-    },
-    {
-      title: "Register Your Firm",
-      description: "Register your real estate firm with EACZ",
-      icon: Building2,
-      action: () => setLocation("/apply/firm"),
+      action: () => setLocation("/apply"),
       featured: true
     }
   ];

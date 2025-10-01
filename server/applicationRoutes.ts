@@ -436,9 +436,9 @@ export function registerApplicationRoutes(app: Express) {
    * Submit application for review (with fee guard)
    * POST /api/public/applications/:applicationId/submit
    */
-  app.post("/api/public/applications/:applicationId/submit", 
+  app.post("/api/public/applications/:applicationId/submit",
     applicationSubmissionGuards(),
-    async (req, res) => {
+    async (req: any, res: any) => {
       try {
         const { applicationId } = req.params;
 
@@ -511,36 +511,38 @@ export function registerApplicationRoutes(app: Express) {
         }
 
         // Update application status to submitted
-        const updateData = {
-          status: 'under_review' as const,
-          submittedAt: new Date()
-        };
-
         if (applicationType === 'individual') {
           await db
             .update(individualApplications)
-            .set(updateData)
+            .set({
+              status: 'eligibility_review',
+              submittedAt: new Date()
+            })
             .where(eq(individualApplications.applicationId, applicationId));
         } else {
           await db
             .update(organizationApplications)
-            .set(updateData)
+            .set({
+              status: 'eligibility_review',
+              submittedAt: new Date()
+            })
             .where(eq(organizationApplications.applicationId, applicationId));
         }
 
         // Log status change
+        const submittedAt = new Date();
         await db.insert(statusHistory).values({
           applicationType,
           applicationIdFk: applicationId,
-          fromStatus: application.status,
-          toStatus: 'under_review',
+          fromStatus: application.status || 'draft',
+          toStatus: 'eligibility_review',
           comment: 'Application submitted for review'
         });
 
         res.json({
           applicationId,
-          status: 'under_review',
-          submittedAt: updateData.submittedAt,
+          status: 'eligibility_review',
+          submittedAt,
           message: 'Application submitted successfully and is now under review'
         });
 
@@ -686,7 +688,7 @@ export function registerApplicationRoutes(app: Express) {
       }
 
       // Check attempt limit
-      if (token.attempts >= 3) {
+      if ((token.attempts || 0) >= 3) {
         return res.status(429).json({
           type: 'https://tools.ietf.org/html/rfc7807',
           title: 'Too Many Attempts',
@@ -699,7 +701,7 @@ export function registerApplicationRoutes(app: Express) {
       // Update attempt count
       await db
         .update(appLoginTokens)
-        .set({ attempts: token.attempts + 1 })
+        .set({ attempts: (token.attempts || 0) + 1 })
         .where(eq(appLoginTokens.id, token.id));
 
       // Generate session token (simple implementation)
@@ -821,7 +823,7 @@ export function registerApplicationRoutes(app: Express) {
       res.json({
         paymentUrl: paymentResult.redirectUrl,
         pollUrl: paymentResult.pollUrl,
-        instructions: paymentResult.instructions,
+        instructions: (paymentResult as any).instructions,
         message: 'Payment initialized successfully'
       });
 
@@ -847,9 +849,9 @@ export function registerApplicationRoutes(app: Express) {
       
       // Process callback
       const paynowService = createPaynowService();
-      const callbackResult = await paynowService.verifyIPN(req.body);
-      
-      if (callbackResult.success && isPaymentSuccessful(callbackResult.status)) {
+      const callbackResult: any = await paynowService.verifyIPN(req.body);
+
+      if (callbackResult && callbackResult.success && isPaymentSuccessful(callbackResult.status)) {
         // Update application fee status
         const updateData = { feeStatus: 'settled' as const };
 
@@ -870,7 +872,8 @@ export function registerApplicationRoutes(app: Express) {
           await db.insert(statusHistory).values({
             applicationType: 'individual',
             applicationIdFk: applicationId,
-            toStatus: individualApp.status,
+            fromStatus: individualApp.status || 'draft',
+            toStatus: individualApp.status || 'draft',
             comment: 'Application fee payment confirmed'
           });
         } else {
@@ -891,7 +894,8 @@ export function registerApplicationRoutes(app: Express) {
             await db.insert(statusHistory).values({
               applicationType: 'organization',
               applicationIdFk: applicationId,
-              toStatus: orgApp.status,
+              fromStatus: orgApp.status || 'draft',
+              toStatus: orgApp.status || 'draft',
               comment: 'Application fee payment confirmed'
             });
           }
@@ -987,7 +991,8 @@ export function registerApplicationRoutes(app: Express) {
       await db.insert(statusHistory).values({
         applicationType,
         applicationIdFk: applicationId,
-        toStatus: applicationType === 'individual' ? individualApp?.status : 'draft',
+        fromStatus: applicationType === 'individual' ? (individualApp?.status || 'draft') : 'draft',
+        toStatus: applicationType === 'individual' ? (individualApp?.status || 'draft') : 'draft',
         comment: 'Proof of payment uploaded - pending verification'
       });
 
@@ -1150,7 +1155,7 @@ export function registerApplicationRoutes(app: Express) {
       }
 
       // Verify application is in a state that allows document uploads
-      if (!['draft', 'needs_applicant_action'].includes(application.status)) {
+      if (!['draft', 'needs_applicant_action'].includes(application.status || '')) {
         return res.status(400).json({
           type: 'https://tools.ietf.org/html/rfc7807',
           title: 'Bad Request',
@@ -1379,14 +1384,17 @@ export function registerApplicationRoutes(app: Express) {
     try {
       const { status, type, limit = 50, offset = 0 } = req.query;
 
-      // Build filters
-      let individualQuery = db.select().from(individualApplications);
-      let orgQuery = db.select().from(organizationApplications);
+      // Build filters and execute queries
+      const individualQueryBase = db.select().from(individualApplications);
+      const orgQueryBase = db.select().from(organizationApplications);
 
-      if (status) {
-        individualQuery = individualQuery.where(eq(individualApplications.status, status as any));
-        orgQuery = orgQuery.where(eq(organizationApplications.status, status as any));
-      }
+      const individualQuery = status
+        ? individualQueryBase.where(eq(individualApplications.status, status as any))
+        : individualQueryBase;
+
+      const orgQuery = status
+        ? orgQueryBase.where(eq(organizationApplications.status, status as any))
+        : orgQueryBase;
 
       // Get individual applications
       let individualApps: any[] = [];
@@ -1688,7 +1696,7 @@ export function registerApplicationRoutes(app: Express) {
       });
 
       // Update application status based on decision
-      const newStatus = decision === 'accepted' ? 'approved' : 'rejected';
+      const newStatus = decision === 'accepted' ? 'accepted' : 'rejected';
       
       const updateData = { 
         status: newStatus as any, 
@@ -1717,7 +1725,7 @@ export function registerApplicationRoutes(app: Express) {
       await db.insert(statusHistory).values({
         applicationType,
         applicationIdFk: applicationId,
-        fromStatus: application.status,
+        fromStatus: application.status || 'draft',
         toStatus: newStatus,
         actorUserId: userId,
         comment: `Application ${decision} by registry`

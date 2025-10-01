@@ -62,6 +62,7 @@ export const users = pgTable("users", {
   department: text("department"),
   jobTitle: text("job_title"),
   notes: text("notes"),
+  clerkId: text("clerk_id").unique(), // Clerk user ID for authentication
   createdBy: varchar("created_by"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()

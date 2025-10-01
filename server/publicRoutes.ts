@@ -1,7 +1,388 @@
 import type { Express } from "express";
+import { z } from "zod";
+import { db } from "./db";
+import { applicants, organizationApplicants } from "@shared/schema";
 import { storage } from "./storage";
+import { eq } from "drizzle-orm";
+import { nextApplicationId } from "./services/namingSeries";
+import { sendEmail, generateWelcomeEmail, generateVerificationEmail, generateOrgApplicantVerificationEmail } from "./services/emailService";
+import crypto from "crypto";
+
+// Validation schemas
+const individualRegistrationSchema = z.object({
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  surname: z.string().min(2, "Surname must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+});
+
+const organizationRegistrationSchema = z.object({
+  companyName: z.string().min(2, "Company name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+});
+
+function generateVerificationToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
 
 export function registerPublicRoutes(app: Express) {
+  // === APPLICANT REGISTRATION ENDPOINTS ===
+
+  /**
+   * Individual applicant registration
+   * POST /api/applicants/register
+   */
+  app.post("/api/applicants/register", async (req, res) => {
+    try {
+      const registrationData = individualRegistrationSchema.parse(req.body);
+
+      // Check if email already exists
+      const existingApplicant = await db
+        .select()
+        .from(applicants)
+        .where(eq(applicants.email, registrationData.email))
+        .limit(1);
+
+      if (existingApplicant.length > 0) {
+        return res.status(409).json({
+          error: "Email already registered",
+          message: "An applicant with this email address already exists."
+        });
+      }
+
+      // Generate applicant ID using existing naming series
+      const applicantId = await nextApplicationId('individual');
+
+      // Generate verification token
+      const verificationToken = generateVerificationToken();
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Create applicant record
+      const [newApplicant] = await db.insert(applicants).values({
+        applicantId,
+        firstName: registrationData.firstName,
+        surname: registrationData.surname,
+        email: registrationData.email,
+        status: 'registered',
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires
+      }).returning();
+
+      // Send welcome email with applicant ID
+      try {
+        const fullName = `${registrationData.firstName} ${registrationData.surname}`;
+        const welcomeEmail = generateWelcomeEmail(fullName, applicantId);
+
+        await sendEmail({
+          to: registrationData.email,
+          from: 'sysadmin@estateagentscouncil.org',
+          ...welcomeEmail
+        });
+
+        // Send verification email
+        const baseUrl = process.env.NODE_ENV === 'production'
+          ? `https://${process.env.REPL_SLUG}.${process.env.REPLIT_DEV_DOMAIN}`
+          : 'http://localhost:5000';
+
+        const verificationEmail = generateVerificationEmail(fullName, verificationToken, baseUrl);
+
+        await sendEmail({
+          to: registrationData.email,
+          from: 'sysadmin@estateagentscouncil.org',
+          ...verificationEmail
+        });
+
+        console.log(`Welcome and verification emails sent to: ${registrationData.email}`);
+      } catch (emailError) {
+        console.error('Failed to send welcome/verification emails:', emailError);
+        // Don't fail the registration if email fails
+      }
+
+      res.status(201).json({
+        success: true,
+        applicantId,
+        message: "Registration successful! Please check your email for your Applicant ID and verification instructions."
+      });
+
+    } catch (error: any) {
+      console.error('Individual registration error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: error.errors
+        });
+      }
+      res.status(500).json({
+        error: "Registration failed",
+        message: "An error occurred during registration. Please try again."
+      });
+    }
+  });
+
+  /**
+   * Organization applicant registration
+   * POST /api/organization-applicants/register
+   */
+  app.post("/api/organization-applicants/register", async (req, res) => {
+    try {
+      const registrationData = organizationRegistrationSchema.parse(req.body);
+
+      // Check if email already exists
+      const existingApplicant = await db
+        .select()
+        .from(organizationApplicants)
+        .where(eq(organizationApplicants.email, registrationData.email))
+        .limit(1);
+
+      if (existingApplicant.length > 0) {
+        return res.status(409).json({
+          error: "Email already registered",
+          message: "An organization applicant with this email address already exists."
+        });
+      }
+
+      // Generate applicant ID using existing naming series
+      const applicantId = await nextApplicationId('organization');
+
+      // Generate verification token
+      const verificationToken = generateVerificationToken();
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Create organization applicant record
+      const [newApplicant] = await db.insert(organizationApplicants).values({
+        applicantId,
+        companyName: registrationData.companyName,
+        email: registrationData.email,
+        status: 'registered',
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires
+      }).returning();
+
+      // Send verification email
+      try {
+        const verificationEmail = generateOrgApplicantVerificationEmail(
+          registrationData.companyName,
+          verificationToken
+        );
+
+        await sendEmail({
+          to: registrationData.email,
+          from: 'sysadmin@estateagentscouncil.org',
+          ...verificationEmail
+        });
+
+        console.log(`Organization verification email sent to: ${registrationData.email}`);
+      } catch (emailError) {
+        console.error('Failed to send organization verification email:', emailError);
+        // Don't fail the registration if email fails
+      }
+
+      res.status(201).json({
+        success: true,
+        applicantId,
+        message: "Registration successful! Please check your email for verification instructions."
+      });
+
+    } catch (error: any) {
+      console.error('Organization registration error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: error.errors
+        });
+      }
+      res.status(500).json({
+        error: "Registration failed",
+        message: "An error occurred during registration. Please try again."
+      });
+    }
+  });
+
+  /**
+   * Email verification endpoint
+   * POST /api/applicants/verify-email
+   */
+  app.post("/api/applicants/verify-email", async (req, res) => {
+    try {
+      const { token, applicantId } = req.body;
+
+      if (!token) {
+        return res.status(400).json({
+          error: "Verification token is required"
+        });
+      }
+
+      // Try individual applicants first
+      const [individualApplicant] = await db
+        .select()
+        .from(applicants)
+        .where(eq(applicants.emailVerificationToken, token))
+        .limit(1);
+
+      if (individualApplicant) {
+        // Check if token is expired
+        if (individualApplicant.emailVerificationExpires && new Date() > individualApplicant.emailVerificationExpires) {
+          return res.status(400).json({
+            error: "Verification token has expired",
+            message: "Please request a new verification email."
+          });
+        }
+
+        // Update applicant as verified
+        await db
+          .update(applicants)
+          .set({
+            emailVerified: true,
+            status: 'email_verified',
+            emailVerificationToken: null,
+            emailVerificationExpires: null,
+            updatedAt: new Date()
+          })
+          .where(eq(applicants.id, individualApplicant.id));
+
+        return res.json({
+          success: true,
+          applicantId: individualApplicant.applicantId,
+          applicantType: 'individual',
+          message: "Email verified successfully! You can now continue with your application."
+        });
+      }
+
+      // Try organization applicants
+      const [orgApplicant] = await db
+        .select()
+        .from(organizationApplicants)
+        .where(eq(organizationApplicants.emailVerificationToken, token))
+        .limit(1);
+
+      if (orgApplicant) {
+        // Check if token is expired
+        if (orgApplicant.emailVerificationExpires && new Date() > orgApplicant.emailVerificationExpires) {
+          return res.status(400).json({
+            error: "Verification token has expired",
+            message: "Please request a new verification email."
+          });
+        }
+
+        // Update applicant as verified
+        await db
+          .update(organizationApplicants)
+          .set({
+            emailVerified: true,
+            status: 'email_verified',
+            emailVerificationToken: null,
+            emailVerificationExpires: null,
+            updatedAt: new Date()
+          })
+          .where(eq(organizationApplicants.id, orgApplicant.id));
+
+        return res.json({
+          success: true,
+          applicantId: orgApplicant.applicantId,
+          applicantType: 'organization',
+          message: "Email verified successfully! You can now continue with your application."
+        });
+      }
+
+      // Token not found
+      return res.status(404).json({
+        error: "Invalid verification token",
+        message: "The verification token is invalid or has already been used."
+      });
+
+    } catch (error: any) {
+      console.error('Email verification error:', error);
+      res.status(500).json({
+        error: "Verification failed",
+        message: "An error occurred during email verification. Please try again."
+      });
+    }
+  });
+
+  /**
+   * Applicant login endpoint (using Applicant ID as password)
+   * POST /api/applicants/login
+   */
+  app.post("/api/applicants/login", async (req, res) => {
+    try {
+      const { email, applicantId } = req.body;
+
+      if (!email || !applicantId) {
+        return res.status(400).json({
+          error: "Email and Applicant ID are required"
+        });
+      }
+
+      // Try individual applicants first
+      const [individualApplicant] = await db
+        .select()
+        .from(applicants)
+        .where(eq(applicants.email, email))
+        .limit(1);
+
+      if (individualApplicant && individualApplicant.applicantId === applicantId) {
+        if (!individualApplicant.emailVerified) {
+          return res.status(401).json({
+            error: "Email not verified",
+            message: "Please verify your email address before logging in."
+          });
+        }
+
+        return res.json({
+          success: true,
+          applicantId: individualApplicant.applicantId,
+          applicantType: 'individual',
+          name: `${individualApplicant.firstName} ${individualApplicant.surname}`,
+          email: individualApplicant.email,
+          status: individualApplicant.status,
+          message: "Login successful"
+        });
+      }
+
+      // Try organization applicants
+      const [orgApplicant] = await db
+        .select()
+        .from(organizationApplicants)
+        .where(eq(organizationApplicants.email, email))
+        .limit(1);
+
+      if (orgApplicant && orgApplicant.applicantId === applicantId) {
+        if (!orgApplicant.emailVerified) {
+          return res.status(401).json({
+            error: "Email not verified",
+            message: "Please verify your email address before logging in."
+          });
+        }
+
+        return res.json({
+          success: true,
+          applicantId: orgApplicant.applicantId,
+          applicantType: 'organization',
+          name: orgApplicant.companyName,
+          email: orgApplicant.email,
+          status: orgApplicant.status,
+          message: "Login successful"
+        });
+      }
+
+      // Invalid credentials
+      return res.status(401).json({
+        error: "Invalid credentials",
+        message: "The email and Applicant ID combination is incorrect."
+      });
+
+    } catch (error: any) {
+      console.error('Applicant login error:', error);
+      res.status(500).json({
+        error: "Login failed",
+        message: "An error occurred during login. Please try again."
+      });
+    }
+  });
+
+  // === PUBLIC VERIFICATION ENDPOINTS ===
+
   // Public verification endpoint - no authentication required
   app.get("/api/public/verify/:membershipNumber", async (req, res) => {
     try {
@@ -34,7 +415,7 @@ export function registerPublicRoutes(app: Express) {
         // Return organization information for verification
         return res.json({
           type: "organization",
-          membershipNumber: organization.membershipNumber || organization.registrationNumber,
+          membershipNumber: organization.registrationNumber,
           name: organization.name,
           organizationType: organization.type,
           status: organization.membershipStatus, // Use 'status' for consistency with frontend

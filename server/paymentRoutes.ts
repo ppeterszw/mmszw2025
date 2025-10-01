@@ -1,357 +1,579 @@
-import type { Express } from "express";
-import { paynowService } from "./paynowService";
-import Stripe from "stripe";
-import { storage } from "./storage";
+/**
+ * Enhanced Payment Routes with PayNow Integration
+ */
 
-// Initialize Stripe if keys are available
-const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY)
-  : null;
+import type { Express } from "express";
+import { db } from "./db";
+import { payments, paymentInstallments, members, organizations, memberRenewals } from "@shared/schema";
+import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { getPayNowService, PayNowService } from "./services/paynowService";
+import { z } from "zod";
+
+// Validation schemas
+const createPaymentSchema = z.object({
+  amount: z.number().positive(),
+  currency: z.string().default("USD"),
+  paymentMethod: z.enum(["paynow_ecocash", "paynow_onemoney", "cash", "bank_transfer", "stripe_card"]),
+  purpose: z.enum(["membership", "application", "renewal", "event", "fine", "subscription"]),
+  description: z.string().optional(),
+  memberId: z.string().optional(),
+  organizationId: z.string().optional(),
+  applicationId: z.string().optional(),
+  eventId: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  email: z.string().email().optional(),
+});
+
+const paynowExpressCheckoutSchema = z.object({
+  paymentId: z.string(),
+  phoneNumber: z.string().regex(/^(?:\+263|0)[0-9]{9}$/, "Invalid Zimbabwe phone number"),
+  paymentMethod: z.enum(["ecocash", "onemoney"]),
+});
 
 export function registerPaymentRoutes(app: Express) {
-  
-  // Paynow payment initiation
-  app.post("/api/payment/paynow/initiate", async (req, res) => {
+  const paynow = getPayNowService();
+
+  /**
+   * Create a new payment
+   * POST /api/payments/create
+   */
+  app.post("/api/payments/create", async (req, res) => {
     try {
-      const { amount, currency = "USD", reference, email, phone, description, memberId, paymentType } = req.body;
+      const paymentData = createPaymentSchema.parse(req.body);
+      const userId = (req as any).user?.id;
 
-      // Enhanced validation
-      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-        return res.status(400).json({
-          success: false,
-          error: "Valid payment amount is required and must be greater than 0"
-        });
+      // Generate unique payment reference
+      const paymentNumber = PayNowService.generateReference('EACZ-PAY');
+      const referenceNumber = PayNowService.generateReference('REF');
+
+      // Calculate fees (2.5% for PayNow transactions)
+      let fees = 0;
+      if (paymentData.paymentMethod.startsWith('paynow_')) {
+        fees = paymentData.amount * 0.025; // 2.5% processing fee
       }
 
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.status(400).json({
-          success: false,
-          error: "Valid email address is required"
+      const netAmount = paymentData.amount - fees;
+
+      // Create payment record
+      const [payment] = await db.insert(payments).values({
+        paymentNumber,
+        memberId: paymentData.memberId || null,
+        organizationId: paymentData.organizationId || null,
+        applicationId: paymentData.applicationId || null,
+        eventId: paymentData.eventId || null,
+        amount: paymentData.amount.toString(),
+        currency: paymentData.currency,
+        paymentMethod: paymentData.paymentMethod,
+        status: 'pending',
+        purpose: paymentData.purpose,
+        description: paymentData.description || `${paymentData.purpose} payment`,
+        referenceNumber,
+        fees: fees.toString(),
+        netAmount: netAmount.toString(),
+        processedBy: userId || null,
+        createdAt: new Date(),
+      }).returning();
+
+      // If PayNow payment, initiate transaction
+      if (paymentData.paymentMethod.startsWith('paynow_')) {
+        const paymentMethod = paymentData.paymentMethod === 'paynow_ecocash' ? 'ecocash' : 'onemoney';
+
+        // Check if phone number provided for express checkout
+        if (paymentData.phoneNumber) {
+          const expressResult = await paynow.initiateExpressCheckout({
+            amount: paymentData.amount,
+            reference: referenceNumber,
+            description: payment.description || '',
+            paymentMethod,
+            phoneNumber: paymentData.phoneNumber,
+            email: paymentData.email,
+          });
+
+          if (expressResult.success) {
+            return res.json({
+              success: true,
+              payment: {
+                id: payment.id,
+                paymentNumber: payment.paymentNumber,
+                amount: payment.amount,
+                status: payment.status,
+                method: 'express',
+              },
+              paynow: {
+                pollUrl: expressResult.pollUrl,
+                instructions: expressResult.instructions,
+              },
+            });
+          }
+        }
+
+        // Standard web payment
+        const initResult = await paynow.initiatePayment({
+          amount: paymentData.amount,
+          reference: referenceNumber,
+          description: payment.description || '',
+          paymentMethod,
+          email: paymentData.email,
+          phone: paymentData.phoneNumber,
         });
+
+        if (initResult.success) {
+          // Update payment with PayNow details
+          await db
+            .update(payments)
+            .set({
+              gatewayResponse: JSON.stringify(initResult),
+              updatedAt: new Date(),
+            })
+            .where(eq(payments.id, payment.id));
+
+          return res.json({
+            success: true,
+            payment: {
+              id: payment.id,
+              paymentNumber: payment.paymentNumber,
+              amount: payment.amount,
+              status: payment.status,
+              method: 'redirect',
+            },
+            paynow: {
+              redirectUrl: initResult.redirectUrl,
+              pollUrl: initResult.pollUrl,
+              reference: initResult.reference,
+            },
+          });
+        } else {
+          // Update payment status to failed
+          await db
+            .update(payments)
+            .set({
+              status: 'failed',
+              failureReason: initResult.error,
+              updatedAt: new Date(),
+            })
+            .where(eq(payments.id, payment.id));
+
+          return res.status(400).json({
+            success: false,
+            error: initResult.error,
+            payment: {
+              id: payment.id,
+              status: 'failed',
+            },
+          });
+        }
       }
 
-      if (!description || description.trim().length < 3) {
-        return res.status(400).json({
-          success: false,
-          error: "Payment description is required (minimum 3 characters)"
-        });
-      }
-
-      if (!reference || reference.trim().length < 3) {
-        return res.status(400).json({
-          success: false,
-          error: "Payment reference is required (minimum 3 characters)"
-        });
-      }
-
-      // Generate unique reference if needed
-      const uniqueReference = reference.includes('EACZ') ? reference : `EACZ-${reference}-${Date.now()}`;
-
-      const baseUrl = 'https://mms.estateagentscouncil.org';
-
-      const paymentRequest = {
-        amount: parseFloat(amount),
-        currency,
-        reference: uniqueReference,
-        email: email.trim(),
-        phone: phone?.trim(),
-        description: description.trim(),
-        returnUrl: `${baseUrl}/payment/return?ref=${uniqueReference}`,
-        resultUrl: `${baseUrl}/api/payment/paynow/callback`,
-        memberId: memberId || req.user?.id,
-        paymentType: paymentType || 'general'
-      };
-
-      console.log('Initiating PayNow payment:', {
-        ...paymentRequest,
-        email: '[HIDDEN]',
-        phone: '[HIDDEN]'
+      // For non-PayNow payments, return pending status
+      res.json({
+        success: true,
+        payment: {
+          id: payment.id,
+          paymentNumber: payment.paymentNumber,
+          amount: payment.amount,
+          status: payment.status,
+          referenceNumber: payment.referenceNumber,
+        },
       });
 
-      const result = await paynowService.initiatePayment(paymentRequest);
+    } catch (error: any) {
+      console.error('Payment creation error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to create payment',
+      });
+    }
+  });
+
+  /**
+   * PayNow callback/webhook endpoint
+   * POST /api/payments/paynow/callback
+   */
+  app.post("/api/payments/paynow/callback", async (req, res) => {
+    try {
+      const result = await paynow.processCallback(req.body);
 
       if (result.success) {
-        // Store payment record in database
-        try {
-          // await storage.createPayment({
-          //   amount: amount.toString(),
-          //   currency,
-          //   paymentMethod: "paynow",
-          //   status: "pending",
-          //   purpose: description,
-          //   referenceNumber: uniqueReference,
-          //   memberId: paymentRequest.memberId || "guest",
-          //   paymentType: paymentRequest.paymentType
-          // });
+        // Additional processing based on payment purpose
+        if (result.paymentId) {
+          const [payment] = await db
+            .select()
+            .from(payments)
+            .where(eq(payments.id, result.paymentId))
+            .limit(1);
 
-          console.log('PayNow payment initiated successfully:', uniqueReference);
-        } catch (dbError) {
-          console.error('Database error while storing payment:', dbError);
-          // Continue with payment process even if DB storage fails
+          if (payment && result.status === 'completed') {
+            // Handle successful payment based on purpose
+            await handleSuccessfulPayment(payment);
+          }
         }
 
         res.json({
           success: true,
-          paymentUrl: result.paymentUrl,
-          pollUrl: result.pollUrl,
-          reference: result.reference || uniqueReference,
-          message: 'Payment initiated successfully. Please complete payment on PayNow.'
+          message: 'Callback processed successfully',
         });
       } else {
-        console.error('PayNow payment initiation failed:', result.error, result.errorCode);
         res.status(400).json({
           success: false,
-          error: result.error || 'Payment initiation failed',
-          errorCode: result.errorCode
+          error: result.error,
         });
       }
-
-    } catch (error) {
-      console.error("Paynow initiation error:", error);
+    } catch (error: any) {
+      console.error('PayNow callback error:', error);
       res.status(500).json({
         success: false,
-        error: "Payment service temporarily unavailable. Please try again later."
+        error: 'Failed to process callback',
       });
     }
   });
 
-  // Paynow callback handler
-  app.post("/api/payment/paynow/callback", async (req, res) => {
+  /**
+   * Check payment status
+   * GET /api/payments/:paymentId/status
+   */
+  app.get("/api/payments/:paymentId/status", async (req, res) => {
     try {
-      const { reference, paynowreference, amount, status, hash } = req.body;
+      const { paymentId } = req.params;
 
-      console.log("PayNow callback received:", {
-        reference,
-        paynowreference,
-        amount,
-        status,
-        timestamp: new Date().toISOString()
-      });
+      const [payment] = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.id, paymentId))
+        .limit(1);
 
-      // Validate required callback fields
-      if (!reference || !paynowreference || !status) {
-        console.error('Invalid PayNow callback - missing required fields');
-        return res.status(400).send("Invalid callback data");
-      }
-
-      // Update payment status in database
-      try {
-        // const paymentStatus = status === "Paid" ? "completed" : 
-        //                      status === "Cancelled" ? "cancelled" : "failed";
-        
-        // await storage.updatePaymentByReference(reference, {
-        //   status: paymentStatus,
-        //   transactionId: paynowreference,
-        //   paymentDate: status === "Paid" ? new Date() : undefined,
-        //   callbackData: JSON.stringify(req.body)
-        // });
-
-        console.log(`Payment ${reference} updated to status: ${status}`);
-      } catch (dbError) {
-        console.error('Database error in PayNow callback:', dbError);
-        // Still return OK to PayNow to prevent retries
-      }
-
-      res.status(200).send("OK");
-
-    } catch (error) {
-      console.error("Paynow callback error:", error);
-      res.status(500).send("Error processing callback");
-    }
-  });
-
-  // Paynow payment verification
-  app.post("/api/payment/paynow/verify", async (req, res) => {
-    try {
-      const { pollUrl, reference } = req.body;
-
-      if (!pollUrl || !pollUrl.startsWith('https://')) {
-        return res.status(400).json({ 
+      if (!payment) {
+        return res.status(404).json({
           success: false,
-          error: "Valid PayNow poll URL is required" 
+          error: 'Payment not found',
         });
       }
 
-      console.log(`Verifying PayNow payment: ${reference || 'unknown'}`);
+      // If payment is pending and uses PayNow, check status
+      if (payment.status === 'pending' && payment.paymentMethod?.startsWith('paynow_')) {
+        const gatewayResponse = payment.gatewayResponse ? JSON.parse(payment.gatewayResponse) : null;
 
-      const result = await paynowService.verifyPayment(pollUrl);
-      
-      // Update database with verification result if reference provided
-      if (reference && result.success && result.status) {
-        try {
-          // const paymentStatus = result.status === 'Paid' ? 'completed' : 
-          //                      result.status === 'Cancelled' ? 'cancelled' : 'pending';
-          
-          // await storage.updatePaymentByReference(reference, {
-          //   status: paymentStatus,
-          //   verificationDate: new Date(),
-          //   verificationData: JSON.stringify(result)
-          // });
+        if (gatewayResponse?.pollUrl) {
+          const statusResult = await paynow.checkPaymentStatus(gatewayResponse.pollUrl);
 
-          console.log(`Payment ${reference} verification result: ${result.status}`);
-        } catch (dbError) {
-          console.error('Database error during payment verification:', dbError);
+          if (statusResult) {
+            // Map PayNow status to our status
+            const newStatus = mapPayNowStatusToInternal(statusResult.status);
+
+            if (newStatus !== payment.status) {
+              // Update payment status
+              await db
+                .update(payments)
+                .set({
+                  status: newStatus,
+                  externalPaymentId: statusResult.paynowReference,
+                  paymentDate: newStatus === 'completed' ? new Date() : null,
+                  updatedAt: new Date(),
+                })
+                .where(eq(payments.id, payment.id));
+
+              if (newStatus === 'completed') {
+                await handleSuccessfulPayment({ ...payment, status: newStatus });
+              }
+
+              return res.json({
+                success: true,
+                payment: {
+                  id: payment.id,
+                  status: newStatus,
+                  paynowReference: statusResult.paynowReference,
+                },
+              });
+            }
+          }
         }
       }
 
       res.json({
-        ...result,
-        statusDescription: result.status ? paynowService.getPaymentStatusDescription(result.status) : 'Unknown status',
-        timestamp: new Date().toISOString()
-      });
-      
-    } catch (error) {
-      console.error("Paynow verification error:", error);
-      res.status(500).json({ 
-        success: false,
-        error: "Payment verification failed. Please try again." 
-      });
-    }
-  });
-
-  // Stripe payment intent creation
-  app.post("/api/payment/stripe/create-intent", async (req, res) => {
-    try {
-      if (!stripe) {
-        return res.status(400).json({ error: "Stripe not configured" });
-      }
-
-      const { amount, currency = "usd", description, metadata } = req.body;
-
-      if (!amount || !description) {
-        return res.status(400).json({ 
-          error: "Missing required fields: amount, description" 
-        });
-      }
-
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(parseFloat(amount) * 100), // Convert to cents
-        currency: currency.toLowerCase(),
-        description,
-        metadata: metadata || {},
-        automatic_payment_methods: {
-          enabled: true,
+        success: true,
+        payment: {
+          id: payment.id,
+          paymentNumber: payment.paymentNumber,
+          amount: payment.amount,
+          status: payment.status,
+          paymentMethod: payment.paymentMethod,
+          purpose: payment.purpose,
+          paymentDate: payment.paymentDate,
+          referenceNumber: payment.referenceNumber,
         },
       });
 
-      res.json({
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id
+    } catch (error: any) {
+      console.error('Payment status check error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to check payment status',
       });
-
-    } catch (error) {
-      console.error("Stripe payment intent creation error:", error);
-      res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  // Stripe webhook handler
-  app.post("/api/payment/stripe/webhook", async (req, res) => {
+  /**
+   * Initiate express checkout for existing payment
+   * POST /api/payments/paynow/express-checkout
+   */
+  app.post("/api/payments/paynow/express-checkout", async (req, res) => {
     try {
-      if (!stripe) {
-        return res.status(400).json({ error: "Stripe not configured" });
-      }
+      const checkoutData = paynowExpressCheckoutSchema.parse(req.body);
 
-      const sig = req.headers['stripe-signature'];
-      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      const [payment] = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.id, checkoutData.paymentId))
+        .limit(1);
 
-      if (!sig || !endpointSecret) {
-        return res.status(400).send('Webhook signature verification failed');
-      }
-
-      let event;
-      try {
-        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-      } catch (err) {
-        console.log('Webhook signature verification failed:', err);
-        return res.status(400).send('Webhook signature verification failed');
-      }
-
-      // Handle payment success
-      if (event.type === 'payment_intent.succeeded') {
-        const paymentIntent = event.data.object;
-        console.log('Payment succeeded:', paymentIntent.id);
-
-        // Update payment status in database
-        // await storage.updatePaymentByTransactionId(paymentIntent.id, {
-        //   status: "completed",
-        //   paymentDate: new Date()
-        // });
-      }
-
-      res.json({ received: true });
-
-    } catch (error) {
-      console.error("Stripe webhook error:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  // Cash payment recording
-  app.post("/api/payment/cash/record", async (req, res) => {
-    try {
-      if (!req.isAuthenticated() || !["admin", "member_manager"].includes(req.user?.role)) {
-        return res.status(403).json({ error: "Unauthorized" });
-      }
-
-      const { amount, currency = "USD", reference, description, memberId, receiptNumber } = req.body;
-
-      if (!amount || !reference || !description || !receiptNumber) {
-        return res.status(400).json({ 
-          error: "Missing required fields: amount, reference, description, receiptNumber" 
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          error: 'Payment not found',
         });
       }
 
-      // Record cash payment
-      // const payment = await storage.createPayment({
-      //   amount: amount.toString(),
-      //   currency,
-      //   paymentMethod: "cash",
-      //   status: "completed",
-      //   purpose: description,
-      //   referenceNumber: reference,
-      //   transactionId: receiptNumber,
-      //   paymentDate: new Date(),
-      //   memberId
-      // });
+      if (payment.status !== 'pending') {
+        return res.status(400).json({
+          success: false,
+          error: 'Payment is not in pending status',
+        });
+      }
 
-      res.json({
-        success: true,
-        message: "Cash payment recorded successfully"
+      const result = await paynow.initiateExpressCheckout({
+        amount: parseFloat(payment.amount),
+        reference: payment.referenceNumber || '',
+        description: payment.description || '',
+        paymentMethod: checkoutData.paymentMethod,
+        phoneNumber: checkoutData.phoneNumber,
       });
 
-    } catch (error) {
-      console.error("Cash payment recording error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      if (result.success) {
+        // Update payment with new gateway response
+        await db
+          .update(payments)
+          .set({
+            gatewayResponse: JSON.stringify(result),
+            updatedAt: new Date(),
+          })
+          .where(eq(payments.id, payment.id));
+
+        res.json({
+          success: true,
+          pollUrl: result.pollUrl,
+          instructions: result.instructions,
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          error: result.error,
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Express checkout error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: error.errors,
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: 'Failed to initiate express checkout',
+      });
     }
   });
 
-  // Get payment methods
-  app.get("/api/payment/methods", (req, res) => {
-    const methods = [
-      {
-        id: "cash",
-        name: "Cash Payment",
-        description: "In-person cash payment at EACZ offices",
-        enabled: true,
-        adminOnly: true
-      },
-      {
-        id: "paynow",
-        name: "PayNow",
-        description: "Mobile money and bank payments via PayNow",
-        enabled: !!process.env.PAYNOW_INTEGRATION_ID,
-        supportedMethods: ["EcoCash", "OneMoney", "Bank Transfer"]
-      },
-      {
-        id: "stripe",
-        name: "Credit/Debit Card",
-        description: "International card payments via Stripe",
-        enabled: !!process.env.STRIPE_SECRET_KEY,
-        supportedMethods: ["Visa", "MasterCard", "American Express"]
-      }
-    ];
+  /**
+   * Get payment history for member/organization
+   * GET /api/payments/history
+   */
+  app.get("/api/payments/history", async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      const { memberId, organizationId, limit = 50, offset = 0 } = req.query;
 
-    res.json(methods);
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Unauthorized',
+        });
+      }
+
+      let query = db.select().from(payments);
+
+      if (memberId) {
+        query = query.where(eq(payments.memberId, memberId as string)) as any;
+      } else if (organizationId) {
+        query = query.where(eq(payments.organizationId, organizationId as string)) as any;
+      }
+
+      const paymentHistory = await query
+        .orderBy(desc(payments.createdAt))
+        .limit(Number(limit))
+        .offset(Number(offset));
+
+      res.json({
+        success: true,
+        payments: paymentHistory,
+        count: paymentHistory.length,
+      });
+
+    } catch (error: any) {
+      console.error('Payment history error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch payment history',
+      });
+    }
   });
+
+  /**
+   * Create payment installment plan
+   * POST /api/payments/:paymentId/installments
+   */
+  app.post("/api/payments/:paymentId/installments", async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+      const { numberOfInstallments, firstPaymentDate } = req.body;
+
+      const [payment] = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.id, paymentId))
+        .limit(1);
+
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          error: 'Payment not found',
+        });
+      }
+
+      const totalAmount = parseFloat(payment.amount);
+      const installmentAmount = totalAmount / numberOfInstallments;
+      const installments = [];
+
+      for (let i = 0; i < numberOfInstallments; i++) {
+        const dueDate = new Date(firstPaymentDate);
+        dueDate.setMonth(dueDate.getMonth() + i);
+
+        const [installment] = await db.insert(paymentInstallments).values({
+          paymentId: payment.id,
+          installmentNumber: i + 1,
+          amount: installmentAmount.toString(),
+          dueDate,
+          status: 'pending',
+        }).returning();
+
+        installments.push(installment);
+      }
+
+      res.json({
+        success: true,
+        installments,
+        message: `Created ${numberOfInstallments} installments`,
+      });
+
+    } catch (error: any) {
+      console.error('Installment creation error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create installments',
+      });
+    }
+  });
+}
+
+/**
+ * Helper function to handle successful payments
+ */
+async function handleSuccessfulPayment(payment: any) {
+  try {
+    // Handle based on payment purpose
+    switch (payment.purpose) {
+      case 'membership':
+      case 'application':
+        // Update application or member status
+        if (payment.memberId) {
+          await db
+            .update(members)
+            .set({
+              membershipStatus: 'active',
+              updatedAt: new Date(),
+            })
+            .where(eq(members.id, payment.memberId));
+        }
+        break;
+
+      case 'renewal':
+        // Update renewal status
+        if (payment.memberId) {
+          const renewals = await db
+            .select()
+            .from(memberRenewals)
+            .where(
+              and(
+                eq(memberRenewals.memberId, payment.memberId),
+                eq(memberRenewals.status, 'pending')
+              )
+            )
+            .limit(1);
+
+          if (renewals.length > 0) {
+            await db
+              .update(memberRenewals)
+              .set({
+                status: 'completed',
+                paidAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .where(eq(memberRenewals.id, renewals[0].id));
+
+            // Extend membership expiry
+            await db
+              .update(members)
+              .set({
+                expiryDate: sql`${members.expiryDate} + INTERVAL '1 year'`,
+                updatedAt: new Date(),
+              })
+              .where(eq(members.id, payment.memberId));
+          }
+        }
+        break;
+
+      default:
+        console.log(`Payment completed for purpose: ${payment.purpose}`);
+    }
+
+    // TODO: Send email notification
+    // TODO: Generate receipt
+
+  } catch (error) {
+    console.error('Error handling successful payment:', error);
+  }
+}
+
+/**
+ * Map PayNow status to internal payment status
+ */
+function mapPayNowStatusToInternal(paynowStatus: string): string {
+  switch (paynowStatus) {
+    case 'paid':
+      return 'completed';
+    case 'cancelled':
+      return 'cancelled';
+    case 'failed':
+      return 'failed';
+    default:
+      return 'pending';
+  }
 }

@@ -21,6 +21,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { hashPassword, comparePasswords } from "./auth";
+import crypto from "crypto";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -74,7 +75,11 @@ export interface IStorage {
   resetLoginAttempts(id: string): Promise<User>;
   verifyPassword(email: string, password: string): Promise<boolean>;
   updateUserPassword(id: string, newPassword: string): Promise<User>;
-  
+
+  // Clerk integration methods
+  getUserByClerkId(clerkId: string): Promise<User | undefined>;
+  createUserFromClerk(clerkData: { clerkId: string; email: string; firstName: string; lastName: string }): Promise<User>;
+
   // Applicant operations
   createApplicant(applicant: InsertApplicant): Promise<Applicant>;
   getApplicant(id: string): Promise<Applicant | undefined>;
@@ -1068,6 +1073,28 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  // Clerk integration methods
+  async getUserByClerkId(clerkId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.clerkId, clerkId));
+    return user || undefined;
+  }
+
+  async createUserFromClerk(clerkData: { clerkId: string; email: string; firstName: string; lastName: string }): Promise<User> {
+    const userData: InsertUser = {
+      clerkId: clerkData.clerkId,
+      email: clerkData.email,
+      firstName: clerkData.firstName,
+      lastName: clerkData.lastName,
+      password: '',
+      role: null,
+      status: 'active',
+      emailVerified: true
+    };
+
+    const [user] = await db.insert(users).values(userData).returning();
+    return user;
+  }
+
   // Enhanced Payment Methods
   async getPayment(id: string): Promise<Payment | undefined> {
     const [payment] = await db.select().from(payments).where(eq(payments.id, id));
@@ -1600,28 +1627,27 @@ export class DatabaseStorage implements IStorage {
       .where(conditions.length > 0 ? and(...conditions) : undefined);
     const total = totalResult[0]?.count || 0;
 
-    // Get paginated results
-    let query = db
+    // Get paginated results with proper query building
+    const baseQuery = db
       .select()
       .from(payments)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
     // Apply sorting
-    if (filters?.sortBy === 'amount') {
-      query = query.orderBy(filters.sortOrder === 'asc' ? asc(sql`CAST(amount AS DECIMAL)`) : desc(sql`CAST(amount AS DECIMAL)`));
-    } else {
-      query = query.orderBy(filters?.sortOrder === 'asc' ? asc(payments.createdAt) : desc(payments.createdAt));
-    }
+    const sortedQuery = filters?.sortBy === 'amount'
+      ? baseQuery.orderBy(filters.sortOrder === 'asc' ? asc(sql`CAST(amount AS DECIMAL)`) : desc(sql`CAST(amount AS DECIMAL)`))
+      : baseQuery.orderBy(filters?.sortOrder === 'asc' ? asc(payments.createdAt) : desc(payments.createdAt));
 
     // Apply pagination
-    if (filters?.limit) {
-      query = query.limit(filters.limit);
-    }
-    if (filters?.offset) {
-      query = query.offset(filters.offset);
-    }
+    const paginatedQuery = filters?.limit
+      ? sortedQuery.limit(filters.limit)
+      : sortedQuery;
 
-    const paymentsList = await query;
+    const finalQuery = filters?.offset
+      ? paginatedQuery.offset(filters.offset)
+      : paginatedQuery;
+
+    const paymentsList = await finalQuery;
 
     return { payments: paymentsList, total };
   }
@@ -1659,9 +1685,20 @@ export class DatabaseStorage implements IStorage {
     const total = totalResult[0]?.count || 0;
 
     // Get paginated results with member information
-    let query = db
+    const baseQuery = db
       .select({
-        ...memberRenewals,
+        id: memberRenewals.id,
+        memberId: memberRenewals.memberId,
+        renewalYear: memberRenewals.renewalYear,
+        status: memberRenewals.status,
+        dueDate: memberRenewals.dueDate,
+        remindersSent: memberRenewals.remindersSent,
+        lastReminderDate: memberRenewals.lastReminderDate,
+        renewalDate: memberRenewals.renewalDate,
+        renewalFee: memberRenewals.renewalFee,
+        paymentId: memberRenewals.paymentId,
+        createdAt: memberRenewals.createdAt,
+        updatedAt: memberRenewals.updatedAt,
         member: {
           id: members.id,
           firstName: members.firstName,
@@ -1677,14 +1714,15 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(memberRenewals.dueDate));
 
     // Apply pagination
-    if (filters?.limit) {
-      query = query.limit(filters.limit);
-    }
-    if (filters?.offset) {
-      query = query.offset(filters.offset);
-    }
+    const paginatedQuery = filters?.limit
+      ? baseQuery.limit(filters.limit)
+      : baseQuery;
 
-    const renewalsList = await query;
+    const finalQuery = filters?.offset
+      ? paginatedQuery.offset(filters.offset)
+      : paginatedQuery;
+
+    const renewalsList = await finalQuery;
 
     return { renewals: renewalsList as any, total };
   }

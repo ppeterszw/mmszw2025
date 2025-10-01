@@ -30,35 +30,33 @@ export default function DocumentManagement() {
   const mockDocuments: Document[] = [
     {
       id: "doc-1",
-      title: "Degree Certificate",
-      type: "education",
-      fileUrl: "/documents/degree.pdf",
+      documentType: "education",
+      filePath: "/documents/degree.pdf",
       fileName: "degree_certificate.pdf",
-      fileSize: "2.5 MB",
-      uploadedAt: new Date("2024-01-15"),
-      verificationStatus: "verified",
+      fileSize: 2621440,
+      mimeType: "application/pdf",
+      isVerified: true,
       verifiedBy: "admin",
-      verifiedAt: new Date("2024-01-16"),
       memberId: "member-profile-test-id",
       applicationId: null,
+      organizationId: null,
       createdAt: new Date("2024-01-15"),
-      updatedAt: new Date("2024-01-16")
+      verificationDate: new Date("2024-01-16")
     },
     {
-      id: "doc-2", 
-      title: "Practicing Certificate",
-      type: "practicing_certificate",
-      fileUrl: "/documents/practicing_cert.pdf",
+      id: "doc-2",
+      documentType: "practicing_certificate",
+      filePath: "/documents/practicing_cert.pdf",
       fileName: "practicing_certificate.pdf",
-      fileSize: "1.8 MB",
-      uploadedAt: new Date("2024-02-01"),
-      verificationStatus: "pending",
+      fileSize: 1887436,
+      mimeType: "application/pdf",
+      isVerified: false,
       verifiedBy: null,
-      verifiedAt: null,
       memberId: "member-profile-test-id",
       applicationId: null,
+      organizationId: null,
       createdAt: new Date("2024-02-01"),
-      updatedAt: new Date("2024-02-01")
+      verificationDate: null
     }
   ];
 

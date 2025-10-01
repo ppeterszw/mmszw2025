@@ -61,11 +61,7 @@ export default function OrganizationProfile() {
 
   const updateOrgMutation = useMutation({
     mutationFn: (data: OrganizationData) =>
-      apiRequest("/api/organization/profile", {
-        method: "PUT",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
-      }),
+      apiRequest("PUT", "/api/organization/profile", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organization/profile"] });
       toast({

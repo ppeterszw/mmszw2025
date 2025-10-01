@@ -384,12 +384,12 @@ export default function AdminDashboard() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="flex flex-wrap sm:flex-nowrap gap-4">
               {quickActions.map((action, index) => (
                 <Button
                   key={index}
                   variant="outline"
-                  className="h-auto flex-col items-center p-4 hover:bg-accent"
+                  className="h-auto flex-col items-center p-4 hover:bg-accent flex-1 min-w-0"
                   onClick={action.action}
                   data-testid={`quick-action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >

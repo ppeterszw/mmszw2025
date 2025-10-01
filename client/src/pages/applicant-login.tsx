@@ -14,10 +14,10 @@ import { useApplicantAuth } from "@/hooks/use-applicant-auth";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 
 const loginSchema = z.object({
-  applicantId: z.string()
-    .min(1, "Applicant ID is required")
-    .regex(/^MBR-APP-\d{4}-\d{4}$/, "Applicant ID must be in format MBR-APP-YYYY-XXXX"),
   email: z.string().email("Invalid email address"),
+  password: z.string()
+    .min(1, "Password is required")
+    .regex(/^MBR-APP-\d{4}-\d{4}$/, "Password should be your Applicant ID (format: MBR-APP-YYYY-XXXX)"),
 });
 
 type LoginData = z.infer<typeof loginSchema>;
@@ -29,13 +29,19 @@ export default function ApplicantLogin() {
   const form = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      applicantId: "",
       email: "",
+      password: "",
     },
   });
 
   const handleSubmit = (data: LoginData) => {
-    loginMutation.mutate(data, {
+    // Convert the password (applicant ID) back to the expected format for the API
+    const loginData = {
+      email: data.email,
+      applicantId: data.password // The password is actually the applicant ID
+    };
+
+    loginMutation.mutate(loginData, {
       onSuccess: () => {
         // Redirect to member registration form after successful login
         setTimeout(() => {
@@ -73,27 +79,6 @@ export default function ApplicantLogin() {
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="applicantId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Applicant ID *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="MBR-APP-2025-0001"
-                            data-testid="input-applicant-id"
-                            {...field}
-                          />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground">
-                          This was sent to your email when you first registered
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
@@ -108,6 +93,28 @@ export default function ApplicantLogin() {
                         </FormControl>
                         <p className="text-xs text-muted-foreground">
                           Use the same email address from your registration
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password (Your Applicant ID) *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="MBR-APP-2025-0001"
+                            data-testid="input-password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Use your Applicant ID that was sent to your email as your password
                         </p>
                         <FormMessage />
                       </FormItem>
@@ -152,8 +159,8 @@ export default function ApplicantLogin() {
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                     <div className="text-sm">
-                      <p className="font-medium text-orange-700">Don't have your Applicant ID?</p>
-                      <p className="text-orange-600 mb-2">Check your email for the welcome message we sent when you first registered.</p>
+                      <p className="font-medium text-orange-700">Don't have your Applicant ID password?</p>
+                      <p className="text-orange-600 mb-2">Check your email for the welcome message we sent when you first registered. Your Applicant ID serves as your password.</p>
                       <Button
                         variant="outline"
                         size="sm"

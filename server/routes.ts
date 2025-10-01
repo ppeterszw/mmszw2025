@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
+import { setupClerkAuth } from "./clerkAuth";
 import { storage } from "./storage";
 import { registerPaymentRoutes } from "./paymentRoutes";
 import { registerApplicationRoutes } from "./applicationRoutes";
@@ -312,7 +313,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { registerPublicRoutes } = await import("./publicRoutes");
   registerPublicRoutes(app);
 
-  // Setup authentication
+  // Setup authentication (Clerk)
+  setupClerkAuth(app);
+  // Keep legacy auth for backward compatibility during migration
   setupAuth(app);
 
   // Register application routes
@@ -1677,12 +1680,204 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add Member with Clerk Integration
+  app.post("/api/admin/members/create-with-clerk", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+    try {
+      const {
+        firstName,
+        surname,
+        dateOfBirth,
+        email,
+        memberType,
+        educationLevel,
+        countryOfResidence,
+        nationality,
+        employmentStatus,
+        organizationName
+      } = req.body;
+
+      // Validate required fields
+      if (!firstName || !surname || !dateOfBirth || !email || !memberType ||
+          !educationLevel || !countryOfResidence || !nationality || !employmentStatus) {
+        return res.status(400).json({
+          message: "Missing required fields",
+          details: "All fields except organization name are required"
+        });
+      }
+
+      // Check if member email already exists
+      const existingMember = await storage.getMemberByEmail(email);
+      if (existingMember) {
+        return res.status(409).json({
+          message: "Email already exists",
+          details: "A member with this email address already exists"
+        });
+      }
+
+      // Check if user with email already exists in Clerk
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({
+          message: "User already exists",
+          details: "A user with this email address already exists"
+        });
+      }
+
+      // Determine account type based on member type
+      const isPREA = memberType === "principal_agent";
+      const accountType = isPREA ? "PREA" : "Member";
+
+      // Create Clerk user
+      let clerkUserId: string;
+      try {
+        const { clerkClient } = await import('./clerkAuth');
+        if (!clerkClient) {
+          return res.status(500).json({
+            message: "Clerk authentication not configured",
+            details: "Cannot create user account without Clerk integration"
+          });
+        }
+
+        const clerkUser = await clerkClient.users.createUser({
+          emailAddress: [email],
+          firstName,
+          lastName: surname,
+          publicMetadata: {
+            accountType,
+            memberType,
+            role: "member"
+          },
+          privateMetadata: {
+            educationLevel,
+            employmentStatus
+          }
+        });
+
+        clerkUserId = clerkUser.id;
+        console.log(`Created Clerk user ${clerkUserId} with account type: ${accountType}`);
+      } catch (clerkError: any) {
+        console.error("Clerk user creation error:", clerkError);
+        return res.status(500).json({
+          message: "Failed to create user account",
+          details: clerkError.message || "Clerk API error"
+        });
+      }
+
+      // Generate membership number
+      const { nextMemberNumber } = await import('./services/namingSeries');
+      const membershipNumber = await nextMemberNumber('individual');
+
+      // Create User record in database
+      const userData = {
+        clerkId: clerkUserId,
+        email,
+        firstName,
+        lastName: surname,
+        password: '', // Empty password for Clerk-managed users
+        role: null,
+        status: 'active' as const,
+        emailVerified: false // Will be verified through Clerk
+      };
+
+      const newUser = await storage.createUser(userData);
+      console.log(`Created User record ${newUser.id} for Clerk user ${clerkUserId}`);
+
+      // Create Member record
+      const memberData = {
+        userId: newUser.id,
+        firstName,
+        lastName: surname,
+        email,
+        dateOfBirth: new Date(dateOfBirth),
+        countryOfResidence,
+        nationality,
+        memberType,
+        membershipNumber,
+        membershipStatus: 'pending' as const,
+        isMatureEntry: educationLevel === 'mature_entry' ? true : false,
+        cpdPoints: 0
+      };
+
+      const newMember = await storage.createMember(memberData);
+      console.log(`Created Member record ${newMember.id} with membership number ${membershipNumber}`);
+
+      // Send welcome email with verification
+      try {
+        const { sendEmail, generateNewMemberWelcomeEmail } = await import('./services/emailService');
+        const fullName = `${firstName} ${surname}`;
+
+        const welcomeEmail = generateNewMemberWelcomeEmail(
+          fullName,
+          membershipNumber,
+          educationLevel,
+          employmentStatus
+        );
+
+        const welcomeEmailSent = await sendEmail({
+          to: email,
+          from: 'noreply@estateagentscouncil.org',
+          ...welcomeEmail
+        });
+
+        console.log(`Welcome email sent to ${email}: ${welcomeEmailSent}`);
+
+        res.status(201).json({
+          success: true,
+          message: `Member created successfully! ${accountType} account has been set up. Verification email has been sent.`,
+          member: {
+            id: newMember.id,
+            firstName: newMember.firstName,
+            surname: newMember.lastName,
+            email: newMember.email,
+            membershipNumber: newMember.membershipNumber,
+            memberType: newMember.memberType,
+            membershipStatus: newMember.membershipStatus,
+            accountType,
+            isPREA,
+            emailVerified: false
+          },
+          emailsSent: {
+            welcome: welcomeEmailSent
+          }
+        });
+
+      } catch (emailError: any) {
+        console.error("Email sending error:", emailError);
+        // Member was created successfully but email failed
+        res.status(201).json({
+          success: true,
+          message: `Member created successfully with ${accountType} account, but email notification failed to send.`,
+          member: {
+            id: newMember.id,
+            firstName: newMember.firstName,
+            surname: newMember.lastName,
+            email: newMember.email,
+            membershipNumber: newMember.membershipNumber,
+            memberType: newMember.memberType,
+            membershipStatus: newMember.membershipStatus,
+            accountType,
+            isPREA,
+            emailVerified: false
+          },
+          emailError: emailError.message
+        });
+      }
+
+    } catch (error: any) {
+      console.error("Create member with Clerk error:", error);
+      res.status(500).json({
+        message: "Failed to create member",
+        details: error.message || "Unknown error occurred"
+      });
+    }
+  });
+
   // Get organization's current members for org users
   app.get("/api/organizations/current/members", requireAuth, async (req, res) => {
     try {
       // Find the user's member record to get their organization
       const allMembers = await storage.getAllMembers();
-      const userMember = allMembers.find(m => m.userId === req.user.id);
+      const userMember = allMembers.find(m => m.userId === req.user?.id);
       
       if (!userMember?.organizationId) {
         return res.status(400).json({
@@ -1708,7 +1903,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Find the user's member record to get their organization
       const allMembers = await storage.getAllMembers();
-      const userMember = allMembers.find(m => m.userId === req.user.id);
+      const userMember = allMembers.find(m => m.userId === req.user?.id);
       
       if (!userMember?.organizationId) {
         return res.status(400).json({
@@ -1824,13 +2019,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Send welcome email
           try {
-            const { sendMemberWelcomeEmail } = await import('./services/emailService');
-            await sendMemberWelcomeEmail(
-              rowData.email,
-              `${rowData.firstname} ${rowData.lastname}`,
-              membershipNumber,
-              tempPassword
-            );
+            // TODO: Implement sendMemberWelcomeEmail function in emailService
+            console.log(`Welcome email would be sent to ${rowData.email} with member number ${membershipNumber}`);
           } catch (emailError: any) {
             console.warn(`Failed to send welcome email to ${rowData.email}:`, emailError.message);
             // Continue - member and user were created successfully even if email failed

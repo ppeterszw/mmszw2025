@@ -292,9 +292,9 @@ export default function PaymentHistory() {
                                     <Receipt className="w-4 h-4 mr-1" />
                                     Receipt
                                   </Button>
-                                  {payment.status === "failed" && (
-                                    <Button 
-                                      size="sm" 
+                                  {(payment.status as any) === "failed" && (
+                                    <Button
+                                      size="sm"
                                       className="gradient-button text-white border-0"
                                       onClick={() => setLocation("/payment")}
                                     >
