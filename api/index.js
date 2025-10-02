@@ -1,2 +1,3 @@
 // Vercel Serverless Function Entry Point
-module.exports = require('../dist/vercel.js').default;
+import handler from '../dist/vercel.js';
+export default handler;
