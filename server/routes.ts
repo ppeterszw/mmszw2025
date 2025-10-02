@@ -1727,40 +1727,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isPREA = memberType === "principal_agent";
       const accountType = isPREA ? "PREA" : "Member";
 
-      // Create Clerk user
-      let clerkUserId: string;
-      try {
-        const { clerkClient } = await import('./clerkAuth');
-        if (!clerkClient) {
+      // Create Clerk user (or use development mode)
+      let clerkUserId: string | null = null;
+      const isDevelopmentMode = process.env.NODE_ENV === 'development' && !process.env.CLERK_SECRET_KEY;
+
+      if (isDevelopmentMode) {
+        // Development mode: Create member without Clerk integration
+        console.log(`[DEV MODE] Creating member without Clerk. Account type: ${accountType}`);
+        clerkUserId = null; // Will create member without Clerk ID
+      } else {
+        // Production mode: Require Clerk integration
+        try {
+          const { clerkClient } = await import('./clerkAuth');
+          if (!clerkClient) {
+            return res.status(500).json({
+              message: "Clerk authentication not configured",
+              details: "Cannot create user account without Clerk integration. Set CLERK_SECRET_KEY environment variable."
+            });
+          }
+
+          // Generate a temporary password for Clerk
+          const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+
+          // Sanitize username: replace invalid characters with underscores
+          // Clerk only allows letters, numbers, hyphens, and underscores
+          const sanitizedUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_');
+
+          const clerkUser = await clerkClient.users.createUser({
+            emailAddress: [email],
+            username: sanitizedUsername,
+            password: tempPassword,
+            firstName,
+            lastName: surname,
+            skipPasswordRequirement: false,
+            publicMetadata: {
+              accountType,
+              memberType,
+              role: "member"
+            },
+            privateMetadata: {
+              educationLevel,
+              employmentStatus,
+              tempPassword // Store temp password in private metadata for reference
+            }
+          });
+
+          clerkUserId = clerkUser.id;
+          console.log(`Created Clerk user ${clerkUserId} with account type: ${accountType}`);
+        } catch (clerkError: any) {
+          console.error("Clerk user creation error:", clerkError);
           return res.status(500).json({
-            message: "Clerk authentication not configured",
-            details: "Cannot create user account without Clerk integration"
+            message: "Failed to create user account",
+            details: clerkError.message || "Clerk API error"
           });
         }
-
-        const clerkUser = await clerkClient.users.createUser({
-          emailAddress: [email],
-          firstName,
-          lastName: surname,
-          publicMetadata: {
-            accountType,
-            memberType,
-            role: "member"
-          },
-          privateMetadata: {
-            educationLevel,
-            employmentStatus
-          }
-        });
-
-        clerkUserId = clerkUser.id;
-        console.log(`Created Clerk user ${clerkUserId} with account type: ${accountType}`);
-      } catch (clerkError: any) {
-        console.error("Clerk user creation error:", clerkError);
-        return res.status(500).json({
-          message: "Failed to create user account",
-          details: clerkError.message || "Clerk API error"
-        });
       }
 
       // Generate membership number
@@ -1768,19 +1788,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const membershipNumber = await nextMemberNumber('individual');
 
       // Create User record in database
-      const userData = {
-        clerkId: clerkUserId,
-        email,
-        firstName,
-        lastName: surname,
-        password: '', // Empty password for Clerk-managed users
-        role: null,
-        status: 'active' as const,
-        emailVerified: false // Will be verified through Clerk
-      };
+      let newUser;
+      if (isDevelopmentMode) {
+        // In development mode without Clerk, create user with hashed password
+        const { hashPassword } = await import('./auth');
+        const tempPassword = await hashPassword('Welcome123!'); // Temporary password for dev
 
-      const newUser = await storage.createUser(userData);
-      console.log(`Created User record ${newUser.id} for Clerk user ${clerkUserId}`);
+        const userData = {
+          clerkId: null,
+          email,
+          firstName,
+          lastName: surname,
+          password: tempPassword,
+          role: null,
+          status: 'active' as const,
+          emailVerified: false
+        };
+
+        newUser = await storage.createUser(userData);
+        console.log(`[DEV MODE] Created User record ${newUser.id} without Clerk (temp password: Welcome123!)`);
+      } else {
+        // Production mode with Clerk
+        const userData = {
+          clerkId: clerkUserId!,
+          email,
+          firstName,
+          lastName: surname,
+          password: '', // Empty password for Clerk-managed users
+          role: null,
+          status: 'active' as const,
+          emailVerified: false // Will be verified through Clerk
+        };
+
+        newUser = await storage.createUser(userData);
+        console.log(`Created User record ${newUser.id} for Clerk user ${clerkUserId}`);
+      }
 
       // Create Member record
       const memberData = {
@@ -1821,9 +1863,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log(`Welcome email sent to ${email}: ${welcomeEmailSent}`);
 
+        const successMessage = isDevelopmentMode
+          ? `[DEV MODE] Member created successfully! ${accountType} account type assigned. Temp password: Welcome123!`
+          : `Member created successfully! ${accountType} account has been set up. Verification email has been sent.`;
+
         res.status(201).json({
           success: true,
-          message: `Member created successfully! ${accountType} account has been set up. Verification email has been sent.`,
+          message: successMessage,
           member: {
             id: newMember.id,
             firstName: newMember.firstName,
@@ -1838,15 +1884,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           emailsSent: {
             welcome: welcomeEmailSent
-          }
+          },
+          ...(isDevelopmentMode && { devMode: true, tempPassword: 'Welcome123!' })
         });
 
       } catch (emailError: any) {
         console.error("Email sending error:", emailError);
+
+        const errorMessage = isDevelopmentMode
+          ? `[DEV MODE] Member created successfully with ${accountType} account type. Temp password: Welcome123!`
+          : `Member created successfully with ${accountType} account, but email notification failed to send.`;
+
         // Member was created successfully but email failed
         res.status(201).json({
           success: true,
-          message: `Member created successfully with ${accountType} account, but email notification failed to send.`,
+          message: errorMessage,
           member: {
             id: newMember.id,
             firstName: newMember.firstName,
@@ -1859,7 +1911,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             isPREA,
             emailVerified: false
           },
-          emailError: emailError.message
+          emailError: isDevelopmentMode ? undefined : emailError.message,
+          ...(isDevelopmentMode && { devMode: true, tempPassword: 'Welcome123!' })
         });
       }
 

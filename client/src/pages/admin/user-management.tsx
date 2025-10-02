@@ -562,12 +562,16 @@ export default function UserManagement() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredUsers.map((user) => {
+                          {filteredUsers.map((user, index) => {
                             const status = getUserStatus(user);
                             const StatusIcon = status.icon;
-                            
+
                             return (
-                              <TableRow key={user.id} data-testid={`user-row-${user.id}`}>
+                              <TableRow
+                                key={user.id}
+                                data-testid={`user-row-${user.id}`}
+                                className={index % 2 === 0 ? 'bg-white' : 'bg-blue-50/30'}
+                              >
                                 <TableCell>
                                   <Checkbox
                                     checked={selectedUsers.includes(user.id)}
@@ -599,35 +603,41 @@ export default function UserManagement() {
                                   {new Date(user.createdAt).toLocaleDateString()}
                                 </TableCell>
                                 <TableCell>
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center flex-wrap gap-2">
                                     <Button
-                                      variant="ghost"
+                                      variant="outline"
                                       size="sm"
+                                      className="h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50"
                                       onClick={() => {
                                         setSelectedUserId(user.id);
                                         setIsPasswordDialogOpen(true);
                                       }}
                                       data-testid={`reset-password-${user.id}`}
                                     >
-                                      <Key className="w-4 h-4" />
+                                      <Key className="w-3 h-3 mr-1" />
+                                      <span className="text-xs">Reset Password</span>
                                     </Button>
                                     {user.isLocked ? (
                                       <Button
-                                        variant="ghost"
+                                        variant="outline"
                                         size="sm"
+                                        className="h-8 px-3 text-green-600 border-green-200 hover:bg-green-50"
                                         onClick={() => unlockUserMutation.mutate(user.id)}
                                         data-testid={`unlock-user-${user.id}`}
                                       >
-                                        <Unlock className="w-4 h-4" />
+                                        <Unlock className="w-3 h-3 mr-1" />
+                                        <span className="text-xs">Unlock</span>
                                       </Button>
                                     ) : (
                                       <Button
-                                        variant="ghost"
+                                        variant="outline"
                                         size="sm"
+                                        className="h-8 px-3 text-red-600 border-red-200 hover:bg-red-50"
                                         onClick={() => lockUserMutation.mutate(user.id)}
                                         data-testid={`lock-user-${user.id}`}
                                       >
-                                        <Lock className="w-4 h-4" />
+                                        <Lock className="w-3 h-3 mr-1" />
+                                        <span className="text-xs">Lock</span>
                                       </Button>
                                     )}
                                   </div>

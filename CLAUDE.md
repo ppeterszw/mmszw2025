@@ -25,19 +25,30 @@ Estate Agents Council of Zimbabwe (EACZ) is a comprehensive member management sy
 
 ### Start Development Server
 ```bash
+# Local development with local database
 DATABASE_URL=postgresql://macbook@localhost:5432/eacz_dev PORT=5002 SESSION_SECRET=development-secret-key-for-testing-only npm run dev
+
+# Or with Neon production database
+DATABASE_URL=postgresql://neondb_owner:npg_6RkPzLfj0Noi@ep-wispy-unit-ad5uuk40-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require PORT=5002 SESSION_SECRET=development-secret-key-for-testing-only npm run dev
 ```
 
 ### Database Commands
 ```bash
-# Generate migration
-DATABASE_URL=postgresql://macbook@localhost:5432/eacz_dev npx drizzle-kit generate
-
-# Apply migrations
-DATABASE_URL=postgresql://macbook@localhost:5432/eacz_dev npx drizzle-kit migrate
-
-# Direct SQL access
+# With local database
+DATABASE_URL=postgresql://macbook@localhost:5432/eacz_dev npx drizzle-kit push
 psql postgresql://macbook@localhost:5432/eacz_dev
+
+# With Neon production database
+DATABASE_URL=postgresql://neondb_owner:npg_6RkPzLfj0Noi@ep-wispy-unit-ad5uuk40-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require npx drizzle-kit push
+```
+
+### Build and Deployment
+```bash
+# Test production build
+npm run build
+
+# Deploy to Vercel (after configuring environment variables)
+vercel --prod
 ```
 
 ### Testing Commands
@@ -71,9 +82,11 @@ npm run typecheck
 - **Components**: Located in `client/src/components/ClerkAuthComponents.tsx`
 
 ## Database
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL (Neon Database for production)
 - **ORM**: Drizzle
-- **Local DB**: `eacz_dev`
+- **Local DB**: `eacz_dev` (development)
+- **Production DB**: Neon Database - `neondb` (serverless PostgreSQL)
+- **Connection**: Pooled connection with SSL required
 - **Schema**: Defined in `shared/schema.ts`
 
 ## Environment Variables
@@ -232,7 +245,7 @@ CLERK_SECRET_KEY=sk_live_...
 # Email Service
 Sender_Address="noreply@estateagentscouncil.org"
 Host="api.zeptomail.eu"
-Send_Mail_Token="live_production_token"
+Send_Mail_Token="Zoho-enczapikey yA6KbHtf7A/zwm0EFkQ5hpnd9I1j/6A/gS2ztiu3e5QkLIPnjKFqhBRvJ9e6JDHZ24SFsK0EaY4Ydtu9uokNd5ExPYMALpTGTuv4P2uV48xh8ciEYNYljJWhA7UTEKJJeRkmCig0RfAgWA=="
 
 # Security
 SESSION_SECRET="secure-production-session-secret"
@@ -274,18 +287,25 @@ GOOGLE_CLOUD_CLIENT_EMAIL="service@eacz-production.iam.gserviceaccount.com"
 - Created Clerk authentication components
 - Updated server middleware for Clerk integration
 - Completed full-stack authentication flow
-- Added production environment documentation
+- **Migrated to Neon Database** (serverless PostgreSQL for production)
+- **Prepared Vercel deployment configuration**
+- Created comprehensive deployment documentation (DEPLOYMENT.md)
+- Updated environment variables for production deployment
+- Successfully tested production build process
 
 ## Development Notes
 - Always use the DATABASE_URL and SESSION_SECRET when running dev server
 - Clerk integration is complete and ready for testing
-- Database migrations should be generated with drizzle-kit
+- Database migrations should be managed with `drizzle-kit push` for Neon compatibility
 - Multiple background dev servers may be running - check port 5002 for main server
 - Demo data is auto-populated on server startup
 - System supports both individual and organization workflows
 - PayNow integration configured for Zimbabwe local payments
 - Email verification flows implemented for all applicant types
-- Production environment uses Neon Database, Clerk, and ZeptoMail
+- **Production database**: Neon Database (serverless PostgreSQL with connection pooling)
+- **Deployment platform**: Vercel (configured with vercel.json)
+- See DEPLOYMENT.md for complete deployment instructions
+- Build output: `dist/public/` (frontend) and `dist/index.js` (backend)
 
 ## Applicatin and Tracking System
 

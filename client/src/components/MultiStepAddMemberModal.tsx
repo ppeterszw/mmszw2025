@@ -70,6 +70,11 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
   const [newMember, setNewMember] = useState<any>(null);
   const { toast } = useToast();
 
+  // Calculate max date (18 years ago from today)
+  const maxDate = new Date();
+  maxDate.setFullYear(maxDate.getFullYear() - 18);
+  const maxDateString = maxDate.toISOString().split('T')[0];
+
   const {
     register,
     handleSubmit,
@@ -103,8 +108,22 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
 
   const createMemberMutation = useMutation({
     mutationFn: async (data: AddMemberFormData) => {
-      const response = await apiRequest("POST", "/api/admin/members/create-with-clerk", data);
-      return await response.json();
+      try {
+        const response = await apiRequest("POST", "/api/admin/members/create-with-clerk", data);
+
+        // Check content type before parsing
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await response.text();
+          console.error("Non-JSON response received:", text.substring(0, 200));
+          throw new Error("Server returned non-JSON response. Check console for details.");
+        }
+
+        return await response.json();
+      } catch (error: any) {
+        console.error("Mutation error:", error);
+        throw error;
+      }
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/members"] });
@@ -115,6 +134,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
       setCurrentStep(1);
     },
     onError: (error: any) => {
+      console.error("onError handler:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to add member. Please try again.",
@@ -148,6 +168,8 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
   };
 
   const onSubmit = async (data: AddMemberFormData) => {
+    console.log("Form submitted with data:", data);
+
     // Validate age for mature entry
     const birthDate = new Date(data.dateOfBirth);
     const today = new Date();
@@ -165,6 +187,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
       return;
     }
 
+    console.log("Calling createMemberMutation.mutate with data");
     createMemberMutation.mutate(data);
   };
 
@@ -201,7 +224,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Step 1: Personal Information */}
             {currentStep === 1 && (
-              <div className="bg-gradient-to-r from-blue-50 to-sky-50 p-6 rounded-xl border border-blue-200 space-y-4">
+              <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
                     <User className="w-5 h-5 text-white" />
@@ -214,11 +237,11 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-blue-800 font-semibold">First Name *</Label>
+                    <Label htmlFor="firstName" className="text-gray-700 font-medium">First Name *</Label>
                     <Input
                       id="firstName"
                       {...register("firstName")}
-                      className="border-blue-300 focus:border-blue-500 bg-white/80"
+                      className="border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:border-gray-300 transition-colors"
                       data-testid="input-first-name"
                     />
                     {errors.firstName && (
@@ -227,11 +250,11 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="surname" className="text-blue-800 font-semibold">Surname *</Label>
+                    <Label htmlFor="surname" className="text-gray-700 font-medium">Surname *</Label>
                     <Input
                       id="surname"
                       {...register("surname")}
-                      className="border-blue-300 focus:border-blue-500 bg-white/80"
+                      className="border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:border-gray-300 transition-colors"
                       data-testid="input-surname"
                     />
                     {errors.surname && (
@@ -249,8 +272,9 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
                     <Input
                       id="dateOfBirth"
                       type="date"
+                      max={maxDateString}
                       {...register("dateOfBirth")}
-                      className="border-blue-300 focus:border-blue-500 bg-white/80"
+                      className="border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:border-gray-300 transition-colors"
                       data-testid="input-date-of-birth"
                     />
                     {errors.dateOfBirth && (
@@ -267,7 +291,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
                       id="email"
                       type="email"
                       {...register("email")}
-                      className="border-blue-300 focus:border-blue-500 bg-white/80"
+                      className="border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:border-gray-300 transition-colors"
                       data-testid="input-email"
                     />
                     {errors.email && (
@@ -287,7 +311,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
 
             {/* Step 2: Professional Details */}
             {currentStep === 2 && (
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200 space-y-4">
+              <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
                     <Briefcase className="w-5 h-5 text-white" />
@@ -304,7 +328,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
                     Member Type *
                   </Label>
                   <Select onValueChange={(value) => setValue("memberType", value as any)} value={watchMemberType}>
-                    <SelectTrigger className="border-purple-300 focus:border-purple-500 bg-white/80" data-testid="select-member-type">
+                    <SelectTrigger className="border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:border-gray-300 transition-colors" data-testid="select-member-type">
                       <SelectValue placeholder="Select member type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -338,7 +362,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
                 )}
 
                 <div className="space-y-3 mt-4">
-                  <Label className="text-purple-800 font-semibold">Education/Entry Type *</Label>
+                  <Label className="text-gray-700 font-medium">Education/Entry Type *</Label>
                   <RadioGroup
                     onValueChange={(value) => setValue("educationLevel", value as any)}
                     value={watchEducationLevel}
@@ -372,7 +396,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
 
             {/* Step 3: Residence & Employment */}
             {currentStep === 3 && (
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-200 space-y-4">
+              <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center">
                     <Globe className="w-5 h-5 text-white" />
@@ -385,9 +409,9 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="countryOfResidence" className="text-emerald-800 font-semibold">Country of Residence *</Label>
+                    <Label htmlFor="countryOfResidence" className="text-gray-700 font-medium">Country of Residence *</Label>
                     <Select onValueChange={(value) => setValue("countryOfResidence", value)} value={watch("countryOfResidence")}>
-                      <SelectTrigger className="border-emerald-300 focus:border-emerald-500 bg-white/80">
+                      <SelectTrigger className="border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:border-gray-300 transition-colors">
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
                       <SelectContent>
@@ -408,9 +432,9 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="nationality" className="text-emerald-800 font-semibold">Nationality *</Label>
+                    <Label htmlFor="nationality" className="text-gray-700 font-medium">Nationality *</Label>
                     <Select onValueChange={(value) => setValue("nationality", value)} value={watch("nationality")}>
-                      <SelectTrigger className="border-emerald-300 focus:border-emerald-500 bg-white/80">
+                      <SelectTrigger className="border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:border-gray-300 transition-colors">
                         <SelectValue placeholder="Select nationality" />
                       </SelectTrigger>
                       <SelectContent>
@@ -458,12 +482,12 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
 
                 {watchEmploymentStatus === "employed" && (
                   <div className="space-y-2 mt-4">
-                    <Label htmlFor="organizationName" className="text-emerald-800 font-semibold">Organization/Firm Name *</Label>
+                    <Label htmlFor="organizationName" className="text-gray-700 font-medium">Organization/Firm Name *</Label>
                     <Input
                       id="organizationName"
                       {...register("organizationName")}
                       placeholder="Enter organization or firm name"
-                      className="border-emerald-300 focus:border-emerald-500 bg-white/80"
+                      className="border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:border-gray-300 transition-colors"
                       data-testid="input-organization-name"
                     />
                     {errors.organizationName && (
@@ -476,7 +500,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
 
             {/* Step 4: Review & Confirm */}
             {currentStep === 4 && (
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-xl border border-amber-200 space-y-4">
+              <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center">
                     <CheckCircle className="w-5 h-5 text-white" />

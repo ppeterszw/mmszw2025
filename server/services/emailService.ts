@@ -9,10 +9,18 @@ if (!process.env.ZEPTOMAIL_API_KEY) {
 }
 
 // Get the correct region endpoint for ZeptoMail
+// IMPORTANT: URL should NOT include https:// - just the domain with trailing slash
+// Examples: "api.zeptomail.com/" or "api.zeptomail.eu/"
 const getZeptoMailUrl = () => {
-  // Use EU region endpoint based on user's region
-  const baseUrl = process.env.ZEPTOMAIL_BASE_URL || "https://api.zeptomail.eu/";
-  return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const baseUrl = process.env.ZEPTOMAIL_BASE_URL || "api.zeptomail.eu/";
+
+  // Remove https:// if present (ZeptoMail client adds it automatically)
+  let cleanUrl = baseUrl.replace(/^https?:\/\//, '');
+
+  // Ensure trailing slash
+  cleanUrl = cleanUrl.endsWith('/') ? cleanUrl : `${cleanUrl}/`;
+
+  return cleanUrl;
 };
 
 // Initialize ZeptoMail client with correct configuration
@@ -21,6 +29,7 @@ if (process.env.ZEPTOMAIL_API_KEY) {
   try {
     const url = getZeptoMailUrl();
     console.log("Using ZeptoMail URL:", url);
+    console.log("Token length:", process.env.ZEPTOMAIL_API_KEY.length);
     zeptoMailClient = new SendMailClient({
       url: url,
       token: process.env.ZEPTOMAIL_API_KEY
@@ -82,9 +91,26 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     return true;
   } catch (error: any) {
     console.error('ZeptoMail email error:', error.error?.message || error.message);
+
     if (error.error?.details) {
       console.error('Error details:', error.error.details);
+
+      // Check for specific error codes
+      const errorDetails = error.error.details;
+      if (Array.isArray(errorDetails)) {
+        errorDetails.forEach((detail: any) => {
+          if (detail.code === 'SERR_157') {
+            console.error('❌ INVALID API TOKEN - Please check your ZeptoMail API token');
+            console.error('   → Log in to ZeptoMail → Settings → Mail Agents → Send Mail API');
+            console.error('   → Generate a new token and update ZEPTOMAIL_API_KEY in .env.local');
+          } else if (detail.code === 'SERR_101') {
+            console.error('❌ SENDER ADDRESS NOT VERIFIED');
+            console.error('   → Verify your sender address in ZeptoMail account');
+          }
+        });
+      }
     }
+
     return false;
   }
 }

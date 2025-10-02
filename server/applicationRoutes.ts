@@ -1642,6 +1642,24 @@ export function registerApplicationRoutes(app: Express) {
   });
 
   /**
+   * Get all uploaded documents for admin review
+   * GET /api/admin/documents
+   */
+  app.get("/api/admin/documents", authorizeRole(STAFF_ROLES), async (req, res) => {
+    try {
+      const documents = await db
+        .select()
+        .from(uploadedDocuments)
+        .orderBy(desc(uploadedDocuments.createdAt));
+
+      res.json(documents);
+    } catch (error: any) {
+      console.error('Error fetching documents:', error);
+      res.status(500).json({ message: 'Failed to fetch documents' });
+    }
+  });
+
+  /**
    * Make registry decision (admin)
    * POST /api/admin/applications/:applicationId/decide
    */

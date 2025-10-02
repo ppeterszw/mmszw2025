@@ -47,6 +47,7 @@ import AdminOrganizationManagement from "@/pages/admin/organization-management";
 import AdminApplicationReview from "@/pages/admin/application-review";
 import AgentsApplicationsReview from "@/pages/admin/agents-applications";
 import FirmsApplicationsReview from "@/pages/admin/firms-applications";
+import ApplicationManagement from "@/pages/admin/application-management";
 import AdminFinanceDashboard from "@/pages/admin/finance-dashboard";
 import EnhancedFinanceDashboard from "@/pages/admin/enhanced-finance-dashboard";
 import AdminSettings from "@/pages/admin/admin-settings";
@@ -114,6 +115,7 @@ function Router() {
       <ProtectedRoute path="/admin/organizations/register" component={OrganizationRegistration} />
       <ProtectedRoute path="/admin/applications" component={AdminApplicationReview} />
       <ProtectedRoute path="/admin-dashboard/applications" component={AdminApplicationReview} />
+      <ProtectedRoute path="/application-management" component={ApplicationManagement} />
       <ProtectedRoute path="/admin-dashboard/agents-applications" component={AgentsApplicationsReview} />
       <ProtectedRoute path="/admin-dashboard/firms-applications" component={FirmsApplicationsReview} />
       <ProtectedRoute path="/admin-dashboard/users" component={UserManagement} />

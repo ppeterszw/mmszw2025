@@ -92,7 +92,7 @@ export default function MemberManagement() {
   });
 
   const filteredMembers = members.filter(member => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       `${member.firstName} ${member.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.membershipNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -100,7 +100,10 @@ export default function MemberManagement() {
     const matchesStatus = statusFilter === "all" || member.membershipStatus === statusFilter;
     const matchesType = typeFilter === "all" || member.memberType === typeFilter;
 
-    return matchesSearch && matchesStatus && matchesType;
+    // Only show bonafide members (active status)
+    const isBonafideMember = member.membershipStatus === "active";
+
+    return matchesSearch && matchesStatus && matchesType && isBonafideMember;
   });
 
   const getStatusColor = (status: string) => {
@@ -215,7 +218,7 @@ export default function MemberManagement() {
             </Button>
 
             <Button
-              onClick={() => setReviewAppsModalOpen(true)}
+              onClick={() => setLocation("/application-management")}
               className="group relative h-32 rounded-3xl bg-gradient-to-br from-emerald-400 via-emerald-300 to-teal-300 hover:from-emerald-500 hover:via-emerald-400 hover:to-teal-400 border-0 shadow-lg hover:shadow-xl hover:shadow-emerald-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
               data-testid="button-review-applications"
             >
@@ -345,18 +348,28 @@ export default function MemberManagement() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4">Member</th>
+                      <th className="text-left py-3 px-4">Full Name</th>
                       <th className="text-left py-3 px-4">Membership #</th>
-                      <th className="text-left py-3 px-4">Type</th>
+                      <th className="text-left py-3 px-4">Member Type</th>
                       <th className="text-left py-3 px-4">Status</th>
                       <th className="text-left py-3 px-4">Organization</th>
-                      <th className="text-left py-3 px-4">Contact</th>
+                      <th className="text-left py-3 px-4">Date Joined</th>
+                      <th className="text-left py-3 px-4">Expiry Date</th>
                       <th className="text-left py-3 px-4">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredMembers.map((member) => (
-                      <tr key={member.id} className="border-b hover:bg-gray-50">
+                    {filteredMembers.map((member, index) => (
+                      <tr
+                        key={member.id}
+                        className={`border-b cursor-pointer transition-colors ${
+                          index % 2 === 0 ? 'bg-white hover:bg-blue-50' : 'bg-blue-50/30 hover:bg-blue-100/40'
+                        }`}
+                        onClick={() => {
+                          setSelectedMember(member);
+                          setMemberDetailModalOpen(true);
+                        }}
+                      >
                         <td className="py-3 px-4">
                           <div>
                             <div className="font-medium">
@@ -387,68 +400,57 @@ export default function MemberManagement() {
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="space-y-1">
-                            {member.phone && (
-                              <div className="flex items-center text-sm">
-                                <Phone className="w-3 h-3 mr-1" />
-                                {member.phone}
-                              </div>
-                            )}
-                            <div className="flex items-center text-sm">
-                              <Mail className="w-3 h-3 mr-1" />
-                              {member.email}
-                            </div>
-                          </div>
+                          <span className="text-sm">
+                            {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
+                          </span>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="flex items-center space-x-2">
-                            <Button 
-                              size="sm" 
+                          <span className="text-sm">
+                            {member.createdAt ? (() => {
+                              const expiryDate = new Date(member.createdAt);
+                              expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                              return expiryDate.toLocaleDateString();
+                            })() : "N/A"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center flex-wrap gap-2">
+                            {member.membershipStatus === "pending" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 text-green-600 border-green-200 hover:bg-green-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStatusChange(member.id, "active");
+                                }}
+                                data-testid={`button-approve-member-${member.id}`}
+                              >
+                                <UserCheck className="w-3 h-3 mr-1" />
+                                <span className="text-xs">Approve</span>
+                              </Button>
+                            )}
+                            {member.membershipStatus === "active" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 text-red-600 border-red-200 hover:bg-red-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStatusChange(member.id, "revoked");
+                                }}
+                                data-testid={`button-revoke-member-${member.id}`}
+                              >
+                                <UserX className="w-3 h-3 mr-1" />
+                                <span className="text-xs">Revoke</span>
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
                               variant="outline"
-                              className="h-8 w-8 p-0 text-blue-600 border-blue-200 hover:bg-blue-50"
-                              onClick={() => {
-                                setSelectedMember(member);
-                                setMemberDetailModalOpen(true);
-                              }}
-                              data-testid={`button-view-member-${member.id}`}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="h-8 w-8 p-0 text-green-600 border-green-200 hover:bg-green-50"
-                              onClick={() => handleStatusChange(member.id, "active")}
-                              data-testid={`button-approve-member-${member.id}`}
-                            >
-                              <UserCheck className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="h-8 w-8 p-0 text-red-600 border-red-200 hover:bg-red-50"
-                              onClick={() => handleStatusChange(member.id, "revoked")}
-                              data-testid={`button-revoke-member-${member.id}`}
-                            >
-                              <UserX className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="h-8 w-8 p-0 text-purple-600 border-purple-200 hover:bg-purple-50"
-                              onClick={() => {
-                                setSelectedMember(member);
-                                setMemberDetailModalOpen(true);
-                              }}
-                              data-testid={`button-edit-member-${member.id}`}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="h-8 w-8 p-0 text-orange-600 border-orange-200 hover:bg-orange-50"
-                              onClick={() => {
+                              className="h-8 px-3 text-purple-600 border-purple-200 hover:bg-purple-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 toast({
                                   title: "Member Management",
                                   description: `Managing member: ${member.firstName} ${member.lastName}`,
@@ -458,20 +460,8 @@ export default function MemberManagement() {
                               }}
                               data-testid={`button-manage-member-${member.id}`}
                             >
-                              <Settings className="w-4 h-4" />
-                            </Button>
-                            
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="h-8 w-8 p-0 text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200"
-                              onClick={() => {
-                                setSelectedMember(member);
-                                setMemberDetailModalOpen(true);
-                              }}
-                              data-testid={`button-details-member-${member.id}`}
-                            >
-                              <MoreVertical className="w-4 h-4" />
+                              <Settings className="w-3 h-3 mr-1" />
+                              <span className="text-xs">Manage</span>
                             </Button>
                           </div>
                         </td>

@@ -1,5 +1,9 @@
+import dotenv from "dotenv";
+
+// Load environment variables from .env.local file
+dotenv.config({ path: ".env.local" });
+
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -40,7 +44,9 @@ app.use((req, res, next) => {
   // Initialize application ID counters before registering routes
   const { initializeApplicationCounters } = await import("./services/namingSeries");
   await initializeApplicationCounters();
-  
+
+  // Use dynamic import for routes to ensure dotenv loads first
+  const { registerRoutes } = await import("./routes");
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
