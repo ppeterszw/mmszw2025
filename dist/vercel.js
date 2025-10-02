@@ -2475,8 +2475,8 @@ var init_storage = __esm({
         return await db.select().from(notifications).where(eq(notifications.status, "pending")).orderBy(notifications.scheduledFor || notifications.createdAt);
       }
       // Audit Logging
-      async createAuditLog(log2) {
-        const [newLog] = await db.insert(auditLogs).values(log2).returning();
+      async createAuditLog(log) {
+        const [newLog] = await db.insert(auditLogs).values(log).returning();
         return newLog;
       }
       async getAuditLogs(filters) {
@@ -10671,7 +10671,6 @@ var init_routes = __esm({
 });
 
 // server/vercel.ts
-import dotenv from "dotenv";
 import express2 from "express";
 
 // server/vite.ts
@@ -10718,15 +10717,6 @@ var vite_config_default = defineConfig({
 // server/vite.ts
 import { nanoid } from "nanoid";
 var viteLogger = createLogger();
-function log(message, source = "express") {
-  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true
-  });
-  console.log(`${formattedTime} [${source}] ${message}`);
-}
 function serveStatic(app2) {
   const distPath = path2.resolve(import.meta.dirname, "public");
   if (!fs.existsSync(distPath)) {
@@ -10741,40 +10731,18 @@ function serveStatic(app2) {
 }
 
 // server/vercel.ts
-if (process.env.NODE_ENV !== "production") {
-  dotenv.config({ path: ".env.local" });
-}
 var app = express2();
 app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
 app.use((req, res, next) => {
-  const start = Date.now();
-  const path3 = req.path;
-  let capturedJsonResponse = void 0;
-  const originalResJson = res.json;
-  res.json = function(bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path3.startsWith("/api")) {
-      let logLine = `${req.method} ${path3} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "\u2026";
-      }
-      log(logLine);
-    }
-  });
+  console.log(`${req.method} ${req.path}`);
   next();
 });
 var appInitialized = false;
 async function initializeApp() {
   if (appInitialized) return app;
   try {
+    console.log("Initializing Vercel serverless function...");
     const { initializeApplicationCounters: initializeApplicationCounters2 } = await Promise.resolve().then(() => (init_namingSeries(), namingSeries_exports));
     await initializeApplicationCounters2();
     const { registerRoutes: registerRoutes2 } = await init_routes().then(() => routes_exports);
@@ -10782,12 +10750,12 @@ async function initializeApp() {
     app.use((err, _req, res, _next) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
+      console.error("Error:", err);
       res.status(status).json({ message });
-      console.error(err);
     });
     serveStatic(app);
     appInitialized = true;
-    log("App initialized successfully for Vercel");
+    console.log("App initialized successfully for Vercel");
   } catch (error) {
     console.error("Failed to initialize app:", error);
     throw error;
@@ -10795,8 +10763,13 @@ async function initializeApp() {
   return app;
 }
 var vercel_default = async (req, res) => {
-  const initializedApp = await initializeApp();
-  return initializedApp(req, res);
+  try {
+    const initializedApp = await initializeApp();
+    return initializedApp(req, res);
+  } catch (error) {
+    console.error("Handler error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 export {
   vercel_default as default
