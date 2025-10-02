@@ -28,12 +28,18 @@
 ### Step 1: Prepare Local Build
 
 ```bash
-# Test production build locally
-npm run build
+# Test Vercel production build locally
+npm run build:vercel
 
 # Verify build output
 ls -la dist/
 ls -la dist/public/
+ls -la api/
+
+# Expected output:
+# - dist/vercel.js (serverless function)
+# - dist/public/ (frontend static files)
+# - api/index.js (Vercel entry point)
 ```
 
 ### Step 2: Configure Vercel
@@ -84,8 +90,17 @@ vercel env add BASE_URL
 ### Step 3: Deploy
 
 ```bash
+# IMPORTANT: Commit all changes first
+git add .
+git commit -m "feat: complete Vercel production deployment preparation"
+git push
+
 # Deploy to production
 vercel --prod
+
+# Or let Vercel auto-deploy from GitHub (recommended):
+# 1. Connect your repo to Vercel at vercel.com/dashboard
+# 2. Every push to main branch will auto-deploy
 ```
 
 ### Step 4: Update Domain Settings
@@ -177,7 +192,9 @@ All environment variables should be set in Vercel Dashboard:
 ### API Routes Not Working
 - Verify `vercel.json` routes configuration
 - Check serverless function logs in Vercel dashboard
-- Ensure `dist/index.js` exists after build
+- Ensure `dist/vercel.js` exists after build
+- Check that `api/index.js` correctly imports the serverless function
+- Verify environment variables are set in Vercel dashboard
 
 ### Email Not Sending
 - Verify ZeptoMail credentials
