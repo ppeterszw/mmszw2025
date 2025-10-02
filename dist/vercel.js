@@ -6682,11 +6682,11 @@ function getObjectStorageClient() {
   }
   return objectStorageClient;
 }
-function parseObjectPath(path3) {
-  if (!path3.startsWith("/")) {
-    path3 = `/${path3}`;
+function parseObjectPath(path2) {
+  if (!path2.startsWith("/")) {
+    path2 = `/${path2}`;
   }
-  const pathParts = path3.split("/");
+  const pathParts = path2.split("/");
   if (pathParts.length < 3) {
     throw new Error("Invalid path: must contain at least a bucket name");
   }
@@ -6749,7 +6749,7 @@ var init_objectStorage = __esm({
         const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
         const paths = Array.from(
           new Set(
-            pathsStr.split(",").map((path3) => path3.trim()).filter((path3) => path3.length > 0)
+            pathsStr.split(",").map((path2) => path2.trim()).filter((path2) => path2.length > 0)
           )
         );
         if (paths.length === 0) {
@@ -10671,69 +10671,12 @@ var init_routes = __esm({
 });
 
 // server/vercel.ts
-import express2 from "express";
-
-// server/vite.ts
 import express from "express";
 import fs from "fs";
-import path2 from "path";
-import { createServer as createViteServer, createLogger } from "vite";
-
-// vite.config.ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-var vite_config_default = defineConfig({
-  plugins: [
-    react(),
-    runtimeErrorOverlay(),
-    ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
-      await import("@replit/vite-plugin-cartographer").then(
-        (m) => m.cartographer()
-      )
-    ] : []
-  ],
-  resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets")
-    }
-  },
-  root: path.resolve(import.meta.dirname, "client"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true
-  },
-  server: {
-    fs: {
-      strict: true,
-      deny: ["**/.*"]
-    }
-  }
-});
-
-// server/vite.ts
-import { nanoid } from "nanoid";
-var viteLogger = createLogger();
-function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
-  }
-  app2.use(express.static(distPath));
-  app2.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
-  });
-}
-
-// server/vercel.ts
-var app = express2();
-app.use(express2.json());
-app.use(express2.urlencoded({ extended: false }));
+var app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
@@ -10753,7 +10696,16 @@ async function initializeApp() {
       console.error("Error:", err);
       res.status(status).json({ message });
     });
-    serveStatic(app);
+    const distPath = path.resolve(import.meta.dirname, "public");
+    if (!fs.existsSync(distPath)) {
+      throw new Error(
+        `Could not find the build directory: ${distPath}, make sure to build the client first`
+      );
+    }
+    app.use(express.static(distPath));
+    app.use("*", (_req, res) => {
+      res.sendFile(path.resolve(distPath, "index.html"));
+    });
     appInitialized = true;
     console.log("App initialized successfully for Vercel");
   } catch (error) {

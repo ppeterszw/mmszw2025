@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { serveStatic } from "./vite";
+import fs from "fs";
+import path from "path";
 
 const app = express();
 app.use(express.json());
@@ -37,7 +38,20 @@ async function initializeApp() {
     });
 
     // Serve static files in production
-    serveStatic(app);
+    const distPath = path.resolve(import.meta.dirname, "public");
+
+    if (!fs.existsSync(distPath)) {
+      throw new Error(
+        `Could not find the build directory: ${distPath}, make sure to build the client first`,
+      );
+    }
+
+    app.use(express.static(distPath));
+
+    // Fall through to index.html if the file doesn't exist
+    app.use("*", (_req, res) => {
+      res.sendFile(path.resolve(distPath, "index.html"));
+    });
 
     appInitialized = true;
     console.log("App initialized successfully for Vercel");
