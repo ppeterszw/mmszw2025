@@ -37,11 +37,15 @@ export function setupClerkAuth(app: Express) {
 
   console.log("✅ Setting up Clerk authentication");
 
+  // TEMPORARILY DISABLED - Causing 504 timeouts
+  // TODO: Fix Clerk middleware to only run on specific routes
+  console.warn("⚠️  Clerk middleware temporarily disabled to prevent timeouts");
+
   // Add Clerk middleware - this adds req.auth
-  app.use(clerkMiddleware());
+  // app.use(clerkMiddleware());
 
   // Attach user info middleware (only for API routes)
-  app.use(attachClerkUser);
+  // app.use(attachClerkUser);
 }
 
 /**
