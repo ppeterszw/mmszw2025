@@ -19,7 +19,7 @@ import { db } from "./db";
 import { eq, and, desc, asc, count, sql, or } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+// import { pool } from "./db"; // TEMPORARILY DISABLED - Using Neon serverless
 import { hashPassword, comparePasswords } from "./auth";
 import crypto from "crypto";
 
@@ -274,10 +274,12 @@ export class DatabaseStorage implements IStorage {
   private migrationCompleted = false;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
-    });
+    // TEMPORARILY DISABLED - Session storage needs pool connection
+    // this.sessionStore = new PostgresSessionStore({
+    //   pool,
+    //   createTableIfMissing: true
+    // });
+
     // Run password migration on startup
     this.runPasswordMigration();
   }

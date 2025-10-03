@@ -1176,21 +1176,20 @@ var init_schema = __esm({
 });
 
 // server/db.ts
-import pkg from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
-var Pool, pool, db;
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+var sql2, db;
 var init_db = __esm({
   "server/db.ts"() {
     "use strict";
     init_schema();
-    ({ Pool } = pkg);
     if (!process.env.DATABASE_URL) {
       throw new Error(
         "DATABASE_URL must be set. Did you forget to provision a database?"
       );
     }
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
-    db = drizzle(pool, { schema: schema_exports });
+    sql2 = neon(process.env.DATABASE_URL);
+    db = drizzle(sql2, { schema: schema_exports });
   }
 });
 
@@ -1202,11 +1201,11 @@ __export(namingSeries_exports, {
   nextApplicationId: () => nextApplicationId,
   nextMemberNumber: () => nextMemberNumber
 });
-import { sql as sql2 } from "drizzle-orm";
+import { sql as sql3 } from "drizzle-orm";
 async function nextApplicationId(type) {
   const currentYear = (/* @__PURE__ */ new Date()).getFullYear();
   const prefix = type === "individual" ? "MBR-APP-" : "ORG-APP-";
-  const result = await db.execute(sql2`
+  const result = await db.execute(sql3`
     INSERT INTO application_id_counters (type, counter) 
     VALUES (${type + "_" + currentYear}, 1)
     ON CONFLICT (type) 
@@ -1221,7 +1220,7 @@ async function nextMemberNumber(kind) {
   const seriesCode = kind === "individual" ? "member_ind" : "member_org";
   const prefix = kind === "individual" ? "EAC-MBR-" : "EAC-ORG-";
   const result = await db.transaction(async (tx) => {
-    const existing = await tx.select().from(namingSeriesCounters).where(sql2`${namingSeriesCounters.seriesCode} = ${seriesCode} AND ${namingSeriesCounters.year} = ${currentYear}`).for("update");
+    const existing = await tx.select().from(namingSeriesCounters).where(sql3`${namingSeriesCounters.seriesCode} = ${seriesCode} AND ${namingSeriesCounters.year} = ${currentYear}`).for("update");
     let counter;
     if (existing.length === 0) {
       await tx.insert(namingSeriesCounters).values({
@@ -1231,7 +1230,7 @@ async function nextMemberNumber(kind) {
       });
       counter = 1;
     } else {
-      const updateResult = await tx.update(namingSeriesCounters).set({ counter: sql2`${namingSeriesCounters.counter} + 1` }).where(sql2`${namingSeriesCounters.seriesCode} = ${seriesCode} AND ${namingSeriesCounters.year} = ${currentYear}`).returning();
+      const updateResult = await tx.update(namingSeriesCounters).set({ counter: sql3`${namingSeriesCounters.counter} + 1` }).where(sql3`${namingSeriesCounters.seriesCode} = ${seriesCode} AND ${namingSeriesCounters.year} = ${currentYear}`).returning();
       counter = updateResult[0]?.counter || 1;
     }
     return counter;
@@ -1239,7 +1238,7 @@ async function nextMemberNumber(kind) {
   return `${prefix}${currentYear}-${String(result).padStart(4, "0")}`;
 }
 async function initializeApplicationCounters() {
-  await db.execute(sql2`
+  await db.execute(sql3`
     CREATE TABLE IF NOT EXISTS application_id_counters (
       type VARCHAR(20) PRIMARY KEY,
       counter INTEGER DEFAULT 0
@@ -1248,7 +1247,7 @@ async function initializeApplicationCounters() {
 }
 async function getCurrentCounters() {
   const memberCounters = await db.select().from(namingSeriesCounters);
-  const appCounters = await db.execute(sql2`SELECT * FROM application_id_counters`);
+  const appCounters = await db.execute(sql3`SELECT * FROM application_id_counters`);
   return {
     memberCounters,
     applicationCounters: appCounters.rows
@@ -1284,13 +1283,13 @@ var init_applicantUtils = __esm({
 });
 
 // server/storage.ts
-import { eq, and, desc, asc, sql as sql3 } from "drizzle-orm";
+import { eq, and, desc, asc, sql as sql4 } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 async function migrateToHashedPasswords() {
   try {
     console.log("Checking for plaintext passwords to migrate...");
-    const plainTextUsers = await db.select().from(users).where(sql3`password NOT LIKE '%.%'`);
+    const plainTextUsers = await db.select().from(users).where(sql4`password NOT LIKE '%.%'`);
     if (plainTextUsers.length === 0) {
       console.log("No plaintext passwords found. Migration not needed.");
       return;
@@ -1781,17 +1780,12 @@ var init_storage = __esm({
     "use strict";
     init_schema();
     init_db();
-    init_db();
     init_auth();
     PostgresSessionStore = connectPg(session);
     DatabaseStorage = class {
       sessionStore;
       migrationCompleted = false;
       constructor() {
-        this.sessionStore = new PostgresSessionStore({
-          pool,
-          createTableIfMissing: true
-        });
         this.runPasswordMigration();
       }
       async runPasswordMigration() {
@@ -2134,7 +2128,7 @@ var init_storage = __esm({
         return updatedCases;
       }
       async getStaffUsers() {
-        return await db.select().from(users).where(sql3`role IN ('admin', 'case_manager', 'staff', 'super_admin')`).orderBy(users.firstName);
+        return await db.select().from(users).where(sql4`role IN ('admin', 'case_manager', 'staff', 'super_admin')`).orderBy(users.firstName);
       }
       // Event operations
       async getEvent(id) {
@@ -2155,7 +2149,7 @@ var init_storage = __esm({
       async getUpcomingEvents() {
         return await db.select().from(events).where(and(
           eq(events.isActive, true),
-          sql3`${events.startDate} > NOW()`
+          sql4`${events.startDate} > NOW()`
         )).orderBy(events.startDate);
       }
       // Payment operations
@@ -2280,7 +2274,7 @@ var init_storage = __esm({
       }
       async incrementLoginAttempts(id) {
         const [user] = await db.update(users).set({
-          loginAttempts: sql3`${users.loginAttempts} + 1`,
+          loginAttempts: sql4`${users.loginAttempts} + 1`,
           updatedAt: /* @__PURE__ */ new Date()
         }).where(eq(users.id, id)).returning();
         return user;
@@ -2346,8 +2340,8 @@ var init_storage = __esm({
       }
       async getPaymentsByDateRange(startDate, endDate) {
         return await db.select().from(payments).where(and(
-          sql3`${payments.createdAt} >= ${startDate}`,
-          sql3`${payments.createdAt} <= ${endDate}`
+          sql4`${payments.createdAt} >= ${startDate}`,
+          sql4`${payments.createdAt} <= ${endDate}`
         )).orderBy(desc(payments.createdAt));
       }
       async getPaymentsByMethod(method) {
@@ -2421,7 +2415,7 @@ var init_storage = __esm({
         return session3;
       }
       async cleanupExpiredSessions() {
-        const result = await db.update(userSessions).set({ isActive: false }).where(sql3`${userSessions.expiresAt} < NOW()`).returning({ id: userSessions.id });
+        const result = await db.update(userSessions).set({ isActive: false }).where(sql4`${userSessions.expiresAt} < NOW()`).returning({ id: userSessions.id });
         return result.length;
       }
       // User Permissions
@@ -2440,7 +2434,7 @@ var init_storage = __esm({
           eq(userPermissions.userId, userId),
           eq(userPermissions.permission, permission),
           eq(userPermissions.isActive, true),
-          resource ? eq(userPermissions.resource, resource) : sql3`1=1`
+          resource ? eq(userPermissions.resource, resource) : sql4`1=1`
         ));
         return permissions.length > 0;
       }
@@ -2497,23 +2491,23 @@ var init_storage = __esm({
       }
       // Dashboard Statistics
       async getDashboardStats() {
-        const totalMembersResult = await db.select({ count: sql3`count(*)` }).from(members);
+        const totalMembersResult = await db.select({ count: sql4`count(*)` }).from(members);
         const totalMembers = totalMembersResult[0]?.count || 0;
-        const activeOrganizationsResult = await db.select({ count: sql3`count(*)` }).from(organizations).where(eq(organizations.membershipStatus, "active"));
+        const activeOrganizationsResult = await db.select({ count: sql4`count(*)` }).from(organizations).where(eq(organizations.membershipStatus, "active"));
         const activeOrganizations = activeOrganizationsResult[0]?.count || 0;
-        const pendingIndividualApplicationsResult = await db.select({ count: sql3`count(*)` }).from(memberApplications).where(sql3`status IN ('submitted', 'pre_validation', 'eligibility_review', 'document_review')`);
+        const pendingIndividualApplicationsResult = await db.select({ count: sql4`count(*)` }).from(memberApplications).where(sql4`status IN ('submitted', 'pre_validation', 'eligibility_review', 'document_review')`);
         const pendingApplications = pendingIndividualApplicationsResult[0]?.count || 0;
-        const openCasesResult = await db.select({ count: sql3`count(*)` }).from(cases).where(eq(cases.status, "open"));
+        const openCasesResult = await db.select({ count: sql4`count(*)` }).from(cases).where(eq(cases.status, "open"));
         const openCases = openCasesResult[0]?.count || 0;
         const startOfMonth = /* @__PURE__ */ new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
-        const revenueResult = await db.select({ sum: sql3`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
+        const revenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
           eq(payments.status, "completed"),
-          sql3`created_at >= ${startOfMonth}`
+          sql4`created_at >= ${startOfMonth}`
         ));
         const revenueThisMonth = Number(revenueResult[0]?.sum || 0);
-        const renewalsPendingResult = await db.select({ count: sql3`count(*)` }).from(memberRenewals).where(sql3`status IN ('pending', 'reminded', 'overdue')`);
+        const renewalsPendingResult = await db.select({ count: sql4`count(*)` }).from(memberRenewals).where(sql4`status IN ('pending', 'reminded', 'overdue')`);
         const renewalsPending = renewalsPendingResult[0]?.count || 0;
         return {
           totalMembers,
@@ -2528,38 +2522,38 @@ var init_storage = __esm({
       async getFinanceStats(filters) {
         const conditions = [eq(payments.status, "completed")];
         if (filters?.startDate) {
-          conditions.push(sql3`created_at >= ${filters.startDate}`);
+          conditions.push(sql4`created_at >= ${filters.startDate}`);
         }
         if (filters?.endDate) {
-          conditions.push(sql3`created_at <= ${filters.endDate}`);
+          conditions.push(sql4`created_at <= ${filters.endDate}`);
         }
-        const totalRevenueResult = await db.select({ sum: sql3`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(...conditions));
+        const totalRevenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(...conditions));
         const totalRevenue = Number(totalRevenueResult[0]?.sum || 0);
         const startOfMonth = /* @__PURE__ */ new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
-        const monthlyRevenueResult = await db.select({ sum: sql3`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
+        const monthlyRevenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
           eq(payments.status, "completed"),
-          sql3`created_at >= ${startOfMonth}`
+          sql4`created_at >= ${startOfMonth}`
         ));
         const monthlyRevenue = Number(monthlyRevenueResult[0]?.sum || 0);
-        const pendingPaymentsResult = await db.select({ count: sql3`count(*)` }).from(payments).where(eq(payments.status, "pending"));
+        const pendingPaymentsResult = await db.select({ count: sql4`count(*)` }).from(payments).where(eq(payments.status, "pending"));
         const pendingPayments = pendingPaymentsResult[0]?.count || 0;
-        const completedPaymentsResult = await db.select({ count: sql3`count(*)` }).from(payments).where(eq(payments.status, "completed"));
+        const completedPaymentsResult = await db.select({ count: sql4`count(*)` }).from(payments).where(eq(payments.status, "completed"));
         const completedPayments = completedPaymentsResult[0]?.count || 0;
-        const membershipFeesResult = await db.select({ sum: sql3`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
+        const membershipFeesResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
           eq(payments.status, "completed"),
-          sql3`purpose LIKE '%membership%' OR purpose LIKE '%renewal%'`
+          sql4`purpose LIKE '%membership%' OR purpose LIKE '%renewal%'`
         ));
         const membershipFees = Number(membershipFeesResult[0]?.sum || 0);
-        const applicationFeesResult = await db.select({ sum: sql3`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
+        const applicationFeesResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
           eq(payments.status, "completed"),
-          sql3`purpose LIKE '%application%'`
+          sql4`purpose LIKE '%application%'`
         ));
         const applicationFees = Number(applicationFeesResult[0]?.sum || 0);
-        const eventFeesResult = await db.select({ sum: sql3`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
+        const eventFeesResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
           eq(payments.status, "completed"),
-          sql3`purpose LIKE '%event%'`
+          sql4`purpose LIKE '%event%'`
         ));
         const eventFees = Number(eventFeesResult[0]?.sum || 0);
         return {
@@ -2581,12 +2575,12 @@ var init_storage = __esm({
           conditions.push(eq(payments.status, filters.status));
         }
         if (filters?.search) {
-          conditions.push(sql3`(purpose ILIKE ${`%${filters.search}%`} OR payment_number ILIKE ${`%${filters.search}%`})`);
+          conditions.push(sql4`(purpose ILIKE ${`%${filters.search}%`} OR payment_number ILIKE ${`%${filters.search}%`})`);
         }
-        const totalResult = await db.select({ count: sql3`count(*)` }).from(payments).where(conditions.length > 0 ? and(...conditions) : void 0);
+        const totalResult = await db.select({ count: sql4`count(*)` }).from(payments).where(conditions.length > 0 ? and(...conditions) : void 0);
         const total = totalResult[0]?.count || 0;
         const baseQuery = db.select().from(payments).where(conditions.length > 0 ? and(...conditions) : void 0);
-        const sortedQuery = filters?.sortBy === "amount" ? baseQuery.orderBy(filters.sortOrder === "asc" ? asc(sql3`CAST(amount AS DECIMAL)`) : desc(sql3`CAST(amount AS DECIMAL)`)) : baseQuery.orderBy(filters?.sortOrder === "asc" ? asc(payments.createdAt) : desc(payments.createdAt));
+        const sortedQuery = filters?.sortBy === "amount" ? baseQuery.orderBy(filters.sortOrder === "asc" ? asc(sql4`CAST(amount AS DECIMAL)`) : desc(sql4`CAST(amount AS DECIMAL)`)) : baseQuery.orderBy(filters?.sortOrder === "asc" ? asc(payments.createdAt) : desc(payments.createdAt));
         const paginatedQuery = filters?.limit ? sortedQuery.limit(filters.limit) : sortedQuery;
         const finalQuery = filters?.offset ? paginatedQuery.offset(filters.offset) : paginatedQuery;
         const paymentsList = await finalQuery;
@@ -2604,7 +2598,7 @@ var init_storage = __esm({
         if (filters?.status) {
           conditions.push(eq(memberRenewals.status, filters.status));
         }
-        const totalResult = await db.select({ count: sql3`count(*)` }).from(memberRenewals).where(conditions.length > 0 ? and(...conditions) : void 0);
+        const totalResult = await db.select({ count: sql4`count(*)` }).from(memberRenewals).where(conditions.length > 0 ? and(...conditions) : void 0);
         const total = totalResult[0]?.count || 0;
         const baseQuery = db.select({
           id: memberRenewals.id,
@@ -2639,7 +2633,7 @@ var init_storage = __esm({
       }
       async incrementRenewalReminder(id) {
         const [renewal] = await db.update(memberRenewals).set({
-          remindersSent: sql3`reminders_sent + 1`,
+          remindersSent: sql4`reminders_sent + 1`,
           lastReminderDate: /* @__PURE__ */ new Date(),
           updatedAt: /* @__PURE__ */ new Date()
         }).where(eq(memberRenewals.id, id)).returning();
@@ -3638,47 +3632,14 @@ __export(clerkAuth_exports, {
   requireRole: () => requireRole,
   setupClerkAuth: () => setupClerkAuth
 });
-import { clerkClient, clerkMiddleware, getAuth } from "@clerk/express";
+import { clerkClient, getAuth } from "@clerk/express";
 function setupClerkAuth(app2) {
   if (!process.env.CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
     console.warn("\u26A0\uFE0F  Clerk keys not configured - authentication disabled");
     return;
   }
   console.log("\u2705 Setting up Clerk authentication");
-  app2.use(clerkMiddleware());
-  app2.use(attachClerkUser);
-}
-async function attachClerkUser(req, res, next) {
-  try {
-    if (!req.path.startsWith("/api")) {
-      return next();
-    }
-    const auth = getAuth(req);
-    if (!auth?.userId) {
-      return next();
-    }
-    const fetchUser = async () => {
-      const user = await clerkClient.users.getUser(auth.userId);
-      const role = user.publicMetadata?.role || "member";
-      req.clerkUser = {
-        clerkId: user.id,
-        email: user.emailAddresses[0]?.emailAddress || "",
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role
-      };
-    };
-    await Promise.race([
-      fetchUser(),
-      new Promise(
-        (_, reject) => setTimeout(() => reject(new Error("Clerk timeout")), 3e3)
-      )
-    ]);
-    next();
-  } catch (error) {
-    console.error("Clerk user fetch error:", error);
-    next();
-  }
+  console.warn("\u26A0\uFE0F  Clerk middleware temporarily disabled to prevent timeouts");
 }
 function requireAuth(req, res, next) {
   const auth = getAuth(req);
@@ -3987,7 +3948,7 @@ var init_paynowService = __esm({
 });
 
 // server/paymentRoutes.ts
-import { eq as eq3, and as and2, desc as desc2, sql as sql4 } from "drizzle-orm";
+import { eq as eq3, and as and2, desc as desc2, sql as sql5 } from "drizzle-orm";
 import { z as z2 } from "zod";
 function registerPaymentRoutes(app2) {
   const paynow = getPayNowService();
@@ -4355,7 +4316,7 @@ async function handleSuccessfulPayment(payment) {
               updatedAt: /* @__PURE__ */ new Date()
             }).where(eq3(memberRenewals.id, renewals[0].id));
             await db.update(members).set({
-              expiryDate: sql4`${members.expiryDate} + INTERVAL '1 year'`,
+              expiryDate: sql5`${members.expiryDate} + INTERVAL '1 year'`,
               updatedAt: /* @__PURE__ */ new Date()
             }).where(eq3(members.id, payment.memberId));
           }
@@ -7252,7 +7213,7 @@ __export(idMigration_exports, {
   getMigrationStatus: () => getMigrationStatus,
   previewIdFormatMigration: () => previewIdFormatMigration
 });
-import { sql as sql5 } from "drizzle-orm";
+import { sql as sql6 } from "drizzle-orm";
 function getEnrollmentYear(joiningDate, createdAt) {
   if (joiningDate) {
     return joiningDate.getFullYear();
@@ -7269,7 +7230,7 @@ function isNewFormat(id) {
 }
 async function isMigrationCompleted() {
   try {
-    const result = await db.execute(sql5`
+    const result = await db.execute(sql6`
       SELECT value FROM system_settings 
       WHERE key = 'id_format_migration_2025_completed'
     `);
@@ -7279,14 +7240,14 @@ async function isMigrationCompleted() {
   }
 }
 async function markMigrationCompleted() {
-  await db.execute(sql5`
+  await db.execute(sql6`
     CREATE TABLE IF NOT EXISTS system_settings (
       key VARCHAR(255) PRIMARY KEY,
       value TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
-  await db.execute(sql5`
+  await db.execute(sql6`
     INSERT INTO system_settings (key, value) 
     VALUES ('id_format_migration_2025_completed', 'true')
     ON CONFLICT (key) 
@@ -7295,12 +7256,12 @@ async function markMigrationCompleted() {
 }
 async function previewIdFormatMigration() {
   console.log("\u{1F50D} Running ID format migration preview...");
-  const memberRecords = await db.execute(sql5`
+  const memberRecords = await db.execute(sql6`
     SELECT id, membership_number, joining_date, created_at 
     FROM members 
     ORDER BY created_at ASC
   `);
-  const orgRecords = await db.execute(sql5`
+  const orgRecords = await db.execute(sql6`
     SELECT id, registration_number, registration_date, created_at 
     FROM organizations 
     ORDER BY created_at ASC
@@ -7375,7 +7336,7 @@ async function executeIdFormatMigration() {
       let membersUpdated = 0;
       let organizationsUpdated = 0;
       for (const change of preview.members) {
-        await tx.execute(sql5`
+        await tx.execute(sql6`
           UPDATE members 
           SET membership_number = ${change.new}
           WHERE id = ${change.id}
@@ -7384,7 +7345,7 @@ async function executeIdFormatMigration() {
         console.log(`Updated member ${change.id}: ${change.old} \u2192 ${change.new}`);
       }
       for (const change of preview.organizations) {
-        await tx.execute(sql5`
+        await tx.execute(sql6`
           UPDATE organizations 
           SET registration_number = ${change.new}
           WHERE id = ${change.id}
@@ -7400,7 +7361,7 @@ async function executeIdFormatMigration() {
         }).onConflictDoUpdate({
           target: [namingSeriesCounters.seriesCode, namingSeriesCounters.year],
           set: {
-            counter: sql5`GREATEST(${namingSeriesCounters.counter}, ${count2})`
+            counter: sql6`GREATEST(${namingSeriesCounters.counter}, ${count2})`
           }
         });
       }
@@ -7412,7 +7373,7 @@ async function executeIdFormatMigration() {
         }).onConflictDoUpdate({
           target: [namingSeriesCounters.seriesCode, namingSeriesCounters.year],
           set: {
-            counter: sql5`GREATEST(${namingSeriesCounters.counter}, ${count2})`
+            counter: sql6`GREATEST(${namingSeriesCounters.counter}, ${count2})`
           }
         });
       }
@@ -7437,12 +7398,12 @@ async function executeIdFormatMigration() {
 }
 async function getMigrationStatus() {
   const completed = await isMigrationCompleted();
-  const membersOldFormat = await db.execute(sql5`
+  const membersOldFormat = await db.execute(sql6`
     SELECT COUNT(*) as count FROM members 
     WHERE membership_number IS NOT NULL 
     AND NOT (membership_number ~ '^EAC-MBR-\\d{4}-\\d{4}$')
   `);
-  const orgsOldFormat = await db.execute(sql5`
+  const orgsOldFormat = await db.execute(sql6`
     SELECT COUNT(*) as count FROM organizations 
     WHERE registration_number IS NOT NULL 
     AND NOT (registration_number ~ '^EAC-ORG-\\d{4}-\\d{4}$')
