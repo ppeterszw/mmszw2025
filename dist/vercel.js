@@ -3631,108 +3631,100 @@ var init_auth = __esm({
 // server/clerkAuth.ts
 var clerkAuth_exports = {};
 __export(clerkAuth_exports, {
-  clerkAuthMiddleware: () => clerkAuthMiddleware,
   clerkClient: () => clerkClient,
   getCurrentUser: () => getCurrentUser,
-  requireAuthMiddleware: () => requireAuthMiddleware,
+  hasRole: () => hasRole,
+  requireAuth: () => requireAuth,
+  requireRole: () => requireRole,
   setupClerkAuth: () => setupClerkAuth
 });
+import { clerkClient, clerkMiddleware, getAuth } from "@clerk/express";
 function setupClerkAuth(app2) {
-  console.log("setupClerkAuth called:");
-  console.log("  - CLERK_SECRET_KEY:", process.env.CLERK_SECRET_KEY ? "SET" : "NOT SET");
-  console.log("  - clerkMiddleware:", clerkMiddleware ? "AVAILABLE" : "NULL");
-  console.log("  - getAuth:", getAuth ? "AVAILABLE" : "NULL");
-  console.log("  - clerkClient:", clerkClient ? "AVAILABLE" : "NULL");
-  if (!process.env.CLERK_SECRET_KEY || !clerkMiddleware) {
-    console.log("Clerk authentication not configured - using basic applicant auth only");
+  if (!process.env.CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
+    console.warn("\u26A0\uFE0F  Clerk keys not configured - authentication disabled");
     return;
   }
-  console.log("\u2705 Setting up Clerk authentication middleware");
+  console.log("\u2705 Setting up Clerk authentication");
   app2.use(clerkMiddleware());
-  app2.use(clerkAuthMiddleware);
+  app2.use(attachClerkUser);
 }
-async function getCurrentUser(req) {
-  if (!getAuth) {
-    return null;
-  }
-  const auth = getAuth(req);
-  if (!auth?.userId) {
-    return null;
-  }
-  let user = await storage.getUserByClerkId(auth.userId);
-  if (!user && auth.userId) {
-    try {
-      const clerkUser = await clerkClient.users.getUser(auth.userId);
-      if (clerkUser) {
-        user = await storage.createUserFromClerk({
-          clerkId: auth.userId,
-          email: clerkUser.primaryEmailAddress?.emailAddress || "",
-          firstName: clerkUser.firstName || "",
-          lastName: clerkUser.lastName || ""
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching Clerk user:", error);
-    }
-  }
-  return user;
-}
-async function clerkAuthMiddleware(req, res, next) {
+async function attachClerkUser(req, res, next) {
   try {
-    const user = await getCurrentUser(req);
-    if (user) {
-      req.user = user;
+    if (!req.path.startsWith("/api")) {
+      return next();
     }
+    const auth = getAuth(req);
+    if (!auth?.userId) {
+      return next();
+    }
+    const fetchUser = async () => {
+      const user = await clerkClient.users.getUser(auth.userId);
+      const role = user.publicMetadata?.role || "member";
+      req.clerkUser = {
+        clerkId: user.id,
+        email: user.emailAddresses[0]?.emailAddress || "",
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role
+      };
+    };
+    await Promise.race([
+      fetchUser(),
+      new Promise(
+        (_, reject) => setTimeout(() => reject(new Error("Clerk timeout")), 3e3)
+      )
+    ]);
     next();
   } catch (error) {
-    console.error("Clerk auth middleware error:", error);
+    console.error("Clerk user fetch error:", error);
     next();
   }
 }
-function requireAuthMiddleware(req, res, next) {
-  if (!getAuth) {
-    return res.status(401).json({ error: "Unauthorized - Clerk not available" });
-  }
+function requireAuth(req, res, next) {
   const auth = getAuth(req);
   if (!auth?.userId) {
-    return res.status(401).json({ error: "Unauthorized" });
+    return res.status(401).json({
+      error: "Unauthorized",
+      message: "You must be logged in to access this resource"
+    });
   }
   next();
 }
-var clerkMiddleware, getAuth, createClerkClient, clerkClient, initializeClerk;
+function requireRole(...roles) {
+  return (req, res, next) => {
+    const auth = getAuth(req);
+    if (!auth?.userId) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "You must be logged in to access this resource"
+      });
+    }
+    if (!req.clerkUser) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "User information not available"
+      });
+    }
+    if (!roles.includes(req.clerkUser.role)) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: `This action requires one of the following roles: ${roles.join(", ")}`,
+        yourRole: req.clerkUser.role
+      });
+    }
+    next();
+  };
+}
+function getCurrentUser(req) {
+  return req.clerkUser || null;
+}
+function hasRole(req, ...roles) {
+  if (!req.clerkUser) return false;
+  return roles.includes(req.clerkUser.role);
+}
 var init_clerkAuth = __esm({
-  async "server/clerkAuth.ts"() {
+  "server/clerkAuth.ts"() {
     "use strict";
-    init_storage();
-    clerkMiddleware = null;
-    getAuth = null;
-    createClerkClient = null;
-    clerkClient = null;
-    initializeClerk = async () => {
-      console.log("CLERK_SECRET_KEY check:", process.env.CLERK_SECRET_KEY ? `${process.env.CLERK_SECRET_KEY.substring(0, 15)}...` : "NOT SET");
-      try {
-        if (process.env.CLERK_SECRET_KEY) {
-          const clerkModule = await import("@clerk/backend");
-          console.log("Clerk module imported, available exports:", Object.keys(clerkModule).slice(0, 10));
-          clerkMiddleware = clerkModule.clerkMiddleware;
-          getAuth = clerkModule.getAuth;
-          createClerkClient = clerkModule.createClerkClient;
-          console.log("After assignment:");
-          console.log("  - clerkMiddleware:", clerkMiddleware ? "SET" : "NULL");
-          console.log("  - getAuth:", getAuth ? "SET" : "NULL");
-          console.log("  - createClerkClient:", createClerkClient ? "SET" : "NULL");
-          clerkClient = createClerkClient({
-            secretKey: process.env.CLERK_SECRET_KEY
-          });
-          console.log("Clerk client initialized successfully");
-        } else {
-          console.log("CLERK_SECRET_KEY not found - Clerk will not be initialized");
-        }
-      } catch (error) {
-        console.log("Clerk initialization error:", error);
-      }
-    };
-    await initializeClerk();
   }
 });
 
@@ -6252,7 +6244,7 @@ function registerApplicationRoutes(app2) {
       });
     }
   });
-  function requireAuth2(req, res, next) {
+  function requireAuth3(req, res, next) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
@@ -7484,7 +7476,7 @@ import { z as z6 } from "zod";
 import multer from "multer";
 import { eq as eq7 } from "drizzle-orm";
 import { randomUUID as randomUUID3, randomBytes as randomBytes2 } from "crypto";
-function requireAuth(req, res, next) {
+function requireAuth2(req, res, next) {
   console.log("Auth middleware: req.isAuthenticated():", req.isAuthenticated());
   console.log("Auth middleware: req.user:", req.user);
   if (!req.isAuthenticated()) {
@@ -8166,7 +8158,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: error.message });
     }
   });
-  app2.get("/api/cases", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/cases", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const validatedQuery = casesQuerySchema2.safeParse(req.query);
       if (!validatedQuery.success) {
@@ -8201,7 +8193,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/cases", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.post("/api/cases", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const validatedData = insertCaseSchema.parse(req.body);
       const caseItem = await storage.createCase(validatedData);
@@ -8210,7 +8202,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: error.message });
     }
   });
-  app2.get("/api/cases/:id", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/cases/:id", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const caseItem = await storage.getCase(id);
@@ -8222,7 +8214,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.put("/api/cases/:id", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.put("/api/cases/:id", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const validatedUpdates = caseUpdateSchema2.parse(req.body);
@@ -8232,7 +8224,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: error.message });
     }
   });
-  app2.put("/api/cases/:id/assign", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.put("/api/cases/:id/assign", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = caseAssignmentSchema2.parse(req.body);
@@ -8242,7 +8234,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: error.message });
     }
   });
-  app2.post("/api/cases/bulk-action", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.post("/api/cases/bulk-action", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const validatedData = bulkCaseActionSchema2.parse(req.body);
       const { caseIds, action, assignedTo, resolution } = validatedData;
@@ -8262,7 +8254,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: error.message });
     }
   });
-  app2.get("/api/cases/reports/export", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/cases/reports/export", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { format = "json", status, priority } = req.query;
       let cases2;
@@ -8289,7 +8281,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/cases/staff", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/cases/staff", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const staff = await storage.getStaffUsers();
       res.json(staff);
@@ -8529,7 +8521,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/admin/members", requireAuth, async (req, res) => {
+  app2.get("/api/admin/members", requireAuth2, async (req, res) => {
     try {
       const allMembers = await storage.getAllMembers();
       res.json(allMembers);
@@ -8538,7 +8530,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch members" });
     }
   });
-  app2.put("/api/members/:id", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.put("/api/members/:id", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -8553,7 +8545,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update member" });
     }
   });
-  app2.post("/api/admin/members/simplified-add", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.post("/api/admin/members/simplified-add", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const {
         firstName,
@@ -8662,7 +8654,7 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.post("/api/admin/members/create-with-clerk", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.post("/api/admin/members/create-with-clerk", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const {
         firstName,
@@ -8705,7 +8697,7 @@ async function registerRoutes(app2) {
         clerkUserId = null;
       } else {
         try {
-          const { clerkClient: clerkClient2 } = await init_clerkAuth().then(() => clerkAuth_exports);
+          const { clerkClient: clerkClient2 } = await Promise.resolve().then(() => (init_clerkAuth(), clerkAuth_exports));
           if (!clerkClient2) {
             return res.status(500).json({
               message: "Clerk authentication not configured",
@@ -8859,7 +8851,7 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.get("/api/organizations/current/members", requireAuth, async (req, res) => {
+  app2.get("/api/organizations/current/members", requireAuth2, async (req, res) => {
     try {
       const allMembers = await storage.getAllMembers();
       const userMember = allMembers.find((m) => m.userId === req.user?.id);
@@ -8878,7 +8870,7 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.post("/api/organizations/current/members/bulk-import", requireAuth, upload.single("csvFile"), async (req, res) => {
+  app2.post("/api/organizations/current/members/bulk-import", requireAuth2, upload.single("csvFile"), async (req, res) => {
     try {
       const allMembers = await storage.getAllMembers();
       const userMember = allMembers.find((m) => m.userId === req.user?.id);
@@ -9001,7 +8993,7 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.post("/api/admin/members/bulk-import", requireAuth, authorizeRole(STAFF_ROLES), upload.single("csvFile"), async (req, res) => {
+  app2.post("/api/admin/members/bulk-import", requireAuth2, authorizeRole(STAFF_ROLES), upload.single("csvFile"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -9242,7 +9234,7 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.get("/api/admin/organizations", requireAuth, async (req, res) => {
+  app2.get("/api/admin/organizations", requireAuth2, async (req, res) => {
     try {
       const allOrganizations = await storage.getAllOrganizations();
       res.json(allOrganizations);
@@ -9251,7 +9243,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch organizations" });
     }
   });
-  app2.get("/api/admin/applicants", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/admin/applicants", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const allApplicants = await storage.listApplicants();
       res.json(allApplicants);
@@ -9260,7 +9252,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch applicants" });
     }
   });
-  app2.get("/api/admin/organization-applicants", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/admin/organization-applicants", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const allOrgApplicants = await storage.listOrganizationApplicants();
       res.json(allOrgApplicants);
@@ -9269,7 +9261,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch organization applicants" });
     }
   });
-  app2.put("/api/admin/applicants/:id", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.put("/api/admin/applicants/:id", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -9349,7 +9341,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update applicant" });
     }
   });
-  app2.put("/api/admin/organization-applicants/:id", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.put("/api/admin/organization-applicants/:id", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -9360,7 +9352,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update organization applicant" });
     }
   });
-  app2.get("/api/admin/applications", requireAuth, async (req, res) => {
+  app2.get("/api/admin/applications", requireAuth2, async (req, res) => {
     try {
       const applications = await storage.getPendingApplications();
       res.json(applications);
@@ -9369,7 +9361,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch applications" });
     }
   });
-  app2.get("/api/members/profile", requireAuth, async (req, res) => {
+  app2.get("/api/members/profile", requireAuth2, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9388,7 +9380,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch member profile" });
     }
   });
-  app2.put("/api/members/profile", requireAuth, async (req, res) => {
+  app2.put("/api/members/profile", requireAuth2, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9406,7 +9398,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update profile" });
     }
   });
-  app2.put("/api/members/professional", requireAuth, async (req, res) => {
+  app2.put("/api/members/professional", requireAuth2, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9429,7 +9421,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update professional details" });
     }
   });
-  app2.put("/api/auth/change-password", requireAuth, async (req, res) => {
+  app2.put("/api/auth/change-password", requireAuth2, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
       if (!currentPassword || !newPassword) {
@@ -9450,7 +9442,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to change password" });
     }
   });
-  app2.get("/api/members/documents", requireAuth, async (req, res) => {
+  app2.get("/api/members/documents", requireAuth2, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9467,7 +9459,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch documents" });
     }
   });
-  app2.get("/api/members/payments", requireAuth, async (req, res) => {
+  app2.get("/api/members/payments", requireAuth2, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9484,7 +9476,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch payments" });
     }
   });
-  app2.get("/api/organization/profile", requireAuth, async (req, res) => {
+  app2.get("/api/organization/profile", requireAuth2, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9501,7 +9493,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch organization profile" });
     }
   });
-  app2.put("/api/organization/profile", requireAuth, async (req, res) => {
+  app2.put("/api/organization/profile", requireAuth2, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9519,7 +9511,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update organization profile" });
     }
   });
-  app2.get("/api/organization/members", requireAuth, async (req, res) => {
+  app2.get("/api/organization/members", requireAuth2, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9537,7 +9529,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch organization members" });
     }
   });
-  app2.get("/api/admin/users", requireAuth, async (req, res) => {
+  app2.get("/api/admin/users", requireAuth2, async (req, res) => {
     try {
       const users2 = await storage.getAllUsers();
       res.json(users2);
@@ -9545,7 +9537,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/admin/users/role/:role", requireAuth, async (req, res) => {
+  app2.get("/api/admin/users/role/:role", requireAuth2, async (req, res) => {
     try {
       const { role } = req.params;
       const users2 = await storage.getUsersByRole(role);
@@ -9554,7 +9546,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.put("/api/admin/users/:id", requireAuth, async (req, res) => {
+  app2.put("/api/admin/users/:id", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -9564,7 +9556,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/admin/users/:id/lock", requireAuth, async (req, res) => {
+  app2.post("/api/admin/users/:id/lock", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const { lockedUntil } = req.body;
@@ -9574,7 +9566,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/admin/users/:id/unlock", requireAuth, async (req, res) => {
+  app2.post("/api/admin/users/:id/unlock", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const user = await storage.unlockUser(id);
@@ -9583,7 +9575,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/admin/users/welcome-emails", requireAuth, async (req, res) => {
+  app2.post("/api/admin/users/welcome-emails", requireAuth2, async (req, res) => {
     try {
       const { userIds } = req.body;
       if (!Array.isArray(userIds) || userIds.length === 0) {
@@ -9606,7 +9598,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/admin/users/password-reset-emails", requireAuth, async (req, res) => {
+  app2.post("/api/admin/users/password-reset-emails", requireAuth2, async (req, res) => {
     try {
       const { userIds } = req.body;
       if (!Array.isArray(userIds) || userIds.length === 0) {
@@ -9766,7 +9758,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/payments/range", requireAuth, async (req, res) => {
+  app2.get("/api/payments/range", requireAuth2, async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
       const payments2 = await storage.getPaymentsByDateRange(
@@ -9778,7 +9770,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/payments/method/:method", requireAuth, async (req, res) => {
+  app2.get("/api/payments/method/:method", requireAuth2, async (req, res) => {
     try {
       const { method } = req.params;
       const payments2 = await storage.getPaymentsByMethod(method);
@@ -9787,7 +9779,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/payments/:id/refund", requireAuth, async (req, res) => {
+  app2.post("/api/payments/:id/refund", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const { refundAmount, reason } = req.body;
@@ -9797,7 +9789,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/payments/:id/installments", requireAuth, async (req, res) => {
+  app2.get("/api/payments/:id/installments", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const installments = await storage.getInstallmentsByPayment(id);
@@ -9806,7 +9798,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/admin/applications", requireAuth, async (req, res) => {
+  app2.get("/api/admin/applications", requireAuth2, async (req, res) => {
     try {
       const applications = await storage.getAllApplications();
       res.json(applications);
@@ -9814,7 +9806,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/organization-applications", requireAuth, async (req, res) => {
+  app2.get("/api/organization-applications", requireAuth2, async (req, res) => {
     try {
       const applications = await storage.getAllOrganizationApplications();
       res.json(applications);
@@ -9822,7 +9814,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/organization-applications/:id", requireAuth, async (req, res) => {
+  app2.get("/api/organization-applications/:id", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const application = await storage.getOrganizationApplication(id);
@@ -9834,7 +9826,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/organization-applications/:id/review", requireAuth, async (req, res) => {
+  app2.post("/api/organization-applications/:id/review", requireAuth2, async (req, res) => {
     try {
       console.log("Organization review request:", { id: req.params.id, action: req.body.action, userId: req.user?.id });
       const { id } = req.params;
@@ -9859,7 +9851,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/applications/status/:status", requireAuth, async (req, res) => {
+  app2.get("/api/applications/status/:status", requireAuth2, async (req, res) => {
     try {
       const { status } = req.params;
       const applications = await storage.getApplicationsByStatus(status);
@@ -9868,7 +9860,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/applications/stage/:stage", requireAuth, async (req, res) => {
+  app2.get("/api/applications/stage/:stage", requireAuth2, async (req, res) => {
     try {
       const { stage } = req.params;
       const applications = await storage.getApplicationsByStage(stage);
@@ -9877,7 +9869,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/applications/:id/assign", requireAuth, async (req, res) => {
+  app2.post("/api/applications/:id/assign", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const { reviewerId } = req.body;
@@ -9887,7 +9879,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/applications/:id/review", requireAuth, async (req, res) => {
+  app2.post("/api/applications/:id/review", requireAuth2, async (req, res) => {
     try {
       console.log("Review application request:", { id: req.params.id, action: req.body.action, userId: req.user?.id });
       const { id } = req.params;
@@ -9916,7 +9908,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/applications/:id/workflows", requireAuth, async (req, res) => {
+  app2.get("/api/applications/:id/workflows", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const workflows = await storage.getWorkflowsByApplication(id);
@@ -9925,7 +9917,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/workflows/stage/:stage", requireAuth, async (req, res) => {
+  app2.get("/api/workflows/stage/:stage", requireAuth2, async (req, res) => {
     try {
       const { stage } = req.params;
       const workflows = await storage.getWorkflowsByStage(stage);
@@ -9934,7 +9926,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/workflows/assignee/:userId", requireAuth, async (req, res) => {
+  app2.get("/api/workflows/assignee/:userId", requireAuth2, async (req, res) => {
     try {
       const { userId } = req.params;
       const workflows = await storage.getWorkflowsByAssignee(userId);
@@ -9943,7 +9935,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/users/:id/permissions", requireAuth, async (req, res) => {
+  app2.get("/api/users/:id/permissions", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const permissions = await storage.getUserPermissions(id);
@@ -9952,7 +9944,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/users/:id/permissions/check", requireAuth, async (req, res) => {
+  app2.get("/api/users/:id/permissions/check", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const { permission, resource } = req.query;
@@ -9966,7 +9958,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/notifications/user/:userId", requireAuth, async (req, res) => {
+  app2.get("/api/notifications/user/:userId", requireAuth2, async (req, res) => {
     try {
       const { userId } = req.params;
       const notifications2 = await storage.getUserNotifications(userId);
@@ -9975,7 +9967,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/notifications/member/:memberId", requireAuth, async (req, res) => {
+  app2.get("/api/notifications/member/:memberId", requireAuth2, async (req, res) => {
     try {
       const { memberId } = req.params;
       const notifications2 = await storage.getMemberNotifications(memberId);
@@ -9984,7 +9976,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/notifications/:id/opened", requireAuth, async (req, res) => {
+  app2.post("/api/notifications/:id/opened", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const notification = await storage.markNotificationOpened(id);
@@ -9993,7 +9985,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/admin/notifications/pending", requireAuth, async (req, res) => {
+  app2.get("/api/admin/notifications/pending", requireAuth2, async (req, res) => {
     try {
       const notifications2 = await storage.getPendingNotifications();
       res.json(notifications2);
@@ -10001,7 +9993,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/admin/audit-logs", requireAuth, async (req, res) => {
+  app2.get("/api/admin/audit-logs", requireAuth2, async (req, res) => {
     try {
       const { userId, resource, action } = req.query;
       const logs = await storage.getAuditLogs({
@@ -10014,7 +10006,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/users/:id/sessions", requireAuth, async (req, res) => {
+  app2.get("/api/users/:id/sessions", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const sessions = await storage.getUserSessions(id);
@@ -10023,7 +10015,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/sessions/:id/deactivate", requireAuth, async (req, res) => {
+  app2.post("/api/sessions/:id/deactivate", requireAuth2, async (req, res) => {
     try {
       const { id } = req.params;
       const session3 = await storage.deactivateSession(id);
@@ -10032,7 +10024,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/admin/sessions/cleanup", requireAuth, async (req, res) => {
+  app2.post("/api/admin/sessions/cleanup", requireAuth2, async (req, res) => {
     try {
       const count2 = await storage.cleanupExpiredSessions();
       res.json({ cleanedSessions: count2 });
@@ -10558,10 +10550,10 @@ async function registerRoutes(app2) {
 }
 var ADMIN_ROLES, FINANCE_ROLES, STAFF_ROLES, MEMBER_MANAGER_ROLES, PAYMENT_SORT_FIELDS, paginationQuerySchema, paymentsQuerySchema, renewalsQuerySchema, upload, financeStatsQuerySchema, settingsUpdateSchema, singleSettingUpdateSchema, renewalUpdateSchema, generateRenewalsSchema, casesQuerySchema2, caseUpdateSchema2, caseAssignmentSchema2, bulkCaseActionSchema2;
 var init_routes = __esm({
-  async "server/routes.ts"() {
+  "server/routes.ts"() {
     "use strict";
     init_auth();
-    await init_clerkAuth();
+    init_clerkAuth();
     init_storage();
     init_paymentRoutes();
     init_applicationRoutes();
@@ -10688,7 +10680,7 @@ async function initializeApp() {
     console.log("Initializing Vercel serverless function...");
     const { initializeApplicationCounters: initializeApplicationCounters2 } = await Promise.resolve().then(() => (init_namingSeries(), namingSeries_exports));
     await initializeApplicationCounters2();
-    const { registerRoutes: registerRoutes2 } = await init_routes().then(() => routes_exports);
+    const { registerRoutes: registerRoutes2 } = await Promise.resolve().then(() => (init_routes(), routes_exports));
     await registerRoutes2(app);
     app.use((err, _req, res, _next) => {
       const status = err.status || err.statusCode || 500;
