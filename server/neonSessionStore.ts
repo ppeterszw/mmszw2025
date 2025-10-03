@@ -6,12 +6,16 @@ import { Store } from "express-session";
 import { sql } from "./db";
 
 export class NeonSessionStore extends Store {
+  private initialized = false;
+
   constructor() {
     super();
-    this.createTableIfMissing();
+    // Don't initialize immediately - defer until first use
   }
 
-  private async createTableIfMissing() {
+  private async ensureTableExists() {
+    if (this.initialized) return;
+
     try {
       await sql`
         CREATE TABLE IF NOT EXISTS session (
@@ -21,14 +25,18 @@ export class NeonSessionStore extends Store {
         )
       `;
       await sql`CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire)`;
+      this.initialized = true;
       console.log("✅ Session table ready");
     } catch (error) {
       console.error("❌ Failed to create session table:", error);
+      throw error;
     }
   }
 
   async get(sid: string, callback: (err?: any, session?: any) => void) {
     try {
+      await this.ensureTableExists();
+
       const result = await sql`
         SELECT sess FROM session WHERE sid = ${sid} AND expire >= NOW()
       `;
@@ -45,6 +53,8 @@ export class NeonSessionStore extends Store {
 
   async set(sid: string, session: any, callback?: (err?: any) => void) {
     try {
+      await this.ensureTableExists();
+
       const expire = this.getExpireTime(session);
 
       await sql`

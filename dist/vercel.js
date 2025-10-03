@@ -1201,11 +1201,12 @@ var init_neonSessionStore = __esm({
     "use strict";
     init_db();
     NeonSessionStore = class extends Store {
+      initialized = false;
       constructor() {
         super();
-        this.createTableIfMissing();
       }
-      async createTableIfMissing() {
+      async ensureTableExists() {
+        if (this.initialized) return;
         try {
           await sql2`
         CREATE TABLE IF NOT EXISTS session (
@@ -1215,13 +1216,16 @@ var init_neonSessionStore = __esm({
         )
       `;
           await sql2`CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire)`;
+          this.initialized = true;
           console.log("\u2705 Session table ready");
         } catch (error) {
           console.error("\u274C Failed to create session table:", error);
+          throw error;
         }
       }
       async get(sid, callback) {
         try {
+          await this.ensureTableExists();
           const result = await sql2`
         SELECT sess FROM session WHERE sid = ${sid} AND expire >= NOW()
       `;
@@ -1235,6 +1239,7 @@ var init_neonSessionStore = __esm({
       }
       async set(sid, session3, callback) {
         try {
+          await this.ensureTableExists();
           const expire = this.getExpireTime(session3);
           await sql2`
         INSERT INTO session (sid, sess, expire)
