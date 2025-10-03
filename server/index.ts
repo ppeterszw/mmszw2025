@@ -45,6 +45,11 @@ app.use((req, res, next) => {
   const { initializeApplicationCounters } = await import("./services/namingSeries");
   await initializeApplicationCounters();
 
+  // Initialize session cleanup service
+  const { SessionService } = await import("./auth/sessionService");
+  SessionService.startCleanup();
+  log("Session cleanup service initialized");
+
   // Use dynamic import for routes to ensure dotenv loads first
   const { registerRoutes } = await import("./routes");
   const server = await registerRoutes(app);

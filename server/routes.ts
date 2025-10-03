@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { setupClerkAuth } from "./clerkAuth";
+import { setupAuthRoutes } from "./auth/authRoutes";
 import { storage } from "./storage";
 import { registerPaymentRoutes } from "./paymentRoutes";
 import { registerApplicationRoutes } from "./applicationRoutes";
@@ -317,6 +318,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupClerkAuth(app);
   // Keep legacy auth for backward compatibility during migration
   setupAuth(app);
+
+  // Setup new comprehensive auth routes (RBAC, Session Management, Password Reset, etc.)
+  setupAuthRoutes(app);
 
   // Register application routes
   registerApplicationRoutes(app);
