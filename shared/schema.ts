@@ -603,16 +603,12 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   createdUsers: many(users)
 }));
 
-export const organizationsRelations = relations(organizations, ({ many, one }) => ({
+export const organizationsRelations = relations(organizations, ({ many }) => ({
   members: many(members),
   applications: many(memberApplications),
   cases: many(cases),
   payments: many(payments),
-  documents: many(documents),
-  principalAgent: one(members, {
-    fields: [organizations.principalAgentId],
-    references: [members.id]
-  })
+  documents: many(documents)
 }));
 
 export const membersRelations = relations(members, ({ one, many }) => ({

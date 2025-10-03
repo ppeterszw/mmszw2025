@@ -1464,16 +1464,17 @@ export class DatabaseStorage implements IStorage {
     const activeOrganizations = activeOrganizationsResult[0]?.count || 0;
 
     // Get pending applications count (both individual and organization applications)
+    // Status values: draft, submitted, payment_pending, payment_received, under_review, approved, rejected
     const pendingIndividualApplicationsResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(individualApplications)
-      .where(sql`status IN ('submitted', 'pre_validation', 'eligibility_review', 'document_review')`);
+      .where(sql`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`);
     const pendingIndividualApplications = pendingIndividualApplicationsResult[0]?.count || 0;
 
     const pendingOrganizationApplicationsResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(organizationApplications)
-      .where(sql`status IN ('submitted', 'pre_validation', 'eligibility_review', 'document_review')`);
+      .where(sql`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`);
     const pendingOrganizationApplications = pendingOrganizationApplicationsResult[0]?.count || 0;
 
     const pendingApplications = pendingIndividualApplications + pendingOrganizationApplications;
