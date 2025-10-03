@@ -11,6 +11,8 @@ export function ProtectedRoute({
 }) {
   const { user, isLoading } = useAuth();
 
+  console.log('[ProtectedRoute]', path, { user, isLoading });
+
   return (
     <Route path={path}>
       {isLoading ? (
