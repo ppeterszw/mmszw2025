@@ -119,22 +119,19 @@ export const organizations = pgTable("organizations", {
 // Members table
 export const members = pgTable("members", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id),
-  organizationId: varchar("organization_id").references(() => organizations.id),
+  clerkId: text("clerk_id"),
   membershipNumber: text("membership_number").unique(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
   phone: text("phone"),
   dateOfBirth: timestamp("date_of_birth"),
-  nationalId: text("national_id"),
   memberType: memberTypeEnum("member_type").notNull(),
   membershipStatus: membershipStatusEnum("membership_status").default("pending"),
-  joiningDate: timestamp("joining_date"),
+  organizationId: varchar("organization_id"),
+  joinedDate: timestamp("joined_date"),
   expiryDate: timestamp("expiry_date"),
-  cpdPoints: integer("cpd_points").default(0),
-  annualFee: decimal("annual_fee", { precision: 10, scale: 2 }),
-  isMatureEntry: boolean("is_mature_entry").default(false),
+  nationalId: text("national_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
@@ -612,10 +609,6 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
 }));
 
 export const membersRelations = relations(members, ({ one, many }) => ({
-  user: one(users, {
-    fields: [members.userId],
-    references: [users.id]
-  }),
   organization: one(organizations, {
     fields: [members.organizationId],
     references: [organizations.id]
