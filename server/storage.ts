@@ -19,12 +19,9 @@ import {
 import { db } from "./db";
 import { eq, and, desc, asc, count, sql, or } from "drizzle-orm";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-// import { pool } from "./db"; // TEMPORARILY DISABLED - Using Neon serverless
+import { NeonSessionStore } from "./neonSessionStore";
 import { hashPassword, comparePasswords } from "./auth";
 import crypto from "crypto";
-
-const PostgresSessionStore = connectPg(session);
 
 // Migration function to convert plaintext passwords to hashed passwords
 async function migrateToHashedPasswords() {
@@ -275,11 +272,8 @@ export class DatabaseStorage implements IStorage {
   private migrationCompleted = false;
 
   constructor() {
-    // TEMPORARILY DISABLED - Session storage needs pool connection
-    // this.sessionStore = new PostgresSessionStore({
-    //   pool,
-    //   createTableIfMissing: true
-    // });
+    // Use NeonSessionStore for Neon serverless compatibility
+    this.sessionStore = new NeonSessionStore();
 
     // Run password migration on startup
     this.runPasswordMigration();
