@@ -1,5 +1,5 @@
-import { 
-  users, organizations, members, memberApplications, cases, events, 
+import {
+  users, organizations, members, cases, events,
   eventRegistrations, payments, documents, userSessions, applicationWorkflows,
   paymentInstallments, notifications, userPermissions, auditLogs, applicants,
   organizationApplicants, individualApplications, organizationApplications, memberRenewals, systemSettings,
@@ -630,7 +630,7 @@ export class DatabaseStorage implements IStorage {
 
   // Application operations
   async getMemberApplication(id: string): Promise<MemberApplication | undefined> {
-    const [app] = await db.select().from(memberApplications).where(eq(memberApplications.id, id));
+    const [app] = await db.select().from(individualApplications).where(eq(individualApplications.id, id));
     return app || undefined;
   }
 
@@ -640,7 +640,7 @@ export class DatabaseStorage implements IStorage {
     const applicationNumber = await nextApplicationId('individual');
     
     const [app] = await db
-      .insert(memberApplications)
+      .insert(individualApplications)
       .values({ ...insertApp, applicationNumber })
       .returning();
     return app;
@@ -648,9 +648,9 @@ export class DatabaseStorage implements IStorage {
 
   async updateMemberApplication(id: string, updates: Partial<MemberApplication>): Promise<MemberApplication> {
     const [app] = await db
-      .update(memberApplications)
+      .update(individualApplications)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(memberApplications.id, id))
+      .where(eq(individualApplications.id, id))
       .returning();
     return app;
   }
@@ -658,9 +658,9 @@ export class DatabaseStorage implements IStorage {
   async getPendingApplications(): Promise<MemberApplication[]> {
     return await db
       .select()
-      .from(memberApplications)
-      .where(eq(memberApplications.status, "submitted"))
-      .orderBy(desc(memberApplications.createdAt));
+      .from(individualApplications)
+      .where(eq(individualApplications.status, "submitted"))
+      .orderBy(desc(individualApplications.createdAt));
   }
 
   // Organization Application operations
@@ -1188,32 +1188,32 @@ export class DatabaseStorage implements IStorage {
   async getApplicationsByStatus(status: string): Promise<MemberApplication[]> {
     return await db
       .select()
-      .from(memberApplications)
-      .where(eq(memberApplications.status, status as any))
-      .orderBy(desc(memberApplications.createdAt));
+      .from(individualApplications)
+      .where(eq(individualApplications.status, status as any))
+      .orderBy(desc(individualApplications.createdAt));
   }
 
   async getApplicationsByStage(stage: string): Promise<MemberApplication[]> {
     return await db
       .select()
-      .from(memberApplications)
-      .where(eq(memberApplications.currentStage, stage as any))
-      .orderBy(desc(memberApplications.createdAt));
+      .from(individualApplications)
+      .where(eq(individualApplications.currentStage, stage as any))
+      .orderBy(desc(individualApplications.createdAt));
   }
 
   async getAllApplications(): Promise<MemberApplication[]> {
-    return await db.select().from(memberApplications).orderBy(desc(memberApplications.createdAt));
+    return await db.select().from(individualApplications).orderBy(desc(individualApplications.createdAt));
   }
 
   async assignApplicationReviewer(id: string, reviewerId: string): Promise<MemberApplication> {
     const [application] = await db
-      .update(memberApplications)
+      .update(individualApplications)
       .set({ 
         reviewedBy: reviewerId,
         reviewStartedAt: new Date(),
         updatedAt: new Date()
       })
-      .where(eq(memberApplications.id, id))
+      .where(eq(individualApplications.id, id))
       .returning();
     return application;
   }
