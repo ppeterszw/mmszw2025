@@ -138,25 +138,23 @@ export const members = pgTable("members", {
 
 // Member Applications table - REMOVED (Legacy table doesn't exist in production)
 // Creating alias to individualApplications for backward compatibility
-// Individual Applications table - New application system
+// Individual Applications table - Matches production database structure
 export const individualApplications = pgTable("individual_applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  applicationId: text("application_id").notNull().unique(), // MBR-APP-XXXX
+  applicationId: text("application_id").notNull().unique(),
+  applicantEmail: text("applicant_email"),
+  personal: text("personal"), // JSONB stored as text
+  education: text("education"), // JSONB stored as text
+  memberType: memberTypeEnum("member_type"),
   status: applicationStatusEnum("status").default("draft"),
-  personal: text("personal").notNull(), // JSON: { firstName, lastName, dob, nationalId, email, phone, address }
-  oLevel: text("o_level").notNull(), // JSON: { subjects[], hasEnglish, hasMath, passesCount }
-  aLevel: text("a_level"), // JSON: { subjects[], passesCount } nullable
-  equivalentQualification: text("equivalent_qualification"), // JSON: { type, institution, levelMap, evidenceDocId } nullable
-  matureEntry: boolean("mature_entry").default(false),
-  feeRequired: boolean("fee_required").default(true),
-  feeAmount: integer("fee_amount"),
-  feeCurrency: varchar("fee_currency", { length: 8 }).default("USD"),
-  feeStatus: varchar("fee_status", { length: 16 }).default("pending"), // none|pending|settled|failed|refunded
-  feePaymentId: varchar("fee_payment_id", { length: 36 }),
-  feeProofDocId: varchar("fee_proof_doc_id", { length: 36 }),
-  submittedAt: timestamp("submitted_at"),
-  createdByUserId: varchar("created_by_user_id").references(() => users.id),
-  memberId: varchar("member_id").references(() => members.id), // Set on acceptance
+  applicationFee: decimal("application_fee", { precision: 10, scale: 2 }),
+  paymentStatus: paymentStatusEnum("payment_status"),
+  paymentReference: text("payment_reference"),
+  reviewNotes: text("review_notes"),
+  reviewedBy: text("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
+  approvedAt: timestamp("approved_at"),
+  createdMemberId: varchar("created_member_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
@@ -164,24 +162,22 @@ export const individualApplications = pgTable("individual_applications", {
 // Alias for backward compatibility - memberApplications points to individualApplications
 export const memberApplications = individualApplications;
 
-// Organization Applications table - New application system
+// Organization Applications table - Matches production database structure
 export const organizationApplications = pgTable("organization_applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  applicationId: text("application_id").notNull().unique(), // ORG-APP-XXXX
+  applicationId: text("application_id").notNull().unique(),
+  applicantEmail: text("applicant_email"),
+  company: text("company"), // JSONB stored as text
+  businessType: organizationTypeEnum("business_type"),
   status: applicationStatusEnum("status").default("draft"),
-  orgProfile: text("org_profile").notNull(), // JSON: { legalName, tradingName, regNo, taxNo, address, emails[], phones[] }
-  trustAccount: text("trust_account").notNull(), // JSON: { bankName, branch, accountNoMasked }
-  preaMemberId: varchar("prea_member_id").references(() => members.id), // Principal Registered Estate Agent
-  directors: text("directors"), // JSON: [{ name, nationalId, memberId }]
-  feeRequired: boolean("fee_required").default(true),
-  feeAmount: integer("fee_amount"),
-  feeCurrency: varchar("fee_currency", { length: 8 }).default("USD"),
-  feeStatus: varchar("fee_status", { length: 16 }).default("pending"),
-  feePaymentId: varchar("fee_payment_id", { length: 36 }),
-  feeProofDocId: varchar("fee_proof_doc_id", { length: 36 }),
-  submittedAt: timestamp("submitted_at"),
-  createdByUserId: varchar("created_by_user_id").references(() => users.id),
-  memberId: varchar("member_id").references(() => members.id), // Set on acceptance
+  applicationFee: decimal("application_fee", { precision: 10, scale: 2 }),
+  paymentStatus: paymentStatusEnum("payment_status"),
+  paymentReference: text("payment_reference"),
+  reviewNotes: text("review_notes"),
+  reviewedBy: text("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
+  approvedAt: timestamp("approved_at"),
+  createdOrganizationId: varchar("created_organization_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
