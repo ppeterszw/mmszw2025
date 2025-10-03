@@ -104,18 +104,14 @@ export const organizationApplicants = pgTable("organization_applicants", {
 // Organizations table
 export const organizations = pgTable("organizations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: text("organization_id").unique(),
   name: text("name").notNull(),
-  type: organizationTypeEnum("type").notNull(),
+  businessType: organizationTypeEnum("business_type").notNull(),
   registrationNumber: text("registration_number").unique(),
   email: text("email").notNull(),
   phone: text("phone"),
-  address: text("address"),
-  principalAgentId: varchar("principal_agent_id"),
-  membershipStatus: membershipStatusEnum("membership_status").default("pending"),
-  registrationDate: timestamp("registration_date"),
-  expiryDate: timestamp("expiry_date"),
-  annualFee: decimal("annual_fee", { precision: 10, scale: 2 }),
-  trustAccountDetails: text("trust_account_details"),
+  physicalAddress: text("physical_address"),
+  status: membershipStatusEnum("status").default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
