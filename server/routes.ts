@@ -1598,7 +1598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         membershipStatus: 'pending' as const,
         // Additional fields based on form data
         isMatureEntry: educationLevel === 'mature_entry' ? true : false,
-        cpdPoints: 0
+        
       };
 
       // Create the member
@@ -1841,7 +1841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         membershipNumber,
         membershipStatus: 'pending' as const,
         isMatureEntry: educationLevel === 'mature_entry' ? true : false,
-        cpdPoints: 0
+        
       };
 
       const newMember = await storage.createMember(memberData);
@@ -2308,7 +2308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             membershipNumber,
             membershipStatus: 'active' as const, // Bulk imported members are active immediately
             isMatureEntry: rowData.educationlevel === 'mature_entry',
-            cpdPoints: 0
+            
           };
 
           // Create the member
@@ -2481,9 +2481,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: applicant.email,
             memberType: 'real_estate_agent', // Default type, can be customized
             membershipStatus: 'active',
-            joiningDate: new Date(),
+            joinedDate: new Date(),
             expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // 1 year from now
-            cpdPoints: 0
+            
           });
           
           // Send welcome email with credentials

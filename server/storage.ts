@@ -553,7 +553,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMemberByUserId(userId: string): Promise<Member | undefined> {
-    const [member] = await db.select().from(members).where(eq(members.userId, userId));
+    // Note: userId field doesn't exist in current schema, using clerkId instead
+    const [member] = await db.select().from(members).where(eq(members.clerkId, userId));
     return member || undefined;
   }
 
