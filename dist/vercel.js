@@ -2485,6 +2485,8 @@ var init_storage = __esm({
       async getDashboardStats() {
         const totalMembersResult = await db.select({ count: sql4`count(*)` }).from(members);
         const totalMembers = totalMembersResult[0]?.count || 0;
+        const totalOrganizationsResult = await db.select({ count: sql4`count(*)` }).from(organizations);
+        const totalOrganizations = totalOrganizationsResult[0]?.count || 0;
         const activeOrganizationsResult = await db.select({ count: sql4`count(*)` }).from(organizations).where(eq(organizations.status, "active"));
         const activeOrganizations = activeOrganizationsResult[0]?.count || 0;
         const pendingIndividualApplicationsResult = await db.select({ count: sql4`count(*)` }).from(individualApplications).where(sql4`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`);
@@ -2494,6 +2496,10 @@ var init_storage = __esm({
         const pendingApplications = pendingIndividualApplications + pendingOrganizationApplications;
         const openCasesResult = await db.select({ count: sql4`count(*)` }).from(cases).where(eq(cases.status, "open"));
         const openCases = openCasesResult[0]?.count || 0;
+        const totalUsersResult = await db.select({ count: sql4`count(*)` }).from(users);
+        const totalUsers = totalUsersResult[0]?.count || 0;
+        const upcomingEventsResult = await db.select({ count: sql4`count(*)` }).from(events).where(sql4`start_date >= NOW()`);
+        const upcomingEvents = upcomingEventsResult[0]?.count || 0;
         const startOfMonth = /* @__PURE__ */ new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
@@ -2502,14 +2508,20 @@ var init_storage = __esm({
           sql4`created_at >= ${startOfMonth}`
         ));
         const revenueThisMonth = Number(revenueResult[0]?.sum || 0);
+        const totalRevenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(eq(payments.status, "completed"));
+        const totalRevenue = Number(totalRevenueResult[0]?.sum || 0);
         const renewalsPending = 0;
         return {
           totalMembers,
           activeOrganizations,
+          totalOrganizations,
           pendingApplications,
           openCases,
+          totalRevenue,
           revenueThisMonth,
-          renewalsPending
+          renewalsPending,
+          totalUsers,
+          upcomingEvents
         };
       }
       // Finance Statistics  

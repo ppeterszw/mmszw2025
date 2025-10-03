@@ -1548,14 +1548,24 @@ export class DatabaseStorage implements IStorage {
   async getDashboardStats(): Promise<{
     totalMembers: number;
     activeOrganizations: number;
+    totalOrganizations: number;
     pendingApplications: number;
     openCases: number;
+    totalRevenue: number;
     revenueThisMonth?: number;
     renewalsPending?: number;
+    totalUsers: number;
+    upcomingEvents: number;
   }> {
     // Get total members count
     const totalMembersResult = await db.select({ count: sql<number>`count(*)` }).from(members);
     const totalMembers = totalMembersResult[0]?.count || 0;
+
+    // Get total organizations count
+    const totalOrganizationsResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(organizations);
+    const totalOrganizations = totalOrganizationsResult[0]?.count || 0;
 
     // Get active organizations count
     const activeOrganizationsResult = await db
@@ -1587,11 +1597,22 @@ export class DatabaseStorage implements IStorage {
       .where(eq(cases.status, "open"));
     const openCases = openCasesResult[0]?.count || 0;
 
+    // Get total users count
+    const totalUsersResult = await db.select({ count: sql<number>`count(*)` }).from(users);
+    const totalUsers = totalUsersResult[0]?.count || 0;
+
+    // Get upcoming events count (events with start date in the future)
+    const upcomingEventsResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(events)
+      .where(sql`start_date >= NOW()`);
+    const upcomingEvents = upcomingEventsResult[0]?.count || 0;
+
     // Get revenue this month
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-    
+
     const revenueResult = await db
       .select({ sum: sql<number>`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` })
       .from(payments)
@@ -1601,6 +1622,13 @@ export class DatabaseStorage implements IStorage {
       ));
     const revenueThisMonth = Number(revenueResult[0]?.sum || 0);
 
+    // Get total revenue (all time)
+    const totalRevenueResult = await db
+      .select({ sum: sql<number>`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` })
+      .from(payments)
+      .where(eq(payments.status, "completed"));
+    const totalRevenue = Number(totalRevenueResult[0]?.sum || 0);
+
     // Get pending renewals count (if table exists)
     // Skip this for now as member_renewals table doesn't exist in production
     const renewalsPending = 0;
@@ -1608,10 +1636,14 @@ export class DatabaseStorage implements IStorage {
     return {
       totalMembers,
       activeOrganizations,
+      totalOrganizations,
       pendingApplications,
       openCases,
+      totalRevenue,
       revenueThisMonth,
       renewalsPending,
+      totalUsers,
+      upcomingEvents,
     };
   }
 
