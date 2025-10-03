@@ -41,6 +41,8 @@ __export(schema_exports, {
   cpdActivities: () => cpdActivities,
   cpdActivitiesRelations: () => cpdActivitiesRelations,
   decisionEnum: () => decisionEnum,
+  directors: () => directors,
+  directorsRelations: () => directorsRelations,
   documentStatusEnum: () => documentStatusEnum,
   documentTypeEnum: () => documentTypeEnum,
   documents: () => documents,
@@ -86,7 +88,6 @@ __export(schema_exports, {
   memberActivities: () => memberActivities,
   memberActivitiesRelations: () => memberActivitiesRelations,
   memberApplications: () => memberApplications,
-  memberApplicationsRelations: () => memberApplicationsRelations,
   memberRenewals: () => memberRenewals,
   memberRenewalsRelations: () => memberRenewalsRelations,
   memberTypeEnum: () => memberTypeEnum,
@@ -132,7 +133,7 @@ import { pgTable, text, varchar, timestamp, integer, boolean, decimal, pgEnum } 
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var userRoleEnum, userStatusEnum, memberTypeEnum, organizationTypeEnum, membershipStatusEnum, caseStatusEnum, casePriorityEnum, caseTypeEnum, eventTypeEnum, activityTypeEnum, renewalStatusEnum, paymentStatusEnum, paymentMethodEnum, applicationStatusEnum, applicationStageEnum, applicationTypeEnum, documentStatusEnum, documentTypeEnum, decisionEnum, educationLevelEnum, notificationTypeEnum, notificationStatusEnum, applicantStatusEnum, users, applicants, organizationApplicants, organizations, members, individualApplications, memberApplications, organizationApplications, uploadedDocuments, statusHistory, registryDecisions, namingSeriesCounters, appLoginTokens, cases, events, eventRegistrations, payments, cpdActivities, memberRenewals, memberActivities, documents, userSessions, applicationWorkflows, paymentInstallments, notifications, userPermissions, auditLogs, badgeTypeEnum, badgeDifficultyEnum, achievementBadges, memberAchievementBadges, systemSettings, usersRelations, organizationsRelations, membersRelations, memberApplicationsRelations, casesRelations, eventsRelations, eventRegistrationsRelations, paymentsRelations, documentsRelations, cpdActivitiesRelations, memberRenewalsRelations, memberActivitiesRelations, userSessionsRelations, applicationWorkflowsRelations, paymentInstallmentsRelations, notificationsRelations, userPermissionsRelations, auditLogsRelations, individualApplicationsRelations, organizationApplicationsRelations, uploadedDocumentsRelations, statusHistoryRelations, registryDecisionsRelations, insertUserSchema, insertApplicantSchema, insertOrganizationApplicantSchema, insertMemberSchema, insertOrganizationSchema, insertMemberApplicationSchema, insertCaseSchema, casesQuerySchema, caseUpdateSchema, caseAssignmentSchema, bulkCaseAssignmentSchema, bulkCaseResolutionSchema, bulkCaseActionSchema, insertEventSchema, insertPaymentSchema, insertDocumentSchema, insertCpdActivitySchema, insertMemberRenewalSchema, insertMemberActivitySchema, insertUserSessionSchema, insertApplicationWorkflowSchema, insertPaymentInstallmentSchema, insertNotificationSchema, insertUserPermissionSchema, insertAuditLogSchema, insertSystemSettingsSchema, insertIndividualApplicationSchema, insertOrganizationApplicationSchema, insertUploadedDocumentSchema, insertStatusHistorySchema, insertRegistryDecisionSchema, insertNamingSeriesCounterSchema, insertAppLoginTokenSchema, insertAchievementBadgeSchema, insertMemberAchievementBadgeSchema, businessExperienceItemSchema, businessExperienceSchema;
+var userRoleEnum, userStatusEnum, memberTypeEnum, organizationTypeEnum, membershipStatusEnum, caseStatusEnum, casePriorityEnum, caseTypeEnum, eventTypeEnum, activityTypeEnum, renewalStatusEnum, paymentStatusEnum, paymentMethodEnum, applicationStatusEnum, applicationStageEnum, applicationTypeEnum, documentStatusEnum, documentTypeEnum, decisionEnum, educationLevelEnum, notificationTypeEnum, notificationStatusEnum, applicantStatusEnum, users, applicants, organizationApplicants, organizations, members, directors, individualApplications, memberApplications, organizationApplications, uploadedDocuments, statusHistory, registryDecisions, namingSeriesCounters, appLoginTokens, cases, events, eventRegistrations, payments, cpdActivities, memberRenewals, memberActivities, documents, userSessions, applicationWorkflows, paymentInstallments, notifications, userPermissions, auditLogs, badgeTypeEnum, badgeDifficultyEnum, achievementBadges, memberAchievementBadges, systemSettings, usersRelations, organizationsRelations, membersRelations, directorsRelations, casesRelations, eventsRelations, eventRegistrationsRelations, paymentsRelations, documentsRelations, cpdActivitiesRelations, memberRenewalsRelations, memberActivitiesRelations, userSessionsRelations, applicationWorkflowsRelations, paymentInstallmentsRelations, notificationsRelations, userPermissionsRelations, auditLogsRelations, individualApplicationsRelations, organizationApplicationsRelations, uploadedDocumentsRelations, statusHistoryRelations, registryDecisionsRelations, insertUserSchema, insertApplicantSchema, insertOrganizationApplicantSchema, insertMemberSchema, insertOrganizationSchema, insertMemberApplicationSchema, insertCaseSchema, casesQuerySchema, caseUpdateSchema, caseAssignmentSchema, bulkCaseAssignmentSchema, bulkCaseResolutionSchema, bulkCaseActionSchema, insertEventSchema, insertPaymentSchema, insertDocumentSchema, insertCpdActivitySchema, insertMemberRenewalSchema, insertMemberActivitySchema, insertUserSessionSchema, insertApplicationWorkflowSchema, insertPaymentInstallmentSchema, insertNotificationSchema, insertUserPermissionSchema, insertAuditLogSchema, insertSystemSettingsSchema, insertIndividualApplicationSchema, insertOrganizationApplicationSchema, insertUploadedDocumentSchema, insertStatusHistorySchema, insertRegistryDecisionSchema, insertNamingSeriesCounterSchema, insertAppLoginTokenSchema, insertAchievementBadgeSchema, insertMemberAchievementBadgeSchema, businessExperienceItemSchema, businessExperienceSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -250,6 +251,8 @@ var init_schema = __esm({
       email: text("email").notNull(),
       phone: text("phone"),
       physicalAddress: text("physical_address"),
+      preaMemberId: varchar("prea_member_id"),
+      // Principal Real Estate Agent - references members.id
       status: membershipStatusEnum("status").default("pending"),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
@@ -269,6 +272,21 @@ var init_schema = __esm({
       joinedDate: timestamp("joined_date"),
       expiryDate: timestamp("expiry_date"),
       nationalId: text("national_id"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    directors = pgTable("directors", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      organizationId: varchar("organization_id").notNull(),
+      firstName: text("first_name").notNull(),
+      lastName: text("last_name").notNull(),
+      nationalId: text("national_id"),
+      email: text("email"),
+      phone: text("phone"),
+      position: text("position"),
+      // e.g., "Chairman", "Director", "Secretary"
+      appointedDate: timestamp("appointed_date"),
+      isActive: boolean("is_active").default(true),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -668,8 +686,13 @@ var init_schema = __esm({
       }),
       createdUsers: many(users)
     }));
-    organizationsRelations = relations(organizations, ({ many }) => ({
+    organizationsRelations = relations(organizations, ({ one, many }) => ({
       members: many(members),
+      directors: many(directors),
+      preaMember: one(members, {
+        fields: [organizations.preaMemberId],
+        references: [members.id]
+      }),
       applications: many(memberApplications),
       cases: many(cases),
       payments: many(payments),
@@ -688,21 +711,11 @@ var init_schema = __esm({
       renewals: many(memberRenewals),
       activities: many(memberActivities)
     }));
-    memberApplicationsRelations = relations(memberApplications, ({ one, many }) => ({
+    directorsRelations = relations(directors, ({ one }) => ({
       organization: one(organizations, {
-        fields: [memberApplications.organizationId],
+        fields: [directors.organizationId],
         references: [organizations.id]
-      }),
-      reviewer: one(users, {
-        fields: [memberApplications.reviewedBy],
-        references: [users.id]
-      }),
-      payment: one(payments, {
-        fields: [memberApplications.paymentId],
-        references: [payments.id]
-      }),
-      documents: many(documents),
-      workflows: many(applicationWorkflows)
+      })
     }));
     casesRelations = relations(cases, ({ one }) => ({
       member: one(members, {
@@ -855,12 +868,8 @@ var init_schema = __esm({
       })
     }));
     individualApplicationsRelations = relations(individualApplications, ({ one, many }) => ({
-      createdByUser: one(users, {
-        fields: [individualApplications.createdByUserId],
-        references: [users.id]
-      }),
-      member: one(members, {
-        fields: [individualApplications.memberId],
+      createdMember: one(members, {
+        fields: [individualApplications.createdMemberId],
         references: [members.id]
       }),
       documents: many(uploadedDocuments),
@@ -869,17 +878,9 @@ var init_schema = __esm({
       loginTokens: many(appLoginTokens)
     }));
     organizationApplicationsRelations = relations(organizationApplications, ({ one, many }) => ({
-      createdByUser: one(users, {
-        fields: [organizationApplications.createdByUserId],
-        references: [users.id]
-      }),
-      preaMember: one(members, {
-        fields: [organizationApplications.preaMemberId],
-        references: [members.id]
-      }),
-      member: one(members, {
-        fields: [organizationApplications.memberId],
-        references: [members.id]
+      createdOrganization: one(organizations, {
+        fields: [organizationApplications.createdOrganizationId],
+        references: [organizations.id]
       }),
       documents: many(uploadedDocuments),
       statusHistory: many(statusHistory),
@@ -1206,9 +1207,9 @@ function sessionTimeoutMiddleware(req, res, next) {
   if (!req.isAuthenticated()) {
     return next();
   }
-  const session4 = req.session;
-  if (session4 && session4.cookie) {
-    const lastActivity = session4.cookie._expires ? new Date(session4.cookie._expires) : /* @__PURE__ */ new Date();
+  const session3 = req.session;
+  if (session3 && session3.cookie) {
+    const lastActivity = session3.cookie._expires ? new Date(session3.cookie._expires) : /* @__PURE__ */ new Date();
     const remaining = SessionService.getTimeoutRemaining(lastActivity);
     res.setHeader("X-Session-Timeout-Remaining", remaining.toString());
     if (remaining < 5) {
@@ -1303,21 +1304,21 @@ var init_sessionService = __esm({
        * Validate and update session
        */
       static async validateSession(sessionToken) {
-        const [session4] = await db.select().from(userSessions).where(
+        const [session3] = await db.select().from(userSessions).where(
           and(
             eq(userSessions.sessionToken, sessionToken),
             eq(userSessions.isActive, true)
           )
         ).limit(1);
-        if (!session4) {
+        if (!session3) {
           return { valid: false, reason: "Session not found" };
         }
         const now = /* @__PURE__ */ new Date();
-        if (new Date(session4.expiresAt) < now) {
+        if (new Date(session3.expiresAt) < now) {
           await this.invalidateSession(sessionToken);
           return { valid: false, reason: "Session expired (absolute timeout)" };
         }
-        const lastActivity = new Date(session4.lastActivityAt);
+        const lastActivity = new Date(session3.lastActivityAt);
         const idleMinutes = (now.getTime() - lastActivity.getTime()) / (1e3 * 60);
         if (idleMinutes > SESSION_CONFIG.IDLE_TIMEOUT_MINUTES) {
           await this.invalidateSession(sessionToken);
@@ -1329,7 +1330,7 @@ var init_sessionService = __esm({
         await db.update(userSessions).set({
           lastActivityAt: now
         }).where(eq(userSessions.sessionToken, sessionToken));
-        return { valid: true, userId: session4.userId };
+        return { valid: true, userId: session3.userId };
       }
       /**
        * Invalidate a session (logout)
@@ -1383,6 +1384,116 @@ var init_sessionService = __esm({
   }
 });
 
+// server/neonSessionStore.ts
+import { Store } from "express-session";
+var NeonSessionStore;
+var init_neonSessionStore = __esm({
+  "server/neonSessionStore.ts"() {
+    "use strict";
+    init_db();
+    NeonSessionStore = class extends Store {
+      constructor() {
+        super();
+        this.createTableIfMissing();
+      }
+      async createTableIfMissing() {
+        try {
+          await sql2`
+        CREATE TABLE IF NOT EXISTS session (
+          sid VARCHAR NOT NULL PRIMARY KEY,
+          sess JSON NOT NULL,
+          expire TIMESTAMP(6) NOT NULL
+        )
+      `;
+          await sql2`CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire)`;
+          console.log("\u2705 Session table ready");
+        } catch (error) {
+          console.error("\u274C Failed to create session table:", error);
+        }
+      }
+      async get(sid, callback) {
+        try {
+          const result = await sql2`
+        SELECT sess FROM session WHERE sid = ${sid} AND expire >= NOW()
+      `;
+          if (result.length === 0) {
+            return callback(null, null);
+          }
+          callback(null, result[0].sess);
+        } catch (error) {
+          callback(error);
+        }
+      }
+      async set(sid, session3, callback) {
+        try {
+          const expire = this.getExpireTime(session3);
+          await sql2`
+        INSERT INTO session (sid, sess, expire)
+        VALUES (${sid}, ${JSON.stringify(session3)}, ${expire})
+        ON CONFLICT (sid)
+        DO UPDATE SET sess = ${JSON.stringify(session3)}, expire = ${expire}
+      `;
+          callback?.();
+        } catch (error) {
+          callback?.(error);
+        }
+      }
+      async destroy(sid, callback) {
+        try {
+          await sql2`DELETE FROM session WHERE sid = ${sid}`;
+          callback?.();
+        } catch (error) {
+          callback?.(error);
+        }
+      }
+      async touch(sid, session3, callback) {
+        try {
+          const expire = this.getExpireTime(session3);
+          await sql2`
+        UPDATE session SET expire = ${expire} WHERE sid = ${sid}
+      `;
+          callback?.();
+        } catch (error) {
+          callback?.(error);
+        }
+      }
+      async all(callback) {
+        try {
+          const result = await sql2`
+        SELECT sess FROM session WHERE expire >= NOW()
+      `;
+          const sessions = result.map((row) => row.sess);
+          callback(null, sessions);
+        } catch (error) {
+          callback(error);
+        }
+      }
+      async clear(callback) {
+        try {
+          await sql2`DELETE FROM session`;
+          callback?.();
+        } catch (error) {
+          callback?.(error);
+        }
+      }
+      async length(callback) {
+        try {
+          const result = await sql2`
+        SELECT COUNT(*) as count FROM session WHERE expire >= NOW()
+      `;
+          callback(null, Number(result[0].count));
+        } catch (error) {
+          callback(error);
+        }
+      }
+      getExpireTime(session3) {
+        const maxAge = session3.cookie?.maxAge || 864e5;
+        return new Date(Date.now() + maxAge);
+      }
+    };
+  }
+});
+
 // server/utils/applicantUtils.ts
 var applicantUtils_exports = {};
 __export(applicantUtils_exports, {
@@ -1406,8 +1517,6 @@ var init_applicantUtils = __esm({
 
 // server/storage.ts
 import { eq as eq2, and as and2, desc, asc, sql as sql4 } from "drizzle-orm";
-import session from "express-session";
-import connectPg from "connect-pg-simple";
 async function migrateToHashedPasswords() {
   try {
     console.log("Checking for plaintext passwords to migrate...");
@@ -1896,18 +2005,19 @@ async function initializeDemoData() {
     console.error("Error initializing demo data:", error);
   }
 }
-var PostgresSessionStore, DatabaseStorage, storage;
+var DatabaseStorage, storage;
 var init_storage = __esm({
   "server/storage.ts"() {
     "use strict";
     init_schema();
     init_db();
+    init_neonSessionStore();
     init_auth();
-    PostgresSessionStore = connectPg(session);
     DatabaseStorage = class {
       sessionStore;
       migrationCompleted = false;
       constructor() {
+        this.sessionStore = new NeonSessionStore();
         this.runPasswordMigration();
       }
       async runPasswordMigration() {
@@ -2140,6 +2250,45 @@ var init_storage = __esm({
       async getAllOrganizations() {
         return await db.select().from(organizations).orderBy(desc(organizations.createdAt));
       }
+      async getOrganizationByMemberId(memberId) {
+        const [org] = await db.select().from(organizations).where(eq2(organizations.preaMemberId, memberId));
+        return org || void 0;
+      }
+      async getOrganizationWithDetails(organizationId) {
+        const [organization] = await db.select().from(organizations).where(eq2(organizations.id, organizationId));
+        if (!organization) return void 0;
+        const orgDirectors = await db.select().from(directors).where(and2(eq2(directors.organizationId, organizationId), eq2(directors.isActive, true))).orderBy(asc(directors.lastName));
+        const orgMembers = await db.select().from(members).where(eq2(members.organizationId, organizationId)).orderBy(asc(members.lastName));
+        const preaMember = organization.preaMemberId ? await db.select().from(members).where(eq2(members.id, organization.preaMemberId)).then((rows) => rows[0]) : null;
+        return {
+          ...organization,
+          directors: orgDirectors,
+          members: orgMembers,
+          preaMember
+        };
+      }
+      // Director operations
+      async getDirectorsByOrganization(organizationId) {
+        return await db.select().from(directors).where(and2(eq2(directors.organizationId, organizationId), eq2(directors.isActive, true))).orderBy(asc(directors.lastName));
+      }
+      async createDirector(insertDirector) {
+        const [director] = await db.insert(directors).values(insertDirector).returning();
+        return director;
+      }
+      async updateDirector(id, updates) {
+        const [director] = await db.update(directors).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(directors.id, id)).returning();
+        return director;
+      }
+      async deleteDirector(id) {
+        await db.update(directors).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(directors.id, id));
+      }
+      async getMembersByOrganization(organizationId) {
+        return await db.select().from(members).where(eq2(members.organizationId, organizationId)).orderBy(asc(members.lastName));
+      }
+      async updateOrganizationPREA(organizationId, memberId) {
+        const [org] = await db.update(organizations).set({ preaMemberId: memberId, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(organizations.id, organizationId)).returning();
+        return org;
+      }
       // Application operations
       async getMemberApplication(id) {
         const [app2] = await db.select().from(individualApplications).where(eq2(individualApplications.id, id));
@@ -2155,8 +2304,26 @@ var init_storage = __esm({
         const [app2] = await db.update(individualApplications).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(individualApplications.id, id)).returning();
         return app2;
       }
+      // Helper function to transform JSONB fields to flat structure for backward compatibility
+      transformApplication(app2) {
+        const personal = typeof app2.personal === "string" ? JSON.parse(app2.personal) : app2.personal || {};
+        const education = typeof app2.education === "string" ? JSON.parse(app2.education) : app2.education || {};
+        return {
+          ...app2,
+          firstName: personal.firstName || "",
+          lastName: personal.lastName || "",
+          phone: personal.phone || "",
+          address: personal.address || "",
+          nationalId: personal.nationalId || "",
+          dateOfBirth: personal.dateOfBirth || null,
+          educationLevel: education.level || "",
+          institution: education.institution || "",
+          yearCompleted: education.yearCompleted || null
+        };
+      }
       async getPendingApplications() {
-        return await db.select().from(individualApplications).where(eq2(individualApplications.status, "submitted")).orderBy(desc(individualApplications.createdAt));
+        const apps = await db.select().from(individualApplications).where(sql4`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`).orderBy(desc(individualApplications.createdAt));
+        return apps.map((app2) => this.transformApplication(app2));
       }
       // Organization Application operations
       async getOrganizationApplication(id) {
@@ -2483,13 +2650,16 @@ var init_storage = __esm({
       }
       // Enhanced Application Methods
       async getApplicationsByStatus(status) {
-        return await db.select().from(individualApplications).where(eq2(individualApplications.status, status)).orderBy(desc(individualApplications.createdAt));
+        const apps = await db.select().from(individualApplications).where(eq2(individualApplications.status, status)).orderBy(desc(individualApplications.createdAt));
+        return apps.map((app2) => this.transformApplication(app2));
       }
       async getApplicationsByStage(stage) {
-        return await db.select().from(individualApplications).where(eq2(individualApplications.currentStage, stage)).orderBy(desc(individualApplications.createdAt));
+        const apps = await db.select().from(individualApplications).where(eq2(individualApplications.currentStage, stage)).orderBy(desc(individualApplications.createdAt));
+        return apps.map((app2) => this.transformApplication(app2));
       }
       async getAllApplications() {
-        return await db.select().from(individualApplications).orderBy(desc(individualApplications.createdAt));
+        const apps = await db.select().from(individualApplications).orderBy(desc(individualApplications.createdAt));
+        return apps.map((app2) => this.transformApplication(app2));
       }
       async assignApplicationReviewer(id, reviewerId) {
         const [application] = await db.update(individualApplications).set({
@@ -2518,8 +2688,8 @@ var init_storage = __esm({
         return await db.select().from(applicationWorkflows).where(eq2(applicationWorkflows.assignedTo, userId)).orderBy(desc(applicationWorkflows.createdAt));
       }
       // Session Management
-      async createUserSession(session4) {
-        const [newSession] = await db.insert(userSessions).values(session4).returning();
+      async createUserSession(session3) {
+        const [newSession] = await db.insert(userSessions).values(session3).returning();
         return newSession;
       }
       async getUserSessions(userId) {
@@ -2529,12 +2699,12 @@ var init_storage = __esm({
         )).orderBy(desc(userSessions.lastActivity));
       }
       async updateSessionActivity(sessionId) {
-        const [session4] = await db.update(userSessions).set({ lastActivity: /* @__PURE__ */ new Date() }).where(eq2(userSessions.id, sessionId)).returning();
-        return session4;
+        const [session3] = await db.update(userSessions).set({ lastActivity: /* @__PURE__ */ new Date() }).where(eq2(userSessions.id, sessionId)).returning();
+        return session3;
       }
       async deactivateSession(sessionId) {
-        const [session4] = await db.update(userSessions).set({ isActive: false }).where(eq2(userSessions.id, sessionId)).returning();
-        return session4;
+        const [session3] = await db.update(userSessions).set({ isActive: false }).where(eq2(userSessions.id, sessionId)).returning();
+        return session3;
       }
       async cleanupExpiredSessions() {
         const result = await db.update(userSessions).set({ isActive: false }).where(sql4`${userSessions.expiresAt} < NOW()`).returning({ id: userSessions.id });
@@ -2615,6 +2785,8 @@ var init_storage = __esm({
       async getDashboardStats() {
         const totalMembersResult = await db.select({ count: sql4`count(*)` }).from(members);
         const totalMembers = totalMembersResult[0]?.count || 0;
+        const totalOrganizationsResult = await db.select({ count: sql4`count(*)` }).from(organizations);
+        const totalOrganizations = totalOrganizationsResult[0]?.count || 0;
         const activeOrganizationsResult = await db.select({ count: sql4`count(*)` }).from(organizations).where(eq2(organizations.status, "active"));
         const activeOrganizations = activeOrganizationsResult[0]?.count || 0;
         const pendingIndividualApplicationsResult = await db.select({ count: sql4`count(*)` }).from(individualApplications).where(sql4`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`);
@@ -2624,6 +2796,10 @@ var init_storage = __esm({
         const pendingApplications = pendingIndividualApplications + pendingOrganizationApplications;
         const openCasesResult = await db.select({ count: sql4`count(*)` }).from(cases).where(eq2(cases.status, "open"));
         const openCases = openCasesResult[0]?.count || 0;
+        const totalUsersResult = await db.select({ count: sql4`count(*)` }).from(users);
+        const totalUsers = totalUsersResult[0]?.count || 0;
+        const upcomingEventsResult = await db.select({ count: sql4`count(*)` }).from(events).where(sql4`start_date >= NOW()`);
+        const upcomingEvents = upcomingEventsResult[0]?.count || 0;
         const startOfMonth = /* @__PURE__ */ new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
@@ -2632,14 +2808,20 @@ var init_storage = __esm({
           sql4`created_at >= ${startOfMonth}`
         ));
         const revenueThisMonth = Number(revenueResult[0]?.sum || 0);
+        const totalRevenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(eq2(payments.status, "completed"));
+        const totalRevenue = Number(totalRevenueResult[0]?.sum || 0);
         const renewalsPending = 0;
         return {
           totalMembers,
           activeOrganizations,
+          totalOrganizations,
           pendingApplications,
           openCases,
+          totalRevenue,
           revenueThisMonth,
-          renewalsPending
+          renewalsPending,
+          totalUsers,
+          upcomingEvents
         };
       }
       // Finance Statistics  
@@ -3585,7 +3767,7 @@ __export(auth_exports, {
 });
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import session2 from "express-session";
+import session from "express-session";
 import { scrypt, randomBytes as randomBytes2, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 async function hashPassword(password) {
@@ -3624,10 +3806,19 @@ function setupAuth(app2) {
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore
+    store: storage.sessionStore,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1e3,
+      // 24 hours
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax"
+    },
+    rolling: true
+    // Reset expiration on every request
   };
   app2.set("trust proxy", 1);
-  app2.use(session2(sessionSettings));
+  app2.use(session(sessionSettings));
   app2.use(passport.initialize());
   app2.use(passport.session());
   passport.use(
@@ -4661,7 +4852,7 @@ Estate Agents Council of Zimbabwe
 // server/auth/authRoutes.ts
 import passport2 from "passport";
 import { Strategy as LocalStrategy2 } from "passport-local";
-import session3 from "express-session";
+import session2 from "express-session";
 import { eq as eq4 } from "drizzle-orm";
 function setupAuthRoutes(app2) {
   const sessionSettings = {
@@ -4679,7 +4870,7 @@ function setupAuthRoutes(app2) {
     // Reset expiry on every request
   };
   app2.set("trust proxy", 1);
-  app2.use(session3(sessionSettings));
+  app2.use(session2(sessionSettings));
   app2.use(passport2.initialize());
   app2.use(passport2.session());
   app2.use(sessionTimeoutMiddleware);
@@ -8579,6 +8770,186 @@ var init_publicRoutes = __esm({
   }
 });
 
+// server/organizationPortalRoutes.ts
+var organizationPortalRoutes_exports = {};
+__export(organizationPortalRoutes_exports, {
+  setupOrganizationPortalRoutes: () => setupOrganizationPortalRoutes
+});
+function setupOrganizationPortalRoutes(app2) {
+  app2.get("/api/organization-portal/:organizationId", requireAuth, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const orgDetails = await storage.getOrganizationWithDetails(organizationId);
+      if (!orgDetails) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const isMemberOfOrg = orgDetails.members.some((m) => m.email === user.email);
+      const isPREA = orgDetails.preaMember?.email === user.email;
+      if (!isMemberOfOrg && !isPREA && !["admin", "super_admin", "staff"].includes(user.role)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      res.json({
+        ...orgDetails,
+        isPREA,
+        canManage: isPREA || ["admin", "super_admin", "staff"].includes(user.role)
+      });
+    } catch (error) {
+      console.error("Get organization details error:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch organization details" });
+    }
+  });
+  app2.get("/api/organization-portal/member/:email", requireAuth, async (req, res) => {
+    try {
+      const { email } = req.params;
+      const user = req.user;
+      if (user.email !== email && !["admin", "super_admin", "staff"].includes(user.role)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      const member = await storage.getMemberByEmail(email);
+      if (!member || !member.organizationId) {
+        return res.status(404).json({ message: "No organization found for this member" });
+      }
+      const orgDetails = await storage.getOrganizationWithDetails(member.organizationId);
+      if (!orgDetails) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const isPREA = orgDetails.preaMember?.email === email;
+      res.json({
+        ...orgDetails,
+        isPREA,
+        canManage: isPREA || ["admin", "super_admin", "staff"].includes(user.role)
+      });
+    } catch (error) {
+      console.error("Get organization by member error:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch organization" });
+    }
+  });
+  app2.post("/api/organization-portal/:organizationId/directors", requireAuth, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const directorData = req.body;
+      const user = req.user;
+      const org = await storage.getOrganization(organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const preaMember = org.preaMemberId ? await storage.getMember(org.preaMemberId) : null;
+      const isPREA = preaMember?.email === user.email;
+      const isAdmin = ["admin", "super_admin", "staff"].includes(user.role);
+      if (!isPREA && !isAdmin) {
+        return res.status(403).json({ message: "Only PREA or admin can add directors" });
+      }
+      const director = await storage.createDirector({
+        ...directorData,
+        organizationId
+      });
+      res.json(director);
+    } catch (error) {
+      console.error("Add director error:", error);
+      res.status(500).json({ message: error.message || "Failed to add director" });
+    }
+  });
+  app2.put("/api/organization-portal/:organizationId/directors/:directorId", requireAuth, async (req, res) => {
+    try {
+      const { organizationId, directorId } = req.params;
+      const updates = req.body;
+      const user = req.user;
+      const org = await storage.getOrganization(organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const preaMember = org.preaMemberId ? await storage.getMember(org.preaMemberId) : null;
+      const isPREA = preaMember?.email === user.email;
+      const isAdmin = ["admin", "super_admin", "staff"].includes(user.role);
+      if (!isPREA && !isAdmin) {
+        return res.status(403).json({ message: "Only PREA or admin can update directors" });
+      }
+      const director = await storage.updateDirector(directorId, updates);
+      res.json(director);
+    } catch (error) {
+      console.error("Update director error:", error);
+      res.status(500).json({ message: error.message || "Failed to update director" });
+    }
+  });
+  app2.delete("/api/organization-portal/:organizationId/directors/:directorId", requireAuth, async (req, res) => {
+    try {
+      const { organizationId, directorId } = req.params;
+      const user = req.user;
+      const org = await storage.getOrganization(organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const preaMember = org.preaMemberId ? await storage.getMember(org.preaMemberId) : null;
+      const isPREA = preaMember?.email === user.email;
+      const isAdmin = ["admin", "super_admin", "staff"].includes(user.role);
+      if (!isPREA && !isAdmin) {
+        return res.status(403).json({ message: "Only PREA or admin can delete directors" });
+      }
+      await storage.deleteDirector(directorId);
+      res.json({ message: "Director deleted successfully" });
+    } catch (error) {
+      console.error("Delete director error:", error);
+      res.status(500).json({ message: error.message || "Failed to delete director" });
+    }
+  });
+  app2.put("/api/organization-portal/:organizationId/prea", requireAuth, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const { memberId } = req.body;
+      const user = req.user;
+      const isAdmin = ["admin", "super_admin", "staff"].includes(user.role);
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Only admin can designate PREA" });
+      }
+      const member = await storage.getMember(memberId);
+      if (!member || member.organizationId !== organizationId) {
+        return res.status(400).json({ message: "Member not found or doesn't belong to this organization" });
+      }
+      if (member.memberType !== "principal_real_estate_agent") {
+        return res.status(400).json({ message: "Member must be a Principal Real Estate Agent" });
+      }
+      const org = await storage.updateOrganizationPREA(organizationId, memberId);
+      res.json(org);
+    } catch (error) {
+      console.error("Update PREA error:", error);
+      res.status(500).json({ message: error.message || "Failed to update PREA" });
+    }
+  });
+  app2.get("/api/organization-portal/:organizationId/members", requireAuth, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const user = req.user;
+      const org = await storage.getOrganization(organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const members3 = await storage.getMembersByOrganization(organizationId);
+      const isMemberOfOrg = members3.some((m) => m.email === user.email);
+      const preaMember = org.preaMemberId ? await storage.getMember(org.preaMemberId) : null;
+      const isPREA = preaMember?.email === user.email;
+      const isAdmin = ["admin", "super_admin", "staff"].includes(user.role);
+      if (!isMemberOfOrg && !isPREA && !isAdmin) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      res.json(members3);
+    } catch (error) {
+      console.error("Get organization members error:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch members" });
+    }
+  });
+}
+var init_organizationPortalRoutes = __esm({
+  "server/organizationPortalRoutes.ts"() {
+    "use strict";
+    init_storage();
+    init_clerkAuth();
+  }
+});
+
 // server/services/idMigration.ts
 var idMigration_exports = {};
 __export(idMigration_exports, {
@@ -8928,6 +9299,8 @@ async function registerRoutes(app2) {
   setupAuth(app2);
   setupAuthRoutes(app2);
   registerApplicationRoutes(app2);
+  const { setupOrganizationPortalRoutes: setupOrganizationPortalRoutes2 } = await Promise.resolve().then(() => (init_organizationPortalRoutes(), organizationPortalRoutes_exports));
+  setupOrganizationPortalRoutes2(app2);
   app2.post("/api/applicants/register", async (req, res) => {
     try {
       const { firstName, surname, email } = req.body;
@@ -10982,6 +11355,61 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
+  app2.get("/api/admin/payments/recent", authorizeRole(FINANCE_ROLES), async (req, res) => {
+    try {
+      const payments2 = await storage.getRecentPayments(10);
+      res.json(payments2);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  app2.put("/api/admin/payments/:id/status", authorizeRole(FINANCE_ROLES), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      if (!status) {
+        return res.status(400).json({ message: "Status is required" });
+      }
+      const validStatuses = ["pending", "processing", "completed", "failed", "cancelled", "refunded"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+      const payment = await storage.updatePayment(id, { status });
+      res.json(payment);
+    } catch (error) {
+      console.error("Update payment status error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  app2.post("/api/admin/payments/record", authorizeRole(FINANCE_ROLES), async (req, res) => {
+    try {
+      const { amount, purpose, paymentMethod, reference, description, paidAt, memberId, organizationId } = req.body;
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Valid amount is required" });
+      }
+      if (!purpose) {
+        return res.status(400).json({ message: "Payment purpose is required" });
+      }
+      if (!paymentMethod) {
+        return res.status(400).json({ message: "Payment method is required" });
+      }
+      const payment = await storage.createPayment({
+        amount: amount.toString(),
+        purpose,
+        paymentMethod,
+        reference,
+        description,
+        status: "completed",
+        paidAt: paidAt ? new Date(paidAt) : /* @__PURE__ */ new Date(),
+        memberId,
+        organizationId
+      });
+      res.json(payment);
+    } catch (error) {
+      console.error("Record payment error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
   app2.get("/api/admin/settings", authorizeRole(ADMIN_ROLES), async (req, res) => {
     try {
       const settings = await storage.getSettings();
@@ -11349,8 +11777,8 @@ async function registerRoutes(app2) {
   app2.post("/api/sessions/:id/deactivate", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
-      const session4 = await storage.deactivateSession(id);
-      res.json(session4);
+      const session3 = await storage.deactivateSession(id);
+      res.json(session3);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

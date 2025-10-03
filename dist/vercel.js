@@ -1193,6 +1193,116 @@ var init_namingSeries = __esm({
   }
 });
 
+// server/neonSessionStore.ts
+import { Store } from "express-session";
+var NeonSessionStore;
+var init_neonSessionStore = __esm({
+  "server/neonSessionStore.ts"() {
+    "use strict";
+    init_db();
+    NeonSessionStore = class extends Store {
+      constructor() {
+        super();
+        this.createTableIfMissing();
+      }
+      async createTableIfMissing() {
+        try {
+          await sql2`
+        CREATE TABLE IF NOT EXISTS session (
+          sid VARCHAR NOT NULL PRIMARY KEY,
+          sess JSON NOT NULL,
+          expire TIMESTAMP(6) NOT NULL
+        )
+      `;
+          await sql2`CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire)`;
+          console.log("\u2705 Session table ready");
+        } catch (error) {
+          console.error("\u274C Failed to create session table:", error);
+        }
+      }
+      async get(sid, callback) {
+        try {
+          const result = await sql2`
+        SELECT sess FROM session WHERE sid = ${sid} AND expire >= NOW()
+      `;
+          if (result.length === 0) {
+            return callback(null, null);
+          }
+          callback(null, result[0].sess);
+        } catch (error) {
+          callback(error);
+        }
+      }
+      async set(sid, session3, callback) {
+        try {
+          const expire = this.getExpireTime(session3);
+          await sql2`
+        INSERT INTO session (sid, sess, expire)
+        VALUES (${sid}, ${JSON.stringify(session3)}, ${expire})
+        ON CONFLICT (sid)
+        DO UPDATE SET sess = ${JSON.stringify(session3)}, expire = ${expire}
+      `;
+          callback?.();
+        } catch (error) {
+          callback?.(error);
+        }
+      }
+      async destroy(sid, callback) {
+        try {
+          await sql2`DELETE FROM session WHERE sid = ${sid}`;
+          callback?.();
+        } catch (error) {
+          callback?.(error);
+        }
+      }
+      async touch(sid, session3, callback) {
+        try {
+          const expire = this.getExpireTime(session3);
+          await sql2`
+        UPDATE session SET expire = ${expire} WHERE sid = ${sid}
+      `;
+          callback?.();
+        } catch (error) {
+          callback?.(error);
+        }
+      }
+      async all(callback) {
+        try {
+          const result = await sql2`
+        SELECT sess FROM session WHERE expire >= NOW()
+      `;
+          const sessions = result.map((row) => row.sess);
+          callback(null, sessions);
+        } catch (error) {
+          callback(error);
+        }
+      }
+      async clear(callback) {
+        try {
+          await sql2`DELETE FROM session`;
+          callback?.();
+        } catch (error) {
+          callback?.(error);
+        }
+      }
+      async length(callback) {
+        try {
+          const result = await sql2`
+        SELECT COUNT(*) as count FROM session WHERE expire >= NOW()
+      `;
+          callback(null, Number(result[0].count));
+        } catch (error) {
+          callback(error);
+        }
+      }
+      getExpireTime(session3) {
+        const maxAge = session3.cookie?.maxAge || 864e5;
+        return new Date(Date.now() + maxAge);
+      }
+    };
+  }
+});
+
 // server/utils/applicantUtils.ts
 var applicantUtils_exports = {};
 __export(applicantUtils_exports, {
@@ -1216,8 +1326,6 @@ var init_applicantUtils = __esm({
 
 // server/storage.ts
 import { eq, and, desc, asc, sql as sql4 } from "drizzle-orm";
-import session from "express-session";
-import connectPg from "connect-pg-simple";
 async function migrateToHashedPasswords() {
   try {
     console.log("Checking for plaintext passwords to migrate...");
@@ -1706,18 +1814,19 @@ async function initializeDemoData() {
     console.error("Error initializing demo data:", error);
   }
 }
-var PostgresSessionStore, DatabaseStorage, storage;
+var DatabaseStorage, storage;
 var init_storage = __esm({
   "server/storage.ts"() {
     "use strict";
     init_schema();
     init_db();
+    init_neonSessionStore();
     init_auth();
-    PostgresSessionStore = connectPg(session);
     DatabaseStorage = class {
       sessionStore;
       migrationCompleted = false;
       constructor() {
+        this.sessionStore = new NeonSessionStore();
         this.runPasswordMigration();
       }
       async runPasswordMigration() {
@@ -2388,8 +2497,8 @@ var init_storage = __esm({
         return await db.select().from(applicationWorkflows).where(eq(applicationWorkflows.assignedTo, userId)).orderBy(desc(applicationWorkflows.createdAt));
       }
       // Session Management
-      async createUserSession(session4) {
-        const [newSession] = await db.insert(userSessions).values(session4).returning();
+      async createUserSession(session3) {
+        const [newSession] = await db.insert(userSessions).values(session3).returning();
         return newSession;
       }
       async getUserSessions(userId) {
@@ -2399,12 +2508,12 @@ var init_storage = __esm({
         )).orderBy(desc(userSessions.lastActivity));
       }
       async updateSessionActivity(sessionId) {
-        const [session4] = await db.update(userSessions).set({ lastActivity: /* @__PURE__ */ new Date() }).where(eq(userSessions.id, sessionId)).returning();
-        return session4;
+        const [session3] = await db.update(userSessions).set({ lastActivity: /* @__PURE__ */ new Date() }).where(eq(userSessions.id, sessionId)).returning();
+        return session3;
       }
       async deactivateSession(sessionId) {
-        const [session4] = await db.update(userSessions).set({ isActive: false }).where(eq(userSessions.id, sessionId)).returning();
-        return session4;
+        const [session3] = await db.update(userSessions).set({ isActive: false }).where(eq(userSessions.id, sessionId)).returning();
+        return session3;
       }
       async cleanupExpiredSessions() {
         const result = await db.update(userSessions).set({ isActive: false }).where(sql4`${userSessions.expiresAt} < NOW()`).returning({ id: userSessions.id });
@@ -3467,7 +3576,7 @@ __export(auth_exports, {
 });
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import session2 from "express-session";
+import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 async function hashPassword(password) {
@@ -3506,10 +3615,19 @@ function setupAuth(app2) {
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore
+    store: storage.sessionStore,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1e3,
+      // 24 hours
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax"
+    },
+    rolling: true
+    // Reset expiration on every request
   };
   app2.set("trust proxy", 1);
-  app2.use(session2(sessionSettings));
+  app2.use(session(sessionSettings));
   app2.use(passport.initialize());
   app2.use(passport.session());
   passport.use(
@@ -4152,9 +4270,9 @@ function sessionTimeoutMiddleware(req, res, next) {
   if (!req.isAuthenticated()) {
     return next();
   }
-  const session4 = req.session;
-  if (session4 && session4.cookie) {
-    const lastActivity = session4.cookie._expires ? new Date(session4.cookie._expires) : /* @__PURE__ */ new Date();
+  const session3 = req.session;
+  if (session3 && session3.cookie) {
+    const lastActivity = session3.cookie._expires ? new Date(session3.cookie._expires) : /* @__PURE__ */ new Date();
     const remaining = SessionService.getTimeoutRemaining(lastActivity);
     res.setHeader("X-Session-Timeout-Remaining", remaining.toString());
     if (remaining < 5) {
@@ -4249,21 +4367,21 @@ var init_sessionService = __esm({
        * Validate and update session
        */
       static async validateSession(sessionToken) {
-        const [session4] = await db.select().from(userSessions).where(
+        const [session3] = await db.select().from(userSessions).where(
           and3(
             eq3(userSessions.sessionToken, sessionToken),
             eq3(userSessions.isActive, true)
           )
         ).limit(1);
-        if (!session4) {
+        if (!session3) {
           return { valid: false, reason: "Session not found" };
         }
         const now = /* @__PURE__ */ new Date();
-        if (new Date(session4.expiresAt) < now) {
+        if (new Date(session3.expiresAt) < now) {
           await this.invalidateSession(sessionToken);
           return { valid: false, reason: "Session expired (absolute timeout)" };
         }
-        const lastActivity = new Date(session4.lastActivityAt);
+        const lastActivity = new Date(session3.lastActivityAt);
         const idleMinutes = (now.getTime() - lastActivity.getTime()) / (1e3 * 60);
         if (idleMinutes > SESSION_CONFIG.IDLE_TIMEOUT_MINUTES) {
           await this.invalidateSession(sessionToken);
@@ -4275,7 +4393,7 @@ var init_sessionService = __esm({
         await db.update(userSessions).set({
           lastActivityAt: now
         }).where(eq3(userSessions.sessionToken, sessionToken));
-        return { valid: true, userId: session4.userId };
+        return { valid: true, userId: session3.userId };
       }
       /**
        * Invalidate a session (logout)
@@ -4727,7 +4845,7 @@ Estate Agents Council of Zimbabwe
 // server/auth/authRoutes.ts
 import passport2 from "passport";
 import { Strategy as LocalStrategy2 } from "passport-local";
-import session3 from "express-session";
+import session2 from "express-session";
 import { eq as eq4 } from "drizzle-orm";
 function setupAuthRoutes(app2) {
   const sessionSettings = {
@@ -4745,7 +4863,7 @@ function setupAuthRoutes(app2) {
     // Reset expiry on every request
   };
   app2.set("trust proxy", 1);
-  app2.use(session3(sessionSettings));
+  app2.use(session2(sessionSettings));
   app2.use(passport2.initialize());
   app2.use(passport2.session());
   app2.use(sessionTimeoutMiddleware);
@@ -11652,8 +11770,8 @@ async function registerRoutes(app2) {
   app2.post("/api/sessions/:id/deactivate", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
-      const session4 = await storage.deactivateSession(id);
-      res.json(session4);
+      const session3 = await storage.deactivateSession(id);
+      res.json(session3);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
