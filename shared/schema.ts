@@ -111,6 +111,7 @@ export const organizations = pgTable("organizations", {
   email: text("email").notNull(),
   phone: text("phone"),
   physicalAddress: text("physical_address"),
+  preaMemberId: varchar("prea_member_id"), // Principal Real Estate Agent - references members.id
   status: membershipStatusEnum("status").default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
@@ -132,6 +133,22 @@ export const members = pgTable("members", {
   joinedDate: timestamp("joined_date"),
   expiryDate: timestamp("expiry_date"),
   nationalId: text("national_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Directors table - for organization directors/board members
+export const directors = pgTable("directors", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  nationalId: text("national_id"),
+  email: text("email"),
+  phone: text("phone"),
+  position: text("position"), // e.g., "Chairman", "Director", "Secretary"
+  appointedDate: timestamp("appointed_date"),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
@@ -560,8 +577,13 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   createdUsers: many(users)
 }));
 
-export const organizationsRelations = relations(organizations, ({ many }) => ({
+export const organizationsRelations = relations(organizations, ({ one, many }) => ({
   members: many(members),
+  directors: many(directors),
+  preaMember: one(members, {
+    fields: [organizations.preaMemberId],
+    references: [members.id]
+  }),
   applications: many(memberApplications),
   cases: many(cases),
   payments: many(payments),
@@ -583,6 +605,13 @@ export const membersRelations = relations(members, ({ one, many }) => ({
 }));
 
 // memberApplications is now an alias to individualApplications, so we use individualApplicationsRelations instead
+
+export const directorsRelations = relations(directors, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [directors.organizationId],
+    references: [organizations.id]
+  })
+}));
 
 export const casesRelations = relations(cases, ({ one }) => ({
   member: one(members, {
@@ -1007,6 +1036,9 @@ export type InsertMember = z.infer<typeof insertMemberSchema>;
 
 export type Organization = typeof organizations.$inferSelect;
 export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+
+export type Director = typeof directors.$inferSelect;
+export type InsertDirector = typeof directors.$inferInsert;
 
 export type MemberApplication = typeof memberApplications.$inferSelect;
 export type InsertMemberApplication = z.infer<typeof insertMemberApplicationSchema>;

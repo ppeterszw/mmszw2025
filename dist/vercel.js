@@ -41,6 +41,8 @@ __export(schema_exports, {
   cpdActivities: () => cpdActivities,
   cpdActivitiesRelations: () => cpdActivitiesRelations,
   decisionEnum: () => decisionEnum,
+  directors: () => directors,
+  directorsRelations: () => directorsRelations,
   documentStatusEnum: () => documentStatusEnum,
   documentTypeEnum: () => documentTypeEnum,
   documents: () => documents,
@@ -131,7 +133,7 @@ import { pgTable, text, varchar, timestamp, integer, boolean, decimal, pgEnum } 
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var userRoleEnum, userStatusEnum, memberTypeEnum, organizationTypeEnum, membershipStatusEnum, caseStatusEnum, casePriorityEnum, caseTypeEnum, eventTypeEnum, activityTypeEnum, renewalStatusEnum, paymentStatusEnum, paymentMethodEnum, applicationStatusEnum, applicationStageEnum, applicationTypeEnum, documentStatusEnum, documentTypeEnum, decisionEnum, educationLevelEnum, notificationTypeEnum, notificationStatusEnum, applicantStatusEnum, users, applicants, organizationApplicants, organizations, members, individualApplications, memberApplications, organizationApplications, uploadedDocuments, statusHistory, registryDecisions, namingSeriesCounters, appLoginTokens, cases, events, eventRegistrations, payments, cpdActivities, memberRenewals, memberActivities, documents, userSessions, applicationWorkflows, paymentInstallments, notifications, userPermissions, auditLogs, badgeTypeEnum, badgeDifficultyEnum, achievementBadges, memberAchievementBadges, systemSettings, usersRelations, organizationsRelations, membersRelations, casesRelations, eventsRelations, eventRegistrationsRelations, paymentsRelations, documentsRelations, cpdActivitiesRelations, memberRenewalsRelations, memberActivitiesRelations, userSessionsRelations, applicationWorkflowsRelations, paymentInstallmentsRelations, notificationsRelations, userPermissionsRelations, auditLogsRelations, individualApplicationsRelations, organizationApplicationsRelations, uploadedDocumentsRelations, statusHistoryRelations, registryDecisionsRelations, insertUserSchema, insertApplicantSchema, insertOrganizationApplicantSchema, insertMemberSchema, insertOrganizationSchema, insertMemberApplicationSchema, insertCaseSchema, casesQuerySchema, caseUpdateSchema, caseAssignmentSchema, bulkCaseAssignmentSchema, bulkCaseResolutionSchema, bulkCaseActionSchema, insertEventSchema, insertPaymentSchema, insertDocumentSchema, insertCpdActivitySchema, insertMemberRenewalSchema, insertMemberActivitySchema, insertUserSessionSchema, insertApplicationWorkflowSchema, insertPaymentInstallmentSchema, insertNotificationSchema, insertUserPermissionSchema, insertAuditLogSchema, insertSystemSettingsSchema, insertIndividualApplicationSchema, insertOrganizationApplicationSchema, insertUploadedDocumentSchema, insertStatusHistorySchema, insertRegistryDecisionSchema, insertNamingSeriesCounterSchema, insertAppLoginTokenSchema, insertAchievementBadgeSchema, insertMemberAchievementBadgeSchema, businessExperienceItemSchema, businessExperienceSchema;
+var userRoleEnum, userStatusEnum, memberTypeEnum, organizationTypeEnum, membershipStatusEnum, caseStatusEnum, casePriorityEnum, caseTypeEnum, eventTypeEnum, activityTypeEnum, renewalStatusEnum, paymentStatusEnum, paymentMethodEnum, applicationStatusEnum, applicationStageEnum, applicationTypeEnum, documentStatusEnum, documentTypeEnum, decisionEnum, educationLevelEnum, notificationTypeEnum, notificationStatusEnum, applicantStatusEnum, users, applicants, organizationApplicants, organizations, members, directors, individualApplications, memberApplications, organizationApplications, uploadedDocuments, statusHistory, registryDecisions, namingSeriesCounters, appLoginTokens, cases, events, eventRegistrations, payments, cpdActivities, memberRenewals, memberActivities, documents, userSessions, applicationWorkflows, paymentInstallments, notifications, userPermissions, auditLogs, badgeTypeEnum, badgeDifficultyEnum, achievementBadges, memberAchievementBadges, systemSettings, usersRelations, organizationsRelations, membersRelations, directorsRelations, casesRelations, eventsRelations, eventRegistrationsRelations, paymentsRelations, documentsRelations, cpdActivitiesRelations, memberRenewalsRelations, memberActivitiesRelations, userSessionsRelations, applicationWorkflowsRelations, paymentInstallmentsRelations, notificationsRelations, userPermissionsRelations, auditLogsRelations, individualApplicationsRelations, organizationApplicationsRelations, uploadedDocumentsRelations, statusHistoryRelations, registryDecisionsRelations, insertUserSchema, insertApplicantSchema, insertOrganizationApplicantSchema, insertMemberSchema, insertOrganizationSchema, insertMemberApplicationSchema, insertCaseSchema, casesQuerySchema, caseUpdateSchema, caseAssignmentSchema, bulkCaseAssignmentSchema, bulkCaseResolutionSchema, bulkCaseActionSchema, insertEventSchema, insertPaymentSchema, insertDocumentSchema, insertCpdActivitySchema, insertMemberRenewalSchema, insertMemberActivitySchema, insertUserSessionSchema, insertApplicationWorkflowSchema, insertPaymentInstallmentSchema, insertNotificationSchema, insertUserPermissionSchema, insertAuditLogSchema, insertSystemSettingsSchema, insertIndividualApplicationSchema, insertOrganizationApplicationSchema, insertUploadedDocumentSchema, insertStatusHistorySchema, insertRegistryDecisionSchema, insertNamingSeriesCounterSchema, insertAppLoginTokenSchema, insertAchievementBadgeSchema, insertMemberAchievementBadgeSchema, businessExperienceItemSchema, businessExperienceSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -249,6 +251,8 @@ var init_schema = __esm({
       email: text("email").notNull(),
       phone: text("phone"),
       physicalAddress: text("physical_address"),
+      preaMemberId: varchar("prea_member_id"),
+      // Principal Real Estate Agent - references members.id
       status: membershipStatusEnum("status").default("pending"),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
@@ -268,6 +272,21 @@ var init_schema = __esm({
       joinedDate: timestamp("joined_date"),
       expiryDate: timestamp("expiry_date"),
       nationalId: text("national_id"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    directors = pgTable("directors", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      organizationId: varchar("organization_id").notNull(),
+      firstName: text("first_name").notNull(),
+      lastName: text("last_name").notNull(),
+      nationalId: text("national_id"),
+      email: text("email"),
+      phone: text("phone"),
+      position: text("position"),
+      // e.g., "Chairman", "Director", "Secretary"
+      appointedDate: timestamp("appointed_date"),
+      isActive: boolean("is_active").default(true),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -667,8 +686,13 @@ var init_schema = __esm({
       }),
       createdUsers: many(users)
     }));
-    organizationsRelations = relations(organizations, ({ many }) => ({
+    organizationsRelations = relations(organizations, ({ one, many }) => ({
       members: many(members),
+      directors: many(directors),
+      preaMember: one(members, {
+        fields: [organizations.preaMemberId],
+        references: [members.id]
+      }),
       applications: many(memberApplications),
       cases: many(cases),
       payments: many(payments),
@@ -686,6 +710,12 @@ var init_schema = __esm({
       cpdActivities: many(cpdActivities),
       renewals: many(memberRenewals),
       activities: many(memberActivities)
+    }));
+    directorsRelations = relations(directors, ({ one }) => ({
+      organization: one(organizations, {
+        fields: [directors.organizationId],
+        references: [organizations.id]
+      })
     }));
     casesRelations = relations(cases, ({ one }) => ({
       member: one(members, {
@@ -1919,6 +1949,45 @@ var init_storage = __esm({
       }
       async getAllOrganizations() {
         return await db.select().from(organizations).orderBy(desc(organizations.createdAt));
+      }
+      async getOrganizationByMemberId(memberId) {
+        const [org] = await db.select().from(organizations).where(eq(organizations.preaMemberId, memberId));
+        return org || void 0;
+      }
+      async getOrganizationWithDetails(organizationId) {
+        const [organization] = await db.select().from(organizations).where(eq(organizations.id, organizationId));
+        if (!organization) return void 0;
+        const orgDirectors = await db.select().from(directors).where(and(eq(directors.organizationId, organizationId), eq(directors.isActive, true))).orderBy(asc(directors.lastName));
+        const orgMembers = await db.select().from(members).where(eq(members.organizationId, organizationId)).orderBy(asc(members.lastName));
+        const preaMember = organization.preaMemberId ? await db.select().from(members).where(eq(members.id, organization.preaMemberId)).then((rows) => rows[0]) : null;
+        return {
+          ...organization,
+          directors: orgDirectors,
+          members: orgMembers,
+          preaMember
+        };
+      }
+      // Director operations
+      async getDirectorsByOrganization(organizationId) {
+        return await db.select().from(directors).where(and(eq(directors.organizationId, organizationId), eq(directors.isActive, true))).orderBy(asc(directors.lastName));
+      }
+      async createDirector(insertDirector) {
+        const [director] = await db.insert(directors).values(insertDirector).returning();
+        return director;
+      }
+      async updateDirector(id, updates) {
+        const [director] = await db.update(directors).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(directors.id, id)).returning();
+        return director;
+      }
+      async deleteDirector(id) {
+        await db.update(directors).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(directors.id, id));
+      }
+      async getMembersByOrganization(organizationId) {
+        return await db.select().from(members).where(eq(members.organizationId, organizationId)).orderBy(asc(members.lastName));
+      }
+      async updateOrganizationPREA(organizationId, memberId) {
+        const [org] = await db.update(organizations).set({ preaMemberId: memberId, updatedAt: /* @__PURE__ */ new Date() }).where(eq(organizations.id, organizationId)).returning();
+        return org;
       }
       // Application operations
       async getMemberApplication(id) {
@@ -8564,6 +8633,186 @@ var init_publicRoutes = __esm({
   }
 });
 
+// server/organizationPortalRoutes.ts
+var organizationPortalRoutes_exports = {};
+__export(organizationPortalRoutes_exports, {
+  setupOrganizationPortalRoutes: () => setupOrganizationPortalRoutes
+});
+function setupOrganizationPortalRoutes(app2) {
+  app2.get("/api/organization-portal/:organizationId", requireAuth, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const orgDetails = await storage.getOrganizationWithDetails(organizationId);
+      if (!orgDetails) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const isMemberOfOrg = orgDetails.members.some((m) => m.email === user.email);
+      const isPREA = orgDetails.preaMember?.email === user.email;
+      if (!isMemberOfOrg && !isPREA && !["admin", "super_admin", "staff"].includes(user.role)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      res.json({
+        ...orgDetails,
+        isPREA,
+        canManage: isPREA || ["admin", "super_admin", "staff"].includes(user.role)
+      });
+    } catch (error) {
+      console.error("Get organization details error:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch organization details" });
+    }
+  });
+  app2.get("/api/organization-portal/member/:email", requireAuth, async (req, res) => {
+    try {
+      const { email } = req.params;
+      const user = req.user;
+      if (user.email !== email && !["admin", "super_admin", "staff"].includes(user.role)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      const member = await storage.getMemberByEmail(email);
+      if (!member || !member.organizationId) {
+        return res.status(404).json({ message: "No organization found for this member" });
+      }
+      const orgDetails = await storage.getOrganizationWithDetails(member.organizationId);
+      if (!orgDetails) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const isPREA = orgDetails.preaMember?.email === email;
+      res.json({
+        ...orgDetails,
+        isPREA,
+        canManage: isPREA || ["admin", "super_admin", "staff"].includes(user.role)
+      });
+    } catch (error) {
+      console.error("Get organization by member error:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch organization" });
+    }
+  });
+  app2.post("/api/organization-portal/:organizationId/directors", requireAuth, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const directorData = req.body;
+      const user = req.user;
+      const org = await storage.getOrganization(organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const preaMember = org.preaMemberId ? await storage.getMember(org.preaMemberId) : null;
+      const isPREA = preaMember?.email === user.email;
+      const isAdmin = ["admin", "super_admin", "staff"].includes(user.role);
+      if (!isPREA && !isAdmin) {
+        return res.status(403).json({ message: "Only PREA or admin can add directors" });
+      }
+      const director = await storage.createDirector({
+        ...directorData,
+        organizationId
+      });
+      res.json(director);
+    } catch (error) {
+      console.error("Add director error:", error);
+      res.status(500).json({ message: error.message || "Failed to add director" });
+    }
+  });
+  app2.put("/api/organization-portal/:organizationId/directors/:directorId", requireAuth, async (req, res) => {
+    try {
+      const { organizationId, directorId } = req.params;
+      const updates = req.body;
+      const user = req.user;
+      const org = await storage.getOrganization(organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const preaMember = org.preaMemberId ? await storage.getMember(org.preaMemberId) : null;
+      const isPREA = preaMember?.email === user.email;
+      const isAdmin = ["admin", "super_admin", "staff"].includes(user.role);
+      if (!isPREA && !isAdmin) {
+        return res.status(403).json({ message: "Only PREA or admin can update directors" });
+      }
+      const director = await storage.updateDirector(directorId, updates);
+      res.json(director);
+    } catch (error) {
+      console.error("Update director error:", error);
+      res.status(500).json({ message: error.message || "Failed to update director" });
+    }
+  });
+  app2.delete("/api/organization-portal/:organizationId/directors/:directorId", requireAuth, async (req, res) => {
+    try {
+      const { organizationId, directorId } = req.params;
+      const user = req.user;
+      const org = await storage.getOrganization(organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const preaMember = org.preaMemberId ? await storage.getMember(org.preaMemberId) : null;
+      const isPREA = preaMember?.email === user.email;
+      const isAdmin = ["admin", "super_admin", "staff"].includes(user.role);
+      if (!isPREA && !isAdmin) {
+        return res.status(403).json({ message: "Only PREA or admin can delete directors" });
+      }
+      await storage.deleteDirector(directorId);
+      res.json({ message: "Director deleted successfully" });
+    } catch (error) {
+      console.error("Delete director error:", error);
+      res.status(500).json({ message: error.message || "Failed to delete director" });
+    }
+  });
+  app2.put("/api/organization-portal/:organizationId/prea", requireAuth, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const { memberId } = req.body;
+      const user = req.user;
+      const isAdmin = ["admin", "super_admin", "staff"].includes(user.role);
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Only admin can designate PREA" });
+      }
+      const member = await storage.getMember(memberId);
+      if (!member || member.organizationId !== organizationId) {
+        return res.status(400).json({ message: "Member not found or doesn't belong to this organization" });
+      }
+      if (member.memberType !== "principal_real_estate_agent") {
+        return res.status(400).json({ message: "Member must be a Principal Real Estate Agent" });
+      }
+      const org = await storage.updateOrganizationPREA(organizationId, memberId);
+      res.json(org);
+    } catch (error) {
+      console.error("Update PREA error:", error);
+      res.status(500).json({ message: error.message || "Failed to update PREA" });
+    }
+  });
+  app2.get("/api/organization-portal/:organizationId/members", requireAuth, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      const user = req.user;
+      const org = await storage.getOrganization(organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      const members3 = await storage.getMembersByOrganization(organizationId);
+      const isMemberOfOrg = members3.some((m) => m.email === user.email);
+      const preaMember = org.preaMemberId ? await storage.getMember(org.preaMemberId) : null;
+      const isPREA = preaMember?.email === user.email;
+      const isAdmin = ["admin", "super_admin", "staff"].includes(user.role);
+      if (!isMemberOfOrg && !isPREA && !isAdmin) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      res.json(members3);
+    } catch (error) {
+      console.error("Get organization members error:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch members" });
+    }
+  });
+}
+var init_organizationPortalRoutes = __esm({
+  "server/organizationPortalRoutes.ts"() {
+    "use strict";
+    init_storage();
+    init_clerkAuth();
+  }
+});
+
 // server/services/idMigration.ts
 var idMigration_exports = {};
 __export(idMigration_exports, {
@@ -8913,6 +9162,8 @@ async function registerRoutes(app2) {
   setupAuth(app2);
   setupAuthRoutes(app2);
   registerApplicationRoutes(app2);
+  const { setupOrganizationPortalRoutes: setupOrganizationPortalRoutes2 } = await Promise.resolve().then(() => (init_organizationPortalRoutes(), organizationPortalRoutes_exports));
+  setupOrganizationPortalRoutes2(app2);
   app2.post("/api/applicants/register", async (req, res) => {
     try {
       const { firstName, surname, email } = req.body;

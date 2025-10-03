@@ -1,420 +1,485 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ModernModal } from "@/components/ui/modern-modal";
 import { OrganizationHeader } from "@/components/OrganizationHeader";
 import { StatsCard } from "@/components/ui/stats-card";
-import { BulkMemberImportDialog } from "@/components/BulkMemberImportDialog";
-import { 
-  Building2, Users, FileText, Download, Settings, 
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Building2, Users, FileText, Download, Settings,
   User, Calendar, DollarSign, Shield, TrendingUp,
-  Clock, Award, AlertTriangle, CheckCircle
+  Clock, Award, AlertTriangle, CheckCircle, Plus,
+  Edit, Trash2, UserCheck, Mail, Phone, MapPin
 } from "lucide-react";
-import { FormFooter } from "@/components/ui/form-footer";
-import type { Organization, Member } from "@shared/schema";
+import type { Organization, Member, Director } from "@shared/schema";
+
+interface OrganizationWithDetails extends Organization {
+  directors: Director[];
+  members: Member[];
+  preaMember: Member | null;
+  isPREA: boolean;
+  canManage: boolean;
+}
 
 export default function OrganizationPortal() {
-  const { user } = useAuth();
-
-  const { data: organization } = useQuery<Organization>({
-    queryKey: ["/api/organizations/current"],
-    enabled: !!user,
+  const { user, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [addDirectorModalOpen, setAddDirectorModalOpen] = useState(false);
+  const [editDirectorModalOpen, setEditDirectorModalOpen] = useState(false);
+  const [selectedDirector, setSelectedDirector] = useState<Director | null>(null);
+  const [directorForm, setDirectorForm] = useState({
+    firstName: "",
+    lastName: "",
+    nationalId: "",
+    email: "",
+    phone: "",
+    position: "",
+    appointedDate: ""
   });
 
-  const { data: organizationMembers = [] } = useQuery<Member[]>({
-    queryKey: ["/api/organizations", organization?.id, "members"],
-    enabled: !!organization?.id,
+  // Redirect to login if not authenticated
+  if (!authLoading && !user) {
+    setLocation("/auth");
+    return null;
+  }
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">Loading...</div>
+    </div>;
+  }
+
+  // Query organization details by member email
+  const { data: organization, isLoading, refetch } = useQuery<OrganizationWithDetails>({
+    queryKey: ["/api/organization-portal/member", user?.email],
+    enabled: !!user?.email,
   });
 
+  // Add Director mutation
+  const addDirectorMutation = useMutation({
+    mutationFn: async (data: typeof directorForm) => {
+      if (!organization?.id) throw new Error("Organization ID not found");
+      return apiRequest("POST", `/api/organization-portal/${organization.id}/directors`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organization-portal/member", user?.email] });
+      toast({
+        title: "Success",
+        description: "Director added successfully"
+      });
+      setAddDirectorModalOpen(false);
+      setDirectorForm({
+        firstName: "",
+        lastName: "",
+        nationalId: "",
+        email: "",
+        phone: "",
+        position: "",
+        appointedDate: ""
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add director",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Delete Director mutation
+  const deleteDirectorMutation = useMutation({
+    mutationFn: async (directorId: string) => {
+      if (!organization?.id) throw new Error("Organization ID not found");
+      return apiRequest("DELETE", `/api/organization-portal/${organization.id}/directors/${directorId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organization-portal/member", user?.email] });
+      toast({
+        title: "Success",
+        description: "Director removed successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove director",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleAddDirector = () => {
+    addDirectorMutation.mutate(directorForm);
+  };
+
+  const handleDeleteDirector = (directorId: string) => {
+    if (confirm("Are you sure you want to remove this director?")) {
+      deleteDirectorMutation.mutate(directorId);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">Loading organization details...</div>
+    </div>;
+  }
+
+  if (!organization) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="p-8 max-w-md">
+          <CardHeader>
+            <CardTitle>No Organization Found</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              You are not currently associated with any organization.
+            </p>
+            <Button onClick={() => setLocation("/member-portal")}>
+              Go to Member Portal
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <OrganizationHeader currentPage="dashboard" title="EACZ Organization Portal" subtitle="Manage your organization's registration and members" />
-      
+      <OrganizationHeader
+        currentPage="dashboard"
+        title="EACZ Organization Portal"
+        subtitle={organization.name}
+      />
+
       <div className="p-6">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            {organization?.name || "Organization Dashboard"}
-          </h1>
-          <p className="text-muted-foreground">Manage your organization's registration and members</p>
+        {/* Header with PREA Badge */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {organization.name}
+            </h1>
+            <p className="text-muted-foreground">{organization.businessType?.replace(/_/g, ' ')}</p>
+          </div>
+          {organization.isPREA && (
+            <Badge className="bg-green-600 text-white px-4 py-2">
+              <UserCheck className="w-4 h-4 mr-2" />
+              Principal Real Estate Agent
+            </Badge>
+          )}
         </div>
 
-        {/* Organization Info Card */}
-        <Card className="mb-8 bg-white/95 backdrop-blur border-white/20 shadow-lg">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl" data-testid="org-name">
-                  {organization?.name}
-                </CardTitle>
-                <p className="text-muted-foreground" data-testid="org-type">
-                  {organization?.type?.replace(/_/g, ' ')}
-                </p>
-              </div>
-              <Badge variant={organization?.membershipStatus === 'active' ? 'default' : 'secondary'}>
-                {organization?.membershipStatus}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="bg-muted">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="directors">Directors</TabsTrigger>
+            <TabsTrigger value="members">Members/Agents</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Organization Info Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Organization Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Registration Number</p>
+                    <p className="font-medium">{organization.registrationNumber || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Status</p>
+                    <Badge variant={organization.status === 'active' ? 'default' : 'secondary'}>
+                      {organization.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      <Mail className="w-4 h-4 inline mr-2" />
+                      Email
+                    </p>
+                    <p className="font-medium">{organization.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      <Phone className="w-4 h-4 inline mr-2" />
+                      Phone
+                    </p>
+                    <p className="font-medium">{organization.phone || 'N/A'}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      <MapPin className="w-4 h-4 inline mr-2" />
+                      Physical Address
+                    </p>
+                    <p className="font-medium">{organization.physicalAddress || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Principal Real Estate Agent</p>
+                    <p className="font-medium">
+                      {organization.preaMember
+                        ? `${organization.preaMember.firstName} ${organization.preaMember.lastName}`
+                        : 'Not Assigned'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Registration Number</p>
-                <p className="font-medium" data-testid="org-registration-number">
-                  {organization?.registrationNumber}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Registration Date</p>
-                <p className="font-medium" data-testid="org-registration-date">
-                  {organization?.registrationDate ? 
-                    new Date(organization.registrationDate).toLocaleDateString() : 'N/A'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Expiry Date</p>
-                <p className="font-medium" data-testid="org-expiry-date">
-                  {organization?.expiryDate ? 
-                    new Date(organization.expiryDate).toLocaleDateString() : 'N/A'}
-                </p>
-              </div>
+              <StatsCard
+                icon={Users}
+                title="Total Members"
+                value={organization.members.length.toString()}
+                iconColor="text-blue-600"
+                iconBg="bg-blue-100"
+              />
+              <StatsCard
+                icon={User}
+                title="Directors"
+                value={organization.directors.length.toString()}
+                iconColor="text-green-600"
+                iconBg="bg-green-100"
+              />
+              <StatsCard
+                icon={CheckCircle}
+                title="Status"
+                value={organization.status}
+                iconColor="text-purple-600"
+                iconBg="bg-purple-100"
+              />
             </div>
-          </CardContent>
-        </Card>
+          </TabsContent>
 
-        {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100">Total Members</p>
-                  <p className="text-3xl font-bold">{organizationMembers.length}</p>
-                </div>
-                <Users className="w-8 h-8" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100">Principal Agent</p>
-                  <p className="text-lg font-bold">{organization?.principalAgentId ? "Assigned" : "Not Set"}</p>
-                </div>
-                <Shield className="w-8 h-8" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100">Status</p>
-                  <p className="text-lg font-bold">{organization?.membershipStatus === 'active' ? "Active" : "Pending"}</p>
-                </div>
-                <FileText className="w-8 h-8" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100">Annual Fee</p>
-                  <p className="text-2xl font-bold">${organization?.annualFee || '0'}</p>
-                </div>
-                <DollarSign className="w-8 h-8" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Additional Information Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {/* Compliance Status */}
-          <Card className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-emerald-100">Compliance</p>
-                  <p className="text-lg font-bold">Up to Date</p>
-                </div>
-                <CheckCircle className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Active Agents */}
-          <Card className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-indigo-100">Active Agents</p>
-                  <p className="text-lg font-bold">{organizationMembers.filter(m => m.membershipStatus === 'active').length}</p>
-                </div>
-                <Award className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Next Renewal */}
-          <Card className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-amber-100">Next Renewal</p>
-                  <p className="text-lg font-bold">{organization?.expiryDate ? new Date(organization.expiryDate).toLocaleDateString() : 'N/A'}</p>
-                </div>
-                <Clock className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Enhanced Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Organization Members */}
-          <Card className="bg-white/95 backdrop-blur border-white/20 shadow-lg">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-gray-900">Organization Members ({organizationMembers.length})</CardTitle>
-                <Button 
-                  variant="link" 
-                  size="sm"
-                  onClick={() => window.location.href = '/organization/agents'}
-                  data-testid="link-view-all-members"
-                  className="text-blue-600 hover:text-blue-700"
-                >
-                  View All →
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {organizationMembers.length > 0 ? (
-                <div className="space-y-3">
-                  {organizationMembers.slice(0, 5).map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-sm font-medium text-white">
-                            {member.firstName?.[0]}{member.lastName?.[0]}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900" data-testid={`member-name-${member.id}`}>
-                            {member.firstName} {member.lastName}
-                          </p>
-                          <p className="text-sm text-gray-600" data-testid={`member-type-${member.id}`}>
-                            {member.memberType?.replace(/_/g, ' ') || 'Agent'}
-                          </p>
-                          <p className="text-xs text-blue-600">
-                            Member: {member.membershipNumber}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge 
-                          variant={member.membershipStatus === 'active' ? 'default' : 'secondary'}
-                          className={member.membershipStatus === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
-                        >
-                          {member.membershipStatus}
-                        </Badge>
-                        <p className="text-xs text-gray-500 mt-1">
-                          CPD: {member.cpdPoints || 0} pts
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {organizationMembers.length > 5 && (
-                    <div className="text-center pt-2">
-                      <p className="text-sm text-gray-500">
-                        +{organizationMembers.length - 5} more members
-                      </p>
-                    </div>
+          {/* Directors Tab */}
+          <TabsContent value="directors" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Directors</CardTitle>
+                  {organization.canManage && (
+                    <Button onClick={() => setAddDirectorModalOpen(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Director
+                    </Button>
                   )}
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 font-medium">No members found</p>
-                  <p className="text-gray-500 text-sm">Members will appear here once they join your organization</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Enhanced Quick Actions */}
-          <Card className="bg-white/95 backdrop-blur border-white/20 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Button 
-                  className="w-full justify-start gradient-button text-white border-0"
-                  onClick={() => window.location.href = '/organization/certificate'}
-                  data-testid="button-download-certificate"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Certificate
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start border-blue-200 text-blue-700 hover:bg-blue-50"
-                  onClick={() => window.location.href = '/organization/profile'}
-                  data-testid="button-update-principal-agent"
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  Update Principal Agent
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start border-purple-200 text-purple-700 hover:bg-purple-50"
-                  onClick={() => window.location.href = '/organization/documents'}
-                  data-testid="button-upload-documents"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Manage Documents
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start border-green-200 text-green-700 hover:bg-green-50"
-                  onClick={() => window.location.href = '/organization/renewals'}
-                  data-testid="button-renew-membership"
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Renew Membership
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start border-orange-200 text-orange-700 hover:bg-orange-50"
-                  onClick={() => window.location.href = '/organization/payments'}
-                  data-testid="button-view-payments"
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  View Payment History
-                </Button>
-                
-                <BulkMemberImportDialog 
-                  endpoint="/api/organizations/current/members/bulk-import"
-                  invalidateKeys={["/api/organizations/current/members"]}
-                  onSuccess={() => {}} 
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Analytics and Performance Dashboard */}
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Organization Analytics</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Member Performance */}
-            <Card className="bg-white/95 backdrop-blur border-white/20 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
-                  Member Performance
-                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-gray-600">Average CPD Points</p>
-                      <p className="text-lg font-semibold text-blue-700">
-                        {organizationMembers.length > 0 
-                          ? Math.round(organizationMembers.reduce((sum, m) => sum + (m.cpdPoints || 0), 0) / organizationMembers.length)
-                          : 0}
-                      </p>
-                    </div>
-                    <Award className="w-6 h-6 text-blue-600" />
+                {organization.directors.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No directors registered</p>
+                ) : (
+                  <div className="space-y-4">
+                    {organization.directors.map((director) => (
+                      <Card key={director.id} className="border">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-semibold">{director.firstName} {director.lastName}</h3>
+                              <p className="text-sm text-muted-foreground">{director.position || 'Director'}</p>
+                              <div className="mt-2 space-y-1 text-sm">
+                                {director.nationalId && (
+                                  <p className="text-muted-foreground">ID: {director.nationalId}</p>
+                                )}
+                                {director.email && (
+                                  <p className="text-muted-foreground">
+                                    <Mail className="w-3 h-3 inline mr-1" />
+                                    {director.email}
+                                  </p>
+                                )}
+                                {director.phone && (
+                                  <p className="text-muted-foreground">
+                                    <Phone className="w-3 h-3 inline mr-1" />
+                                    {director.phone}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {organization.canManage && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteDirector(director.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-gray-600">Active Members Rate</p>
-                      <p className="text-lg font-semibold text-green-700">
-                        {organizationMembers.length > 0 
-                          ? Math.round((organizationMembers.filter(m => m.membershipStatus === 'active').length / organizationMembers.length) * 100)
-                          : 0}%
-                      </p>
-                    </div>
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-gray-600">Principal Agents</p>
-                      <p className="text-lg font-semibold text-purple-700">
-                        {organizationMembers.filter(m => m.memberType === 'principal_real_estate_agent').length}
-                      </p>
-                    </div>
-                    <Shield className="w-6 h-6 text-purple-600" />
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Organization Health */}
-            <Card className="bg-white/95 backdrop-blur border-white/20 shadow-lg">
+          {/* Members Tab */}
+          <TabsContent value="members" className="space-y-6">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center">
-                  <Shield className="w-5 h-5 mr-2 text-green-600" />
-                  Organization Health
-                </CardTitle>
+                <CardTitle>Registered Members/Agents</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-gray-600">Compliance Status</p>
-                      <p className="text-lg font-semibold text-green-700">Excellent</p>
-                    </div>
-                    <CheckCircle className="w-6 h-6 text-green-600" />
+                {organization.members.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No members registered</p>
+                ) : (
+                  <div className="space-y-4">
+                    {organization.members.map((member) => (
+                      <Card key={member.id} className="border">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold">{member.firstName} {member.lastName}</h3>
+                                {member.id === organization.preaMemberId && (
+                                  <Badge variant="default" className="text-xs">PREA</Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {member.memberType?.replace(/_/g, ' ')}
+                              </p>
+                              <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <p className="text-muted-foreground">Membership #</p>
+                                  <p className="font-medium">{member.membershipNumber || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Status</p>
+                                  <Badge variant={member.membershipStatus === 'active' ? 'default' : 'secondary'}>
+                                    {member.membershipStatus}
+                                  </Badge>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Email</p>
+                                  <p className="font-medium text-xs">{member.email}</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Phone</p>
+                                  <p className="font-medium">{member.phone || 'N/A'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-gray-600">Registration Status</p>
-                      <p className="text-lg font-semibold text-blue-700">
-                        {organization?.membershipStatus === 'active' ? 'Active' : 'Pending'}
-                      </p>
-                    </div>
-                    <Building2 className="w-6 h-6 text-blue-600" />
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-gray-600">Days to Renewal</p>
-                      <p className="text-lg font-semibold text-amber-700">
-                        {organization?.expiryDate 
-                          ? Math.max(0, Math.ceil((new Date(organization.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-                          : 'N/A'
-                        }
-                      </p>
-                    </div>
-                    <Clock className="w-6 h-6 text-amber-600" />
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Organization Documents</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center text-muted-foreground py-8">
+                  Document management coming soon
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Add Director Modal */}
+      <ModernModal
+        open={addDirectorModalOpen}
+        onOpenChange={setAddDirectorModalOpen}
+        title="Add Director"
+        description="Add a new director to your organization"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="firstName">First Name *</Label>
+              <Input
+                id="firstName"
+                value={directorForm.firstName}
+                onChange={(e) => setDirectorForm({ ...directorForm, firstName: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="lastName">Last Name *</Label>
+              <Input
+                id="lastName"
+                value={directorForm.lastName}
+                onChange={(e) => setDirectorForm({ ...directorForm, lastName: e.target.value })}
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="nationalId">National ID</Label>
+            <Input
+              id="nationalId"
+              value={directorForm.nationalId}
+              onChange={(e) => setDirectorForm({ ...directorForm, nationalId: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={directorForm.email}
+              onChange={(e) => setDirectorForm({ ...directorForm, email: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              id="phone"
+              value={directorForm.phone}
+              onChange={(e) => setDirectorForm({ ...directorForm, phone: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="position">Position</Label>
+            <Input
+              id="position"
+              placeholder="e.g., Chairman, Director, Secretary"
+              value={directorForm.position}
+              onChange={(e) => setDirectorForm({ ...directorForm, position: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="appointedDate">Appointed Date</Label>
+            <Input
+              id="appointedDate"
+              type="date"
+              value={directorForm.appointedDate}
+              onChange={(e) => setDirectorForm({ ...directorForm, appointedDate: e.target.value })}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setAddDirectorModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddDirector} disabled={addDirectorMutation.isPending}>
+              {addDirectorMutation.isPending ? "Adding..." : "Add Director"}
+            </Button>
           </div>
         </div>
-      </div>
-      
-      <FormFooter />
+      </ModernModal>
     </div>
   );
 }

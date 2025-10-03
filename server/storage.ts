@@ -1,10 +1,11 @@
 import {
-  users, organizations, members, cases, events,
+  users, organizations, members, cases, events, directors,
   eventRegistrations, payments, documents, userSessions, applicationWorkflows,
   paymentInstallments, notifications, userPermissions, auditLogs, applicants,
   organizationApplicants, individualApplications, organizationApplications, memberRenewals, systemSettings,
   type User, type InsertUser, type Member, type InsertMember,
-  type Organization, type InsertOrganization, type MemberApplication, 
+  type Organization, type InsertOrganization, type Director, type InsertDirector,
+  type MemberApplication,
   type InsertMemberApplication, type Case, type InsertCase,
   type Event, type InsertEvent, type Payment, type InsertPayment,
   type Document, type InsertDocument, type UserSession, type InsertUserSession,
@@ -626,6 +627,81 @@ export class DatabaseStorage implements IStorage {
 
   async getAllOrganizations(): Promise<Organization[]> {
     return await db.select().from(organizations).orderBy(desc(organizations.createdAt));
+  }
+
+  async getOrganizationByMemberId(memberId: string): Promise<Organization | undefined> {
+    const [org] = await db.select().from(organizations).where(eq(organizations.preaMemberId, memberId));
+    return org || undefined;
+  }
+
+  async getOrganizationWithDetails(organizationId: string) {
+    const [organization] = await db.select().from(organizations).where(eq(organizations.id, organizationId));
+    if (!organization) return undefined;
+
+    const orgDirectors = await db.select().from(directors)
+      .where(and(eq(directors.organizationId, organizationId), eq(directors.isActive, true)))
+      .orderBy(asc(directors.lastName));
+
+    const orgMembers = await db.select().from(members)
+      .where(eq(members.organizationId, organizationId))
+      .orderBy(asc(members.lastName));
+
+    const preaMember = organization.preaMemberId
+      ? await db.select().from(members).where(eq(members.id, organization.preaMemberId)).then(rows => rows[0])
+      : null;
+
+    return {
+      ...organization,
+      directors: orgDirectors,
+      members: orgMembers,
+      preaMember
+    };
+  }
+
+  // Director operations
+  async getDirectorsByOrganization(organizationId: string): Promise<Director[]> {
+    return await db.select().from(directors)
+      .where(and(eq(directors.organizationId, organizationId), eq(directors.isActive, true)))
+      .orderBy(asc(directors.lastName));
+  }
+
+  async createDirector(insertDirector: InsertDirector): Promise<Director> {
+    const [director] = await db
+      .insert(directors)
+      .values(insertDirector)
+      .returning();
+    return director;
+  }
+
+  async updateDirector(id: string, updates: Partial<Director>): Promise<Director> {
+    const [director] = await db
+      .update(directors)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(directors.id, id))
+      .returning();
+    return director;
+  }
+
+  async deleteDirector(id: string): Promise<void> {
+    await db
+      .update(directors)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(directors.id, id));
+  }
+
+  async getMembersByOrganization(organizationId: string): Promise<Member[]> {
+    return await db.select().from(members)
+      .where(eq(members.organizationId, organizationId))
+      .orderBy(asc(members.lastName));
+  }
+
+  async updateOrganizationPREA(organizationId: string, memberId: string): Promise<Organization> {
+    const [org] = await db
+      .update(organizations)
+      .set({ preaMemberId: memberId, updatedAt: new Date() })
+      .where(eq(organizations.id, organizationId))
+      .returning();
+    return org;
   }
 
   // Application operations

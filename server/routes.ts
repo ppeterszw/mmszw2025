@@ -325,6 +325,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register application routes
   registerApplicationRoutes(app);
 
+  // Setup Organization Portal routes
+  const { setupOrganizationPortalRoutes } = await import("./organizationPortalRoutes");
+  setupOrganizationPortalRoutes(app);
+
   // ===== APPLICANT REGISTRATION ROUTES =====
 
   /**
