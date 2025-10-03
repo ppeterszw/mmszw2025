@@ -659,7 +659,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(individualApplications)
-      .where(eq(individualApplications.status, "submitted"))
+      .where(sql`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`)
       .orderBy(desc(individualApplications.createdAt));
   }
 

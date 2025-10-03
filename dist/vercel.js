@@ -86,7 +86,6 @@ __export(schema_exports, {
   memberActivities: () => memberActivities,
   memberActivitiesRelations: () => memberActivitiesRelations,
   memberApplications: () => memberApplications,
-  memberApplicationsRelations: () => memberApplicationsRelations,
   memberRenewals: () => memberRenewals,
   memberRenewalsRelations: () => memberRenewalsRelations,
   memberTypeEnum: () => memberTypeEnum,
@@ -132,7 +131,7 @@ import { pgTable, text, varchar, timestamp, integer, boolean, decimal, pgEnum } 
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var userRoleEnum, userStatusEnum, memberTypeEnum, organizationTypeEnum, membershipStatusEnum, caseStatusEnum, casePriorityEnum, caseTypeEnum, eventTypeEnum, activityTypeEnum, renewalStatusEnum, paymentStatusEnum, paymentMethodEnum, applicationStatusEnum, applicationStageEnum, applicationTypeEnum, documentStatusEnum, documentTypeEnum, decisionEnum, educationLevelEnum, notificationTypeEnum, notificationStatusEnum, applicantStatusEnum, users, applicants, organizationApplicants, organizations, members, memberApplications, individualApplications, organizationApplications, uploadedDocuments, statusHistory, registryDecisions, namingSeriesCounters, appLoginTokens, cases, events, eventRegistrations, payments, cpdActivities, memberRenewals, memberActivities, documents, userSessions, applicationWorkflows, paymentInstallments, notifications, userPermissions, auditLogs, badgeTypeEnum, badgeDifficultyEnum, achievementBadges, memberAchievementBadges, systemSettings, usersRelations, organizationsRelations, membersRelations, memberApplicationsRelations, casesRelations, eventsRelations, eventRegistrationsRelations, paymentsRelations, documentsRelations, cpdActivitiesRelations, memberRenewalsRelations, memberActivitiesRelations, userSessionsRelations, applicationWorkflowsRelations, paymentInstallmentsRelations, notificationsRelations, userPermissionsRelations, auditLogsRelations, individualApplicationsRelations, organizationApplicationsRelations, uploadedDocumentsRelations, statusHistoryRelations, registryDecisionsRelations, insertUserSchema, insertApplicantSchema, insertOrganizationApplicantSchema, insertMemberSchema, insertOrganizationSchema, insertMemberApplicationSchema, insertCaseSchema, casesQuerySchema, caseUpdateSchema, caseAssignmentSchema, bulkCaseAssignmentSchema, bulkCaseResolutionSchema, bulkCaseActionSchema, insertEventSchema, insertPaymentSchema, insertDocumentSchema, insertCpdActivitySchema, insertMemberRenewalSchema, insertMemberActivitySchema, insertUserSessionSchema, insertApplicationWorkflowSchema, insertPaymentInstallmentSchema, insertNotificationSchema, insertUserPermissionSchema, insertAuditLogSchema, insertSystemSettingsSchema, insertIndividualApplicationSchema, insertOrganizationApplicationSchema, insertUploadedDocumentSchema, insertStatusHistorySchema, insertRegistryDecisionSchema, insertNamingSeriesCounterSchema, insertAppLoginTokenSchema, insertAchievementBadgeSchema, insertMemberAchievementBadgeSchema, businessExperienceItemSchema, businessExperienceSchema;
+var userRoleEnum, userStatusEnum, memberTypeEnum, organizationTypeEnum, membershipStatusEnum, caseStatusEnum, casePriorityEnum, caseTypeEnum, eventTypeEnum, activityTypeEnum, renewalStatusEnum, paymentStatusEnum, paymentMethodEnum, applicationStatusEnum, applicationStageEnum, applicationTypeEnum, documentStatusEnum, documentTypeEnum, decisionEnum, educationLevelEnum, notificationTypeEnum, notificationStatusEnum, applicantStatusEnum, users, applicants, organizationApplicants, organizations, members, individualApplications, memberApplications, organizationApplications, uploadedDocuments, statusHistory, registryDecisions, namingSeriesCounters, appLoginTokens, cases, events, eventRegistrations, payments, cpdActivities, memberRenewals, memberActivities, documents, userSessions, applicationWorkflows, paymentInstallments, notifications, userPermissions, auditLogs, badgeTypeEnum, badgeDifficultyEnum, achievementBadges, memberAchievementBadges, systemSettings, usersRelations, organizationsRelations, membersRelations, casesRelations, eventsRelations, eventRegistrationsRelations, paymentsRelations, documentsRelations, cpdActivitiesRelations, memberRenewalsRelations, memberActivitiesRelations, userSessionsRelations, applicationWorkflowsRelations, paymentInstallmentsRelations, notificationsRelations, userPermissionsRelations, auditLogsRelations, individualApplicationsRelations, organizationApplicationsRelations, uploadedDocumentsRelations, statusHistoryRelations, registryDecisionsRelations, insertUserSchema, insertApplicantSchema, insertOrganizationApplicantSchema, insertMemberSchema, insertOrganizationSchema, insertMemberApplicationSchema, insertCaseSchema, casesQuerySchema, caseUpdateSchema, caseAssignmentSchema, bulkCaseAssignmentSchema, bulkCaseResolutionSchema, bulkCaseActionSchema, insertEventSchema, insertPaymentSchema, insertDocumentSchema, insertCpdActivitySchema, insertMemberRenewalSchema, insertMemberActivitySchema, insertUserSessionSchema, insertApplicationWorkflowSchema, insertPaymentInstallmentSchema, insertNotificationSchema, insertUserPermissionSchema, insertAuditLogSchema, insertSystemSettingsSchema, insertIndividualApplicationSchema, insertOrganizationApplicationSchema, insertUploadedDocumentSchema, insertStatusHistorySchema, insertRegistryDecisionSchema, insertNamingSeriesCounterSchema, insertAppLoginTokenSchema, insertAchievementBadgeSchema, insertMemberAchievementBadgeSchema, businessExperienceItemSchema, businessExperienceSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -243,134 +242,73 @@ var init_schema = __esm({
     });
     organizations = pgTable("organizations", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      organizationId: text("organization_id").unique(),
       name: text("name").notNull(),
-      type: organizationTypeEnum("type").notNull(),
+      businessType: organizationTypeEnum("business_type").notNull(),
       registrationNumber: text("registration_number").unique(),
       email: text("email").notNull(),
       phone: text("phone"),
-      address: text("address"),
-      principalAgentId: varchar("principal_agent_id"),
-      membershipStatus: membershipStatusEnum("membership_status").default("pending"),
-      registrationDate: timestamp("registration_date"),
-      expiryDate: timestamp("expiry_date"),
-      annualFee: decimal("annual_fee", { precision: 10, scale: 2 }),
-      trustAccountDetails: text("trust_account_details"),
+      physicalAddress: text("physical_address"),
+      status: membershipStatusEnum("status").default("pending"),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
     members = pgTable("members", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      userId: varchar("user_id").references(() => users.id),
-      organizationId: varchar("organization_id").references(() => organizations.id),
+      clerkId: text("clerk_id"),
       membershipNumber: text("membership_number").unique(),
       firstName: text("first_name").notNull(),
       lastName: text("last_name").notNull(),
       email: text("email").notNull().unique(),
       phone: text("phone"),
       dateOfBirth: timestamp("date_of_birth"),
-      nationalId: text("national_id"),
       memberType: memberTypeEnum("member_type").notNull(),
       membershipStatus: membershipStatusEnum("membership_status").default("pending"),
-      joiningDate: timestamp("joining_date"),
+      organizationId: varchar("organization_id"),
+      joinedDate: timestamp("joined_date"),
       expiryDate: timestamp("expiry_date"),
-      cpdPoints: integer("cpd_points").default(0),
-      annualFee: decimal("annual_fee", { precision: 10, scale: 2 }),
-      isMatureEntry: boolean("is_mature_entry").default(false),
-      createdAt: timestamp("created_at").defaultNow(),
-      updatedAt: timestamp("updated_at").defaultNow()
-    });
-    memberApplications = pgTable("member_applications", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      applicationNumber: text("application_number").unique(),
-      firstName: text("first_name").notNull(),
-      lastName: text("last_name").notNull(),
-      email: text("email").notNull(),
-      phone: text("phone"),
-      dateOfBirth: timestamp("date_of_birth"),
       nationalId: text("national_id"),
-      memberType: memberTypeEnum("member_type").notNull(),
-      organizationId: varchar("organization_id").references(() => organizations.id),
-      status: applicationStatusEnum("status").default("draft"),
-      currentStage: applicationStageEnum("current_stage").default("initial_review"),
-      applicationFee: decimal("application_fee", { precision: 10, scale: 2 }),
-      feePaymentStatus: paymentStatusEnum("fee_payment_status").default("pending"),
-      paymentId: varchar("payment_id"),
-      educationLevel: educationLevelEnum("education_level"),
-      workExperience: integer("work_experience"),
-      // in years
-      currentEmployer: text("current_employer"),
-      jobTitle: text("job_title"),
-      documentsUploaded: boolean("documents_uploaded").default(false),
-      documentsVerified: boolean("documents_verified").default(false),
-      backgroundCheckPassed: boolean("background_check_passed"),
-      interviewScheduled: boolean("interview_scheduled").default(false),
-      interviewDate: timestamp("interview_date"),
-      interviewNotes: text("interview_notes"),
-      reviewNotes: text("review_notes"),
-      rejectionReason: text("rejection_reason"),
-      reviewedBy: varchar("reviewed_by").references(() => users.id),
-      submittedAt: timestamp("submitted_at"),
-      reviewStartedAt: timestamp("review_started_at"),
-      approvedAt: timestamp("approved_at"),
-      rejectedAt: timestamp("rejected_at"),
-      expiresAt: timestamp("expires_at"),
-      priority: integer("priority").default(3),
-      // 1=high, 3=normal, 5=low
-      estimatedProcessingDays: integer("estimated_processing_days").default(30),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
     individualApplications = pgTable("individual_applications", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       applicationId: text("application_id").notNull().unique(),
-      // MBR-APP-XXXX
+      applicantEmail: text("applicant_email"),
+      personal: text("personal"),
+      // JSONB stored as text
+      education: text("education"),
+      // JSONB stored as text
+      memberType: memberTypeEnum("member_type"),
       status: applicationStatusEnum("status").default("draft"),
-      personal: text("personal").notNull(),
-      // JSON: { firstName, lastName, dob, nationalId, email, phone, address }
-      oLevel: text("o_level").notNull(),
-      // JSON: { subjects[], hasEnglish, hasMath, passesCount }
-      aLevel: text("a_level"),
-      // JSON: { subjects[], passesCount } nullable
-      equivalentQualification: text("equivalent_qualification"),
-      // JSON: { type, institution, levelMap, evidenceDocId } nullable
-      matureEntry: boolean("mature_entry").default(false),
-      feeRequired: boolean("fee_required").default(true),
-      feeAmount: integer("fee_amount"),
-      feeCurrency: varchar("fee_currency", { length: 8 }).default("USD"),
-      feeStatus: varchar("fee_status", { length: 16 }).default("pending"),
-      // none|pending|settled|failed|refunded
-      feePaymentId: varchar("fee_payment_id", { length: 36 }),
-      feeProofDocId: varchar("fee_proof_doc_id", { length: 36 }),
-      submittedAt: timestamp("submitted_at"),
-      createdByUserId: varchar("created_by_user_id").references(() => users.id),
-      memberId: varchar("member_id").references(() => members.id),
-      // Set on acceptance
+      applicationFee: decimal("application_fee", { precision: 10, scale: 2 }),
+      paymentStatus: paymentStatusEnum("payment_status"),
+      paymentReference: text("payment_reference"),
+      reviewNotes: text("review_notes"),
+      reviewedBy: text("reviewed_by"),
+      reviewedAt: timestamp("reviewed_at"),
+      approvedAt: timestamp("approved_at"),
+      createdMemberId: varchar("created_member_id"),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
+    memberApplications = individualApplications;
     organizationApplications = pgTable("organization_applications", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       applicationId: text("application_id").notNull().unique(),
-      // ORG-APP-XXXX
+      applicantEmail: text("applicant_email"),
+      company: text("company"),
+      // JSONB stored as text
+      businessType: organizationTypeEnum("business_type"),
       status: applicationStatusEnum("status").default("draft"),
-      orgProfile: text("org_profile").notNull(),
-      // JSON: { legalName, tradingName, regNo, taxNo, address, emails[], phones[] }
-      trustAccount: text("trust_account").notNull(),
-      // JSON: { bankName, branch, accountNoMasked }
-      preaMemberId: varchar("prea_member_id").references(() => members.id),
-      // Principal Registered Estate Agent
-      directors: text("directors"),
-      // JSON: [{ name, nationalId, memberId }]
-      feeRequired: boolean("fee_required").default(true),
-      feeAmount: integer("fee_amount"),
-      feeCurrency: varchar("fee_currency", { length: 8 }).default("USD"),
-      feeStatus: varchar("fee_status", { length: 16 }).default("pending"),
-      feePaymentId: varchar("fee_payment_id", { length: 36 }),
-      feeProofDocId: varchar("fee_proof_doc_id", { length: 36 }),
-      submittedAt: timestamp("submitted_at"),
-      createdByUserId: varchar("created_by_user_id").references(() => users.id),
-      memberId: varchar("member_id").references(() => members.id),
-      // Set on acceptance
+      applicationFee: decimal("application_fee", { precision: 10, scale: 2 }),
+      paymentStatus: paymentStatusEnum("payment_status"),
+      paymentReference: text("payment_reference"),
+      reviewNotes: text("review_notes"),
+      reviewedBy: text("reviewed_by"),
+      reviewedAt: timestamp("reviewed_at"),
+      approvedAt: timestamp("approved_at"),
+      createdOrganizationId: varchar("created_organization_id"),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -729,22 +667,14 @@ var init_schema = __esm({
       }),
       createdUsers: many(users)
     }));
-    organizationsRelations = relations(organizations, ({ many, one }) => ({
+    organizationsRelations = relations(organizations, ({ many }) => ({
       members: many(members),
       applications: many(memberApplications),
       cases: many(cases),
       payments: many(payments),
-      documents: many(documents),
-      principalAgent: one(members, {
-        fields: [organizations.principalAgentId],
-        references: [members.id]
-      })
+      documents: many(documents)
     }));
     membersRelations = relations(members, ({ one, many }) => ({
-      user: one(users, {
-        fields: [members.userId],
-        references: [users.id]
-      }),
       organization: one(organizations, {
         fields: [members.organizationId],
         references: [organizations.id]
@@ -756,22 +686,6 @@ var init_schema = __esm({
       cpdActivities: many(cpdActivities),
       renewals: many(memberRenewals),
       activities: many(memberActivities)
-    }));
-    memberApplicationsRelations = relations(memberApplications, ({ one, many }) => ({
-      organization: one(organizations, {
-        fields: [memberApplications.organizationId],
-        references: [organizations.id]
-      }),
-      reviewer: one(users, {
-        fields: [memberApplications.reviewedBy],
-        references: [users.id]
-      }),
-      payment: one(payments, {
-        fields: [memberApplications.paymentId],
-        references: [payments.id]
-      }),
-      documents: many(documents),
-      workflows: many(applicationWorkflows)
     }));
     casesRelations = relations(cases, ({ one }) => ({
       member: one(members, {
@@ -924,12 +838,8 @@ var init_schema = __esm({
       })
     }));
     individualApplicationsRelations = relations(individualApplications, ({ one, many }) => ({
-      createdByUser: one(users, {
-        fields: [individualApplications.createdByUserId],
-        references: [users.id]
-      }),
-      member: one(members, {
-        fields: [individualApplications.memberId],
+      createdMember: one(members, {
+        fields: [individualApplications.createdMemberId],
         references: [members.id]
       }),
       documents: many(uploadedDocuments),
@@ -938,17 +848,9 @@ var init_schema = __esm({
       loginTokens: many(appLoginTokens)
     }));
     organizationApplicationsRelations = relations(organizationApplications, ({ one, many }) => ({
-      createdByUser: one(users, {
-        fields: [organizationApplications.createdByUserId],
-        references: [users.id]
-      }),
-      preaMember: one(members, {
-        fields: [organizationApplications.preaMemberId],
-        references: [members.id]
-      }),
-      member: one(members, {
-        fields: [organizationApplications.memberId],
-        references: [members.id]
+      createdOrganization: one(organizations, {
+        fields: [organizationApplications.createdOrganizationId],
+        references: [organizations.id]
       }),
       documents: many(uploadedDocuments),
       statusHistory: many(statusHistory),
@@ -1973,7 +1875,7 @@ var init_storage = __esm({
         return member || void 0;
       }
       async getMemberByUserId(userId) {
-        const [member] = await db.select().from(members).where(eq(members.userId, userId));
+        const [member] = await db.select().from(members).where(eq(members.clerkId, userId));
         return member || void 0;
       }
       async getMemberByEmail(email) {
@@ -2020,21 +1922,21 @@ var init_storage = __esm({
       }
       // Application operations
       async getMemberApplication(id) {
-        const [app2] = await db.select().from(memberApplications).where(eq(memberApplications.id, id));
+        const [app2] = await db.select().from(individualApplications).where(eq(individualApplications.id, id));
         return app2 || void 0;
       }
       async createMemberApplication(insertApp) {
         const { nextApplicationId: nextApplicationId2 } = await Promise.resolve().then(() => (init_namingSeries(), namingSeries_exports));
         const applicationNumber = await nextApplicationId2("individual");
-        const [app2] = await db.insert(memberApplications).values({ ...insertApp, applicationNumber }).returning();
+        const [app2] = await db.insert(individualApplications).values({ ...insertApp, applicationNumber }).returning();
         return app2;
       }
       async updateMemberApplication(id, updates) {
-        const [app2] = await db.update(memberApplications).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(memberApplications.id, id)).returning();
+        const [app2] = await db.update(individualApplications).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(individualApplications.id, id)).returning();
         return app2;
       }
       async getPendingApplications() {
-        return await db.select().from(memberApplications).where(eq(memberApplications.status, "submitted")).orderBy(desc(memberApplications.createdAt));
+        return await db.select().from(individualApplications).where(sql4`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`).orderBy(desc(individualApplications.createdAt));
       }
       // Organization Application operations
       async getOrganizationApplication(id) {
@@ -2361,20 +2263,20 @@ var init_storage = __esm({
       }
       // Enhanced Application Methods
       async getApplicationsByStatus(status) {
-        return await db.select().from(memberApplications).where(eq(memberApplications.status, status)).orderBy(desc(memberApplications.createdAt));
+        return await db.select().from(individualApplications).where(eq(individualApplications.status, status)).orderBy(desc(individualApplications.createdAt));
       }
       async getApplicationsByStage(stage) {
-        return await db.select().from(memberApplications).where(eq(memberApplications.currentStage, stage)).orderBy(desc(memberApplications.createdAt));
+        return await db.select().from(individualApplications).where(eq(individualApplications.currentStage, stage)).orderBy(desc(individualApplications.createdAt));
       }
       async getAllApplications() {
-        return await db.select().from(memberApplications).orderBy(desc(memberApplications.createdAt));
+        return await db.select().from(individualApplications).orderBy(desc(individualApplications.createdAt));
       }
       async assignApplicationReviewer(id, reviewerId) {
-        const [application] = await db.update(memberApplications).set({
+        const [application] = await db.update(individualApplications).set({
           reviewedBy: reviewerId,
           reviewStartedAt: /* @__PURE__ */ new Date(),
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(memberApplications.id, id)).returning();
+        }).where(eq(individualApplications.id, id)).returning();
         return application;
       }
       // Application Workflow Methods
@@ -2396,8 +2298,8 @@ var init_storage = __esm({
         return await db.select().from(applicationWorkflows).where(eq(applicationWorkflows.assignedTo, userId)).orderBy(desc(applicationWorkflows.createdAt));
       }
       // Session Management
-      async createUserSession(session3) {
-        const [newSession] = await db.insert(userSessions).values(session3).returning();
+      async createUserSession(session4) {
+        const [newSession] = await db.insert(userSessions).values(session4).returning();
         return newSession;
       }
       async getUserSessions(userId) {
@@ -2407,12 +2309,12 @@ var init_storage = __esm({
         )).orderBy(desc(userSessions.lastActivity));
       }
       async updateSessionActivity(sessionId) {
-        const [session3] = await db.update(userSessions).set({ lastActivity: /* @__PURE__ */ new Date() }).where(eq(userSessions.id, sessionId)).returning();
-        return session3;
+        const [session4] = await db.update(userSessions).set({ lastActivity: /* @__PURE__ */ new Date() }).where(eq(userSessions.id, sessionId)).returning();
+        return session4;
       }
       async deactivateSession(sessionId) {
-        const [session3] = await db.update(userSessions).set({ isActive: false }).where(eq(userSessions.id, sessionId)).returning();
-        return session3;
+        const [session4] = await db.update(userSessions).set({ isActive: false }).where(eq(userSessions.id, sessionId)).returning();
+        return session4;
       }
       async cleanupExpiredSessions() {
         const result = await db.update(userSessions).set({ isActive: false }).where(sql4`${userSessions.expiresAt} < NOW()`).returning({ id: userSessions.id });
@@ -2493,10 +2395,13 @@ var init_storage = __esm({
       async getDashboardStats() {
         const totalMembersResult = await db.select({ count: sql4`count(*)` }).from(members);
         const totalMembers = totalMembersResult[0]?.count || 0;
-        const activeOrganizationsResult = await db.select({ count: sql4`count(*)` }).from(organizations).where(eq(organizations.membershipStatus, "active"));
+        const activeOrganizationsResult = await db.select({ count: sql4`count(*)` }).from(organizations).where(eq(organizations.status, "active"));
         const activeOrganizations = activeOrganizationsResult[0]?.count || 0;
-        const pendingIndividualApplicationsResult = await db.select({ count: sql4`count(*)` }).from(memberApplications).where(sql4`status IN ('submitted', 'pre_validation', 'eligibility_review', 'document_review')`);
-        const pendingApplications = pendingIndividualApplicationsResult[0]?.count || 0;
+        const pendingIndividualApplicationsResult = await db.select({ count: sql4`count(*)` }).from(individualApplications).where(sql4`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`);
+        const pendingIndividualApplications = pendingIndividualApplicationsResult[0]?.count || 0;
+        const pendingOrganizationApplicationsResult = await db.select({ count: sql4`count(*)` }).from(organizationApplications).where(sql4`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`);
+        const pendingOrganizationApplications = pendingOrganizationApplicationsResult[0]?.count || 0;
+        const pendingApplications = pendingIndividualApplications + pendingOrganizationApplications;
         const openCasesResult = await db.select({ count: sql4`count(*)` }).from(cases).where(eq(cases.status, "open"));
         const openCases = openCasesResult[0]?.count || 0;
         const startOfMonth = /* @__PURE__ */ new Date();
@@ -2507,8 +2412,7 @@ var init_storage = __esm({
           sql4`created_at >= ${startOfMonth}`
         ));
         const revenueThisMonth = Number(revenueResult[0]?.sum || 0);
-        const renewalsPendingResult = await db.select({ count: sql4`count(*)` }).from(memberRenewals).where(sql4`status IN ('pending', 'reminded', 'overdue')`);
-        const renewalsPending = renewalsPendingResult[0]?.count || 0;
+        const renewalsPending = 0;
         return {
           totalMembers,
           activeOrganizations,
@@ -3689,9 +3593,1442 @@ var init_clerkAuth = __esm({
   }
 });
 
+// server/auth/authService.ts
+import { scrypt as scrypt2, randomBytes as randomBytes2, timingSafeEqual as timingSafeEqual2 } from "crypto";
+import { promisify as promisify2 } from "util";
+import { eq as eq2, and as and2, lt } from "drizzle-orm";
+var scryptAsync2, AUTH_CONFIG, AuthService;
+var init_authService = __esm({
+  "server/auth/authService.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    scryptAsync2 = promisify2(scrypt2);
+    AUTH_CONFIG = {
+      // Password requirements
+      PASSWORD_MIN_LENGTH: 8,
+      PASSWORD_REQUIRE_UPPERCASE: true,
+      PASSWORD_REQUIRE_LOWERCASE: true,
+      PASSWORD_REQUIRE_NUMBER: true,
+      PASSWORD_REQUIRE_SPECIAL: true,
+      // Account lockout
+      MAX_LOGIN_ATTEMPTS: 5,
+      LOCKOUT_DURATION_MINUTES: 30,
+      // Session
+      SESSION_TIMEOUT_MINUTES: 60,
+      SESSION_ABSOLUTE_TIMEOUT_HOURS: 8,
+      // Password reset
+      PASSWORD_RESET_TOKEN_EXPIRY_HOURS: 1,
+      // Email verification
+      EMAIL_VERIFICATION_TOKEN_EXPIRY_HOURS: 24
+    };
+    AuthService = class {
+      /**
+       * Hash a password using scrypt
+       */
+      static async hashPassword(password) {
+        const validation = this.validatePasswordStrength(password);
+        if (!validation.valid) {
+          throw new Error(`Weak password: ${validation.errors.join(", ")}`);
+        }
+        const salt = randomBytes2(16).toString("hex");
+        const buf = await scryptAsync2(password, salt, 64);
+        return `${buf.toString("hex")}.${salt}`;
+      }
+      /**
+       * Compare supplied password with stored hash
+       */
+      static async comparePasswords(supplied, stored) {
+        if (!stored || !supplied) {
+          return false;
+        }
+        if (!stored.includes(".")) {
+          console.warn("Attempted login with unhashed password");
+          return false;
+        }
+        const [hashed, salt] = stored.split(".");
+        if (!hashed || !salt) {
+          return false;
+        }
+        try {
+          const hashedBuf = Buffer.from(hashed, "hex");
+          const suppliedBuf = await scryptAsync2(supplied, salt, 64);
+          if (hashedBuf.length !== suppliedBuf.length) {
+            return false;
+          }
+          return timingSafeEqual2(hashedBuf, suppliedBuf);
+        } catch (error) {
+          console.error("Password comparison error:", error);
+          return false;
+        }
+      }
+      /**
+       * Validate password strength
+       */
+      static validatePasswordStrength(password) {
+        const errors = [];
+        if (password.length < AUTH_CONFIG.PASSWORD_MIN_LENGTH) {
+          errors.push(
+            `Password must be at least ${AUTH_CONFIG.PASSWORD_MIN_LENGTH} characters`
+          );
+        }
+        if (AUTH_CONFIG.PASSWORD_REQUIRE_UPPERCASE && !/[A-Z]/.test(password)) {
+          errors.push("Password must contain at least one uppercase letter");
+        }
+        if (AUTH_CONFIG.PASSWORD_REQUIRE_LOWERCASE && !/[a-z]/.test(password)) {
+          errors.push("Password must contain at least one lowercase letter");
+        }
+        if (AUTH_CONFIG.PASSWORD_REQUIRE_NUMBER && !/[0-9]/.test(password)) {
+          errors.push("Password must contain at least one number");
+        }
+        if (AUTH_CONFIG.PASSWORD_REQUIRE_SPECIAL && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+          errors.push("Password must contain at least one special character");
+        }
+        return {
+          valid: errors.length === 0,
+          errors
+        };
+      }
+      /**
+       * Check if account is locked
+       */
+      static async isAccountLocked(userId) {
+        const [user] = await db.select().from(users).where(eq2(users.id, userId)).limit(1);
+        if (!user) return false;
+        if (user.lockedUntil && new Date(user.lockedUntil) > /* @__PURE__ */ new Date()) {
+          return true;
+        }
+        if (user.lockedUntil && new Date(user.lockedUntil) <= /* @__PURE__ */ new Date()) {
+          await db.update(users).set({
+            lockedUntil: null,
+            loginAttempts: 0,
+            updatedAt: /* @__PURE__ */ new Date()
+          }).where(eq2(users.id, userId));
+        }
+        return false;
+      }
+      /**
+       * Record failed login attempt
+       */
+      static async recordFailedLogin(userId) {
+        const [user] = await db.select().from(users).where(eq2(users.id, userId)).limit(1);
+        if (!user) return;
+        const newAttempts = (user.loginAttempts || 0) + 1;
+        const updates = {
+          loginAttempts: newAttempts,
+          updatedAt: /* @__PURE__ */ new Date()
+        };
+        if (newAttempts >= AUTH_CONFIG.MAX_LOGIN_ATTEMPTS) {
+          const lockoutUntil = /* @__PURE__ */ new Date();
+          lockoutUntil.setMinutes(
+            lockoutUntil.getMinutes() + AUTH_CONFIG.LOCKOUT_DURATION_MINUTES
+          );
+          updates.lockedUntil = lockoutUntil;
+        }
+        await db.update(users).set(updates).where(eq2(users.id, userId));
+      }
+      /**
+       * Record successful login
+       */
+      static async recordSuccessfulLogin(userId) {
+        await db.update(users).set({
+          lastLoginAt: /* @__PURE__ */ new Date(),
+          loginAttempts: 0,
+          lockedUntil: null,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq2(users.id, userId));
+      }
+      /**
+       * Generate password reset token
+       */
+      static async generatePasswordResetToken(email) {
+        const [user] = await db.select().from(users).where(eq2(users.email, email)).limit(1);
+        if (!user) return null;
+        const token = randomBytes2(32).toString("hex");
+        const expires = /* @__PURE__ */ new Date();
+        expires.setHours(
+          expires.getHours() + AUTH_CONFIG.PASSWORD_RESET_TOKEN_EXPIRY_HOURS
+        );
+        await db.update(users).set({
+          passwordResetToken: token,
+          passwordResetExpires: expires,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq2(users.id, user.id));
+        return token;
+      }
+      /**
+       * Verify password reset token
+       */
+      static async verifyPasswordResetToken(token) {
+        const [user] = await db.select().from(users).where(
+          and2(
+            eq2(users.passwordResetToken, token),
+            lt(/* @__PURE__ */ new Date(), users.passwordResetExpires)
+          )
+        ).limit(1);
+        return user?.id || null;
+      }
+      /**
+       * Reset password with token
+       */
+      static async resetPassword(token, newPassword) {
+        const userId = await this.verifyPasswordResetToken(token);
+        if (!userId) return false;
+        const hashedPassword = await this.hashPassword(newPassword);
+        await db.update(users).set({
+          password: hashedPassword,
+          passwordResetToken: null,
+          passwordResetExpires: null,
+          passwordChangedAt: /* @__PURE__ */ new Date(),
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq2(users.id, userId));
+        return true;
+      }
+      /**
+       * Generate email verification token
+       */
+      static async generateEmailVerificationToken(userId) {
+        const token = randomBytes2(32).toString("hex");
+        await db.update(users).set({
+          emailVerificationToken: token,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq2(users.id, userId));
+        return token;
+      }
+      /**
+       * Verify email with token
+       */
+      static async verifyEmail(token) {
+        const [user] = await db.select().from(users).where(eq2(users.emailVerificationToken, token)).limit(1);
+        if (!user) return false;
+        await db.update(users).set({
+          emailVerified: true,
+          emailVerificationToken: null,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq2(users.id, user.id));
+        return true;
+      }
+      /**
+       * Change user password (authenticated)
+       */
+      static async changePassword(userId, currentPassword, newPassword) {
+        const [user] = await db.select().from(users).where(eq2(users.id, userId)).limit(1);
+        if (!user) {
+          return { success: false, error: "User not found" };
+        }
+        const isValid = await this.comparePasswords(currentPassword, user.password);
+        if (!isValid) {
+          return { success: false, error: "Current password is incorrect" };
+        }
+        const hashedPassword = await this.hashPassword(newPassword);
+        await db.update(users).set({
+          password: hashedPassword,
+          passwordChangedAt: /* @__PURE__ */ new Date(),
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq2(users.id, userId));
+        return { success: true };
+      }
+    };
+  }
+});
+
+// server/auth/rbacService.ts
+function requireAuth2(req, res, next) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({
+      error: "Unauthorized",
+      message: "You must be logged in to access this resource"
+    });
+  }
+  next();
+}
+var Permission, ROLE_PERMISSIONS, RBACService;
+var init_rbacService = __esm({
+  "server/auth/rbacService.ts"() {
+    "use strict";
+    Permission = /* @__PURE__ */ ((Permission3) => {
+      Permission3["USER_CREATE"] = "user:create";
+      Permission3["USER_READ"] = "user:read";
+      Permission3["USER_UPDATE"] = "user:update";
+      Permission3["USER_DELETE"] = "user:delete";
+      Permission3["USER_MANAGE_ROLES"] = "user:manage_roles";
+      Permission3["MEMBER_CREATE"] = "member:create";
+      Permission3["MEMBER_READ"] = "member:read";
+      Permission3["MEMBER_UPDATE"] = "member:update";
+      Permission3["MEMBER_DELETE"] = "member:delete";
+      Permission3["MEMBER_APPROVE"] = "member:approve";
+      Permission3["MEMBER_SUSPEND"] = "member:suspend";
+      Permission3["APPLICATION_READ"] = "application:read";
+      Permission3["APPLICATION_REVIEW"] = "application:review";
+      Permission3["APPLICATION_APPROVE"] = "application:approve";
+      Permission3["APPLICATION_REJECT"] = "application:reject";
+      Permission3["CASE_CREATE"] = "case:create";
+      Permission3["CASE_READ"] = "case:read";
+      Permission3["CASE_UPDATE"] = "case:update";
+      Permission3["CASE_DELETE"] = "case:delete";
+      Permission3["CASE_ASSIGN"] = "case:assign";
+      Permission3["CASE_CLOSE"] = "case:close";
+      Permission3["PAYMENT_READ"] = "payment:read";
+      Permission3["PAYMENT_PROCESS"] = "payment:process";
+      Permission3["PAYMENT_REFUND"] = "payment:refund";
+      Permission3["PAYMENT_REPORTS"] = "payment:reports";
+      Permission3["DOCUMENT_READ"] = "document:read";
+      Permission3["DOCUMENT_UPLOAD"] = "document:upload";
+      Permission3["DOCUMENT_VERIFY"] = "document:verify";
+      Permission3["DOCUMENT_DELETE"] = "document:delete";
+      Permission3["EVENT_CREATE"] = "event:create";
+      Permission3["EVENT_READ"] = "event:read";
+      Permission3["EVENT_UPDATE"] = "event:update";
+      Permission3["EVENT_DELETE"] = "event:delete";
+      Permission3["ORGANIZATION_CREATE"] = "organization:create";
+      Permission3["ORGANIZATION_READ"] = "organization:read";
+      Permission3["ORGANIZATION_UPDATE"] = "organization:update";
+      Permission3["ORGANIZATION_DELETE"] = "organization:delete";
+      Permission3["SYSTEM_SETTINGS"] = "system:settings";
+      Permission3["SYSTEM_LOGS"] = "system:logs";
+      Permission3["SYSTEM_BACKUP"] = "system:backup";
+      return Permission3;
+    })(Permission || {});
+    ROLE_PERMISSIONS = {
+      super_admin: [
+        // Full access to everything
+        ...Object.values(Permission)
+      ],
+      admin: [
+        // User management (except role management)
+        "user:create" /* USER_CREATE */,
+        "user:read" /* USER_READ */,
+        "user:update" /* USER_UPDATE */,
+        "user:delete" /* USER_DELETE */,
+        // Full member management
+        "member:create" /* MEMBER_CREATE */,
+        "member:read" /* MEMBER_READ */,
+        "member:update" /* MEMBER_UPDATE */,
+        "member:delete" /* MEMBER_DELETE */,
+        "member:approve" /* MEMBER_APPROVE */,
+        "member:suspend" /* MEMBER_SUSPEND */,
+        // Full application management
+        "application:read" /* APPLICATION_READ */,
+        "application:review" /* APPLICATION_REVIEW */,
+        "application:approve" /* APPLICATION_APPROVE */,
+        "application:reject" /* APPLICATION_REJECT */,
+        // Full case management
+        "case:create" /* CASE_CREATE */,
+        "case:read" /* CASE_READ */,
+        "case:update" /* CASE_UPDATE */,
+        "case:delete" /* CASE_DELETE */,
+        "case:assign" /* CASE_ASSIGN */,
+        "case:close" /* CASE_CLOSE */,
+        // Full payment management
+        "payment:read" /* PAYMENT_READ */,
+        "payment:process" /* PAYMENT_PROCESS */,
+        "payment:refund" /* PAYMENT_REFUND */,
+        "payment:reports" /* PAYMENT_REPORTS */,
+        // Full document management
+        "document:read" /* DOCUMENT_READ */,
+        "document:upload" /* DOCUMENT_UPLOAD */,
+        "document:verify" /* DOCUMENT_VERIFY */,
+        "document:delete" /* DOCUMENT_DELETE */,
+        // Full event management
+        "event:create" /* EVENT_CREATE */,
+        "event:read" /* EVENT_READ */,
+        "event:update" /* EVENT_UPDATE */,
+        "event:delete" /* EVENT_DELETE */,
+        // Full organization management
+        "organization:create" /* ORGANIZATION_CREATE */,
+        "organization:read" /* ORGANIZATION_READ */,
+        "organization:update" /* ORGANIZATION_UPDATE */,
+        "organization:delete" /* ORGANIZATION_DELETE */,
+        // System logs only
+        "system:logs" /* SYSTEM_LOGS */
+      ],
+      member_manager: [
+        // Member management
+        "member:create" /* MEMBER_CREATE */,
+        "member:read" /* MEMBER_READ */,
+        "member:update" /* MEMBER_UPDATE */,
+        "member:approve" /* MEMBER_APPROVE */,
+        // Application review
+        "application:read" /* APPLICATION_READ */,
+        "application:review" /* APPLICATION_REVIEW */,
+        // Document management
+        "document:read" /* DOCUMENT_READ */,
+        "document:upload" /* DOCUMENT_UPLOAD */,
+        "document:verify" /* DOCUMENT_VERIFY */,
+        // Organization management
+        "organization:read" /* ORGANIZATION_READ */,
+        "organization:update" /* ORGANIZATION_UPDATE */
+      ],
+      case_manager: [
+        // Case management
+        "case:create" /* CASE_CREATE */,
+        "case:read" /* CASE_READ */,
+        "case:update" /* CASE_UPDATE */,
+        "case:assign" /* CASE_ASSIGN */,
+        "case:close" /* CASE_CLOSE */,
+        // Read member info
+        "member:read" /* MEMBER_READ */,
+        // Read organization info
+        "organization:read" /* ORGANIZATION_READ */,
+        // Read documents
+        "document:read" /* DOCUMENT_READ */
+      ],
+      accountant: [
+        // Full payment access
+        "payment:read" /* PAYMENT_READ */,
+        "payment:process" /* PAYMENT_PROCESS */,
+        "payment:refund" /* PAYMENT_REFUND */,
+        "payment:reports" /* PAYMENT_REPORTS */,
+        // Read-only member access
+        "member:read" /* MEMBER_READ */,
+        // Read-only organization access
+        "organization:read" /* ORGANIZATION_READ */,
+        // Read applications
+        "application:read" /* APPLICATION_READ */
+      ],
+      reviewer: [
+        // Application review
+        "application:read" /* APPLICATION_READ */,
+        "application:review" /* APPLICATION_REVIEW */,
+        // Document verification
+        "document:read" /* DOCUMENT_READ */,
+        "document:verify" /* DOCUMENT_VERIFY */,
+        // Read member info
+        "member:read" /* MEMBER_READ */,
+        // Read organization info
+        "organization:read" /* ORGANIZATION_READ */
+      ],
+      staff: [
+        // Basic read access
+        "member:read" /* MEMBER_READ */,
+        "application:read" /* APPLICATION_READ */,
+        "case:read" /* CASE_READ */,
+        "document:read" /* DOCUMENT_READ */,
+        "event:read" /* EVENT_READ */,
+        "organization:read" /* ORGANIZATION_READ */
+      ]
+    };
+    RBACService = class {
+      /**
+       * Check if user has a specific permission
+       */
+      static hasPermission(userRole, permission) {
+        const rolePermissions = ROLE_PERMISSIONS[userRole];
+        if (!rolePermissions) return false;
+        return rolePermissions.includes(permission);
+      }
+      /**
+       * Check if user has any of the specified permissions
+       */
+      static hasAnyPermission(userRole, permissions) {
+        return permissions.some(
+          (permission) => this.hasPermission(userRole, permission)
+        );
+      }
+      /**
+       * Check if user has all of the specified permissions
+       */
+      static hasAllPermissions(userRole, permissions) {
+        return permissions.every(
+          (permission) => this.hasPermission(userRole, permission)
+        );
+      }
+      /**
+       * Get all permissions for a role
+       */
+      static getRolePermissions(role) {
+        return ROLE_PERMISSIONS[role] || [];
+      }
+    };
+  }
+});
+
+// server/auth/sessionService.ts
+import { eq as eq3, and as and3, lt as lt2 } from "drizzle-orm";
+import { randomBytes as randomBytes3 } from "crypto";
+function sessionTimeoutMiddleware(req, res, next) {
+  if (!req.isAuthenticated()) {
+    return next();
+  }
+  const session4 = req.session;
+  if (session4 && session4.cookie) {
+    const lastActivity = session4.cookie._expires ? new Date(session4.cookie._expires) : /* @__PURE__ */ new Date();
+    const remaining = SessionService.getTimeoutRemaining(lastActivity);
+    res.setHeader("X-Session-Timeout-Remaining", remaining.toString());
+    if (remaining < 5) {
+      res.setHeader("X-Session-Warning", "true");
+    }
+  }
+  next();
+}
+function refreshSessionMiddleware(req, res, next) {
+  if (req.isAuthenticated() && req.session) {
+    req.session.touch();
+  }
+  next();
+}
+var SESSION_CONFIG, SessionService;
+var init_sessionService = __esm({
+  "server/auth/sessionService.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    SESSION_CONFIG = {
+      // Idle timeout: session expires after 60 minutes of inactivity
+      IDLE_TIMEOUT_MINUTES: 60,
+      // Absolute timeout: session expires after 8 hours regardless of activity
+      ABSOLUTE_TIMEOUT_HOURS: 8,
+      // Session cleanup: remove expired sessions every 1 hour
+      CLEANUP_INTERVAL_MINUTES: 60
+    };
+    SessionService = class {
+      static cleanupInterval = null;
+      /**
+       * Start automatic session cleanup
+       */
+      static startCleanup() {
+        if (this.cleanupInterval) return;
+        this.cleanupInterval = setInterval(
+          () => {
+            this.cleanupExpiredSessions().catch(console.error);
+          },
+          SESSION_CONFIG.CLEANUP_INTERVAL_MINUTES * 60 * 1e3
+        );
+        console.log("\u2705 Session cleanup started");
+      }
+      /**
+       * Stop automatic session cleanup
+       */
+      static stopCleanup() {
+        if (this.cleanupInterval) {
+          clearInterval(this.cleanupInterval);
+          this.cleanupInterval = null;
+          console.log("Session cleanup stopped");
+        }
+      }
+      /**
+       * Clean up expired sessions
+       */
+      static async cleanupExpiredSessions() {
+        const now = /* @__PURE__ */ new Date();
+        const result = await db.delete(userSessions).where(
+          and3(
+            lt2(userSessions.expiresAt, now),
+            eq3(userSessions.isActive, true)
+          )
+        );
+        const count2 = result.rowCount || 0;
+        if (count2 > 0) {
+          console.log(`\u{1F9F9} Cleaned up ${count2} expired sessions`);
+        }
+        return count2;
+      }
+      /**
+       * Create a new session
+       */
+      static async createSession(userId, ipAddress, userAgent) {
+        const sessionToken = randomBytes3(32).toString("hex");
+        const now = /* @__PURE__ */ new Date();
+        const expiresAt = new Date(
+          now.getTime() + SESSION_CONFIG.ABSOLUTE_TIMEOUT_HOURS * 60 * 60 * 1e3
+        );
+        await db.insert(userSessions).values({
+          userId,
+          sessionToken,
+          ipAddress,
+          userAgent,
+          expiresAt,
+          lastActivityAt: now,
+          isActive: true
+        });
+        return sessionToken;
+      }
+      /**
+       * Validate and update session
+       */
+      static async validateSession(sessionToken) {
+        const [session4] = await db.select().from(userSessions).where(
+          and3(
+            eq3(userSessions.sessionToken, sessionToken),
+            eq3(userSessions.isActive, true)
+          )
+        ).limit(1);
+        if (!session4) {
+          return { valid: false, reason: "Session not found" };
+        }
+        const now = /* @__PURE__ */ new Date();
+        if (new Date(session4.expiresAt) < now) {
+          await this.invalidateSession(sessionToken);
+          return { valid: false, reason: "Session expired (absolute timeout)" };
+        }
+        const lastActivity = new Date(session4.lastActivityAt);
+        const idleMinutes = (now.getTime() - lastActivity.getTime()) / (1e3 * 60);
+        if (idleMinutes > SESSION_CONFIG.IDLE_TIMEOUT_MINUTES) {
+          await this.invalidateSession(sessionToken);
+          return {
+            valid: false,
+            reason: "Session expired (idle timeout)"
+          };
+        }
+        await db.update(userSessions).set({
+          lastActivityAt: now
+        }).where(eq3(userSessions.sessionToken, sessionToken));
+        return { valid: true, userId: session4.userId };
+      }
+      /**
+       * Invalidate a session (logout)
+       */
+      static async invalidateSession(sessionToken) {
+        await db.update(userSessions).set({
+          isActive: false
+        }).where(eq3(userSessions.sessionToken, sessionToken));
+      }
+      /**
+       * Invalidate all sessions for a user
+       */
+      static async invalidateAllUserSessions(userId) {
+        await db.update(userSessions).set({
+          isActive: false
+        }).where(
+          and3(
+            eq3(userSessions.userId, userId),
+            eq3(userSessions.isActive, true)
+          )
+        );
+      }
+      /**
+       * Get active sessions for a user
+       */
+      static async getUserActiveSessions(userId) {
+        return await db.select({
+          sessionToken: userSessions.sessionToken,
+          createdAt: userSessions.createdAt,
+          lastActivityAt: userSessions.lastActivityAt,
+          expiresAt: userSessions.expiresAt,
+          ipAddress: userSessions.ipAddress,
+          userAgent: userSessions.userAgent
+        }).from(userSessions).where(
+          and3(
+            eq3(userSessions.userId, userId),
+            eq3(userSessions.isActive, true)
+          )
+        );
+      }
+      /**
+       * Get session timeout remaining (in minutes)
+       */
+      static getTimeoutRemaining(lastActivityAt) {
+        const now = /* @__PURE__ */ new Date();
+        const elapsed = (now.getTime() - lastActivityAt.getTime()) / (1e3 * 60);
+        const remaining = SESSION_CONFIG.IDLE_TIMEOUT_MINUTES - elapsed;
+        return Math.max(0, Math.round(remaining));
+      }
+    };
+  }
+});
+
+// server/auth/emailNotifications.ts
+var BASE_URL, AuthEmailService;
+var init_emailNotifications = __esm({
+  "server/auth/emailNotifications.ts"() {
+    "use strict";
+    init_emailService();
+    BASE_URL = process.env.BASE_URL || "https://mms.estateagentscouncil.org";
+    AuthEmailService = class {
+      /**
+       * Send welcome email after registration
+       */
+      static async sendWelcomeEmail(email, name, verificationToken) {
+        const verificationLink = `${BASE_URL}/verify-email?token=${verificationToken}`;
+        return await sendEmail({
+          to: email,
+          from: "sysadmin@estateagentscouncil.org",
+          subject: "Welcome to Estate Agents Council of Zimbabwe",
+          html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #1a56db; color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; background: #f9fafb; }
+            .button { display: inline-block; padding: 12px 24px; background: #1a56db; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+            .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Welcome to EACZ</h1>
+            </div>
+            <div class="content">
+              <p>Hello ${name},</p>
+
+              <p>Thank you for registering with the Estate Agents Council of Zimbabwe. We're excited to have you join us!</p>
+
+              <p>To complete your registration, please verify your email address by clicking the button below:</p>
+
+              <p style="text-align: center;">
+                <a href="${verificationLink}" class="button">Verify Email Address</a>
+              </p>
+
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; color: #1a56db;">${verificationLink}</p>
+
+              <p><strong>This link will expire in 24 hours.</strong></p>
+
+              <p>If you didn't create an account, please ignore this email.</p>
+
+              <p>Best regards,<br>Estate Agents Council of Zimbabwe</p>
+            </div>
+            <div class="footer">
+              <p>Estate Agents Council of Zimbabwe<br>
+              Email: info@estateagentscouncil.org<br>
+              Website: estateagentscouncil.org</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+          text: `
+Welcome to Estate Agents Council of Zimbabwe!
+
+Hello ${name},
+
+Thank you for registering. To complete your registration, please verify your email address by visiting:
+
+${verificationLink}
+
+This link will expire in 24 hours.
+
+If you didn't create an account, please ignore this email.
+
+Best regards,
+Estate Agents Council of Zimbabwe
+      `
+        });
+      }
+      /**
+       * Send password reset email
+       */
+      static async sendPasswordResetEmail(email, name, resetToken) {
+        const resetLink = `${BASE_URL}/reset-password?token=${resetToken}`;
+        return await sendEmail({
+          to: email,
+          from: "sysadmin@estateagentscouncil.org",
+          subject: "Password Reset Request - EACZ",
+          html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #dc2626; color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; background: #f9fafb; }
+            .button { display: inline-block; padding: 12px 24px; background: #dc2626; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+            .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 20px 0; }
+            .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Password Reset Request</h1>
+            </div>
+            <div class="content">
+              <p>Hello ${name},</p>
+
+              <p>We received a request to reset your password for your EACZ account.</p>
+
+              <p>Click the button below to reset your password:</p>
+
+              <p style="text-align: center;">
+                <a href="${resetLink}" class="button">Reset Password</a>
+              </p>
+
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; color: #dc2626;">${resetLink}</p>
+
+              <div class="warning">
+                <strong>\u26A0\uFE0F Security Notice:</strong><br>
+                \u2022 This link will expire in 1 hour<br>
+                \u2022 For security, you can only use this link once<br>
+                \u2022 If you didn't request this reset, please ignore this email and contact support
+              </div>
+
+              <p>Need help? Contact our support team at support@estateagentscouncil.org</p>
+
+              <p>Best regards,<br>Estate Agents Council of Zimbabwe</p>
+            </div>
+            <div class="footer">
+              <p>Estate Agents Council of Zimbabwe<br>
+              Email: info@estateagentscouncil.org</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+          text: `
+Password Reset Request
+
+Hello ${name},
+
+We received a request to reset your password for your EACZ account.
+
+To reset your password, visit:
+${resetLink}
+
+SECURITY NOTICE:
+- This link will expire in 1 hour
+- You can only use this link once
+- If you didn't request this reset, please ignore this email and contact support
+
+Need help? Contact support@estateagentscouncil.org
+
+Best regards,
+Estate Agents Council of Zimbabwe
+      `
+        });
+      }
+      /**
+       * Send password changed confirmation
+       */
+      static async sendPasswordChangedEmail(email, name) {
+        return await sendEmail({
+          to: email,
+          from: "sysadmin@estateagentscouncil.org",
+          subject: "Password Changed Successfully - EACZ",
+          html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #10b981; color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; background: #f9fafb; }
+            .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 20px 0; }
+            .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>\u2713 Password Changed</h1>
+            </div>
+            <div class="content">
+              <p>Hello ${name},</p>
+
+              <p>This email confirms that your password was successfully changed.</p>
+
+              <div class="warning">
+                <strong>\u26A0\uFE0F Didn't make this change?</strong><br>
+                If you didn't change your password, your account may be compromised. Please contact our support team immediately at:<br>
+                <strong>support@estateagentscouncil.org</strong>
+              </div>
+
+              <p><strong>Changed:</strong> ${(/* @__PURE__ */ new Date()).toLocaleString()}</p>
+
+              <p>Best regards,<br>Estate Agents Council of Zimbabwe</p>
+            </div>
+            <div class="footer">
+              <p>Estate Agents Council of Zimbabwe<br>
+              Email: info@estateagentscouncil.org</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+          text: `
+Password Changed Successfully
+
+Hello ${name},
+
+This email confirms that your password was successfully changed.
+
+DIDN'T MAKE THIS CHANGE?
+If you didn't change your password, your account may be compromised. Please contact support immediately at: support@estateagentscouncil.org
+
+Changed: ${(/* @__PURE__ */ new Date()).toLocaleString()}
+
+Best regards,
+Estate Agents Council of Zimbabwe
+      `
+        });
+      }
+      /**
+       * Send account locked notification
+       */
+      static async sendAccountLockedEmail(email, name, unlockTime) {
+        return await sendEmail({
+          to: email,
+          from: "sysadmin@estateagentscouncil.org",
+          subject: "Account Locked - EACZ",
+          html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #dc2626; color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; background: #f9fafb; }
+            .alert { background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px; margin: 20px 0; }
+            .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>\u{1F512} Account Locked</h1>
+            </div>
+            <div class="content">
+              <p>Hello ${name},</p>
+
+              <div class="alert">
+                <strong>Your account has been temporarily locked due to multiple failed login attempts.</strong>
+              </div>
+
+              <p><strong>Unlock Time:</strong> ${unlockTime.toLocaleString()}</p>
+
+              <p>Your account will automatically unlock at the time shown above.</p>
+
+              <p><strong>For immediate assistance:</strong></p>
+              <ul>
+                <li>Contact support: support@estateagentscouncil.org</li>
+                <li>Call: +263 XXX XXX XXX</li>
+              </ul>
+
+              <p>If you didn't attempt to login, please contact support immediately as your account may be under attack.</p>
+
+              <p>Best regards,<br>Estate Agents Council of Zimbabwe</p>
+            </div>
+            <div class="footer">
+              <p>Estate Agents Council of Zimbabwe</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+          text: `
+Account Locked
+
+Hello ${name},
+
+Your account has been temporarily locked due to multiple failed login attempts.
+
+Unlock Time: ${unlockTime.toLocaleString()}
+
+Your account will automatically unlock at the time shown above.
+
+For immediate assistance:
+- Email: support@estateagentscouncil.org
+- Phone: +263 XXX XXX XXX
+
+If you didn't attempt to login, please contact support immediately.
+
+Best regards,
+Estate Agents Council of Zimbabwe
+      `
+        });
+      }
+      /**
+       * Send login notification (suspicious activity)
+       */
+      static async sendLoginNotification(email, name, loginDetails) {
+        return await sendEmail({
+          to: email,
+          from: "sysadmin@estateagentscouncil.org",
+          subject: "New Login to Your Account - EACZ",
+          html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #1a56db; color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; background: #f9fafb; }
+            .details { background: white; border: 1px solid #e5e7eb; padding: 12px; margin: 20px 0; }
+            .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 20px 0; }
+            .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>New Login Detected</h1>
+            </div>
+            <div class="content">
+              <p>Hello ${name},</p>
+
+              <p>We detected a new login to your EACZ account.</p>
+
+              <div class="details">
+                <strong>Login Details:</strong><br>
+                \u2022 Time: ${loginDetails.time.toLocaleString()}<br>
+                ${loginDetails.ipAddress ? `\u2022 IP Address: ${loginDetails.ipAddress}<br>` : ""}
+                ${loginDetails.location ? `\u2022 Location: ${loginDetails.location}<br>` : ""}
+                ${loginDetails.userAgent ? `\u2022 Device: ${loginDetails.userAgent}<br>` : ""}
+              </div>
+
+              <div class="warning">
+                <strong>Was this you?</strong><br>
+                If you didn't login, your account may be compromised. Please:
+                <ol>
+                  <li>Change your password immediately</li>
+                  <li>Contact support: support@estateagentscouncil.org</li>
+                </ol>
+              </div>
+
+              <p>Best regards,<br>Estate Agents Council of Zimbabwe</p>
+            </div>
+            <div class="footer">
+              <p>Estate Agents Council of Zimbabwe</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+          text: `
+New Login Detected
+
+Hello ${name},
+
+We detected a new login to your EACZ account.
+
+Login Details:
+- Time: ${loginDetails.time.toLocaleString()}
+${loginDetails.ipAddress ? `- IP Address: ${loginDetails.ipAddress}
+` : ""}
+${loginDetails.location ? `- Location: ${loginDetails.location}
+` : ""}
+${loginDetails.userAgent ? `- Device: ${loginDetails.userAgent}
+` : ""}
+
+WAS THIS YOU?
+If you didn't login, your account may be compromised. Please:
+1. Change your password immediately
+2. Contact support: support@estateagentscouncil.org
+
+Best regards,
+Estate Agents Council of Zimbabwe
+      `
+        });
+      }
+    };
+  }
+});
+
+// server/auth/authRoutes.ts
+import passport2 from "passport";
+import { Strategy as LocalStrategy2 } from "passport-local";
+import session3 from "express-session";
+import { eq as eq4 } from "drizzle-orm";
+function setupAuthRoutes(app2) {
+  const sessionSettings = {
+    secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 8 * 60 * 60 * 1e3,
+      // 8 hours
+      sameSite: "lax"
+    },
+    rolling: true
+    // Reset expiry on every request
+  };
+  app2.set("trust proxy", 1);
+  app2.use(session3(sessionSettings));
+  app2.use(passport2.initialize());
+  app2.use(passport2.session());
+  app2.use(sessionTimeoutMiddleware);
+  app2.use(refreshSessionMiddleware);
+  SessionService.startCleanup();
+  passport2.use(
+    new LocalStrategy2(
+      { usernameField: "email" },
+      async (email, password, done) => {
+        try {
+          const [user] = await db.select().from(users).where(eq4(users.email, email)).limit(1);
+          if (!user) {
+            return done(null, false, { message: "Invalid email or password" });
+          }
+          const isLocked = await AuthService.isAccountLocked(user.id);
+          if (isLocked) {
+            return done(null, false, {
+              message: "Account is locked due to multiple failed login attempts"
+            });
+          }
+          if (user.status !== "active") {
+            return done(null, false, {
+              message: "Account is inactive. Please contact support."
+            });
+          }
+          const isValid = await AuthService.comparePasswords(
+            password,
+            user.password
+          );
+          if (!isValid) {
+            await AuthService.recordFailedLogin(user.id);
+            return done(null, false, { message: "Invalid email or password" });
+          }
+          await AuthService.recordSuccessfulLogin(user.id);
+          return done(null, {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            status: user.status,
+            emailVerified: user.emailVerified || false
+          });
+        } catch (error) {
+          return done(error);
+        }
+      }
+    )
+  );
+  passport2.serializeUser((user, done) => {
+    done(null, user.id);
+  });
+  passport2.deserializeUser(async (id, done) => {
+    try {
+      const [user] = await db.select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        status: users.status,
+        emailVerified: users.emailVerified
+      }).from(users).where(eq4(users.id, id)).limit(1);
+      done(null, user || void 0);
+    } catch (error) {
+      done(error);
+    }
+  });
+  app2.post("/api/auth/register", async (req, res) => {
+    try {
+      const { email, password, firstName, lastName, role } = req.body;
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({
+          error: "Missing required fields",
+          required: ["email", "password", "firstName", "lastName"]
+        });
+      }
+      const [existingUser] = await db.select().from(users).where(eq4(users.email, email)).limit(1);
+      if (existingUser) {
+        return res.status(400).json({
+          error: "Email already registered"
+        });
+      }
+      let hashedPassword;
+      try {
+        hashedPassword = await AuthService.hashPassword(password);
+      } catch (error) {
+        return res.status(400).json({
+          error: error.message
+        });
+      }
+      const [newUser] = await db.insert(users).values({
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        role: role || "staff",
+        // Default role
+        status: "active",
+        emailVerified: false
+      }).returning();
+      const verificationToken = await AuthService.generateEmailVerificationToken(newUser.id);
+      await AuthEmailService.sendWelcomeEmail(
+        email,
+        `${firstName} ${lastName}`,
+        verificationToken
+      );
+      res.status(201).json({
+        success: true,
+        message: "Registration successful. Please check your email to verify your account.",
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          role: newUser.role
+        }
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({
+        error: "Registration failed"
+      });
+    }
+  });
+  app2.post(
+    "/api/auth/login",
+    passport2.authenticate("local"),
+    async (req, res) => {
+      try {
+        const user = req.user;
+        const ipAddress = req.ip || req.socket.remoteAddress;
+        const userAgent = req.headers["user-agent"];
+        res.json({
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            emailVerified: user.emailVerified,
+            permissions: RBACService.getRolePermissions(user.role)
+          }
+        });
+      } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({
+          error: "Login failed"
+        });
+      }
+    }
+  );
+  app2.post("/api/auth/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({
+          error: "Logout failed"
+        });
+      }
+      req.session.destroy(() => {
+        res.json({
+          success: true,
+          message: "Logged out successfully"
+        });
+      });
+    });
+  });
+  app2.get("/api/auth/me", requireAuth2, (req, res) => {
+    const user = req.user;
+    res.json({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      permissions: RBACService.getRolePermissions(user.role)
+    });
+  });
+  app2.get("/api/auth/verify-email/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const success = await AuthService.verifyEmail(token);
+      if (success) {
+        res.json({
+          success: true,
+          message: "Email verified successfully"
+        });
+      } else {
+        res.status(400).json({
+          error: "Invalid or expired verification token"
+        });
+      }
+    } catch (error) {
+      console.error("Email verification error:", error);
+      res.status(500).json({
+        error: "Email verification failed"
+      });
+    }
+  });
+  app2.post("/api/auth/resend-verification", requireAuth2, async (req, res) => {
+    try {
+      const user = req.user;
+      if (user.emailVerified) {
+        return res.status(400).json({
+          error: "Email already verified"
+        });
+      }
+      const token = await AuthService.generateEmailVerificationToken(user.id);
+      await AuthEmailService.sendWelcomeEmail(
+        user.email,
+        `${user.firstName} ${user.lastName}`,
+        token
+      );
+      res.json({
+        success: true,
+        message: "Verification email sent"
+      });
+    } catch (error) {
+      console.error("Resend verification error:", error);
+      res.status(500).json({
+        error: "Failed to resend verification email"
+      });
+    }
+  });
+  app2.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({
+          error: "Email is required"
+        });
+      }
+      const token = await AuthService.generatePasswordResetToken(email);
+      if (token) {
+        const [user] = await db.select().from(users).where(eq4(users.email, email)).limit(1);
+        if (user) {
+          await AuthEmailService.sendPasswordResetEmail(
+            email,
+            `${user.firstName} ${user.lastName}`,
+            token
+          );
+        }
+      }
+      res.json({
+        success: true,
+        message: "If the email exists, a password reset link has been sent"
+      });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({
+        error: "Failed to process password reset request"
+      });
+    }
+  });
+  app2.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      if (!token || !newPassword) {
+        return res.status(400).json({
+          error: "Token and new password are required"
+        });
+      }
+      const success = await AuthService.resetPassword(token, newPassword);
+      if (success) {
+        const userId = await AuthService.verifyPasswordResetToken(token);
+        if (userId) {
+          const [user] = await db.select().from(users).where(eq4(users.id, userId)).limit(1);
+          if (user) {
+            await AuthEmailService.sendPasswordChangedEmail(
+              user.email,
+              `${user.firstName} ${user.lastName}`
+            );
+          }
+        }
+        res.json({
+          success: true,
+          message: "Password reset successfully"
+        });
+      } else {
+        res.status(400).json({
+          error: "Invalid or expired reset token"
+        });
+      }
+    } catch (error) {
+      console.error("Password reset error:", error);
+      res.status(500).json({
+        error: error.message || "Password reset failed"
+      });
+    }
+  });
+  app2.post("/api/auth/change-password", requireAuth2, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const user = req.user;
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({
+          error: "Current password and new password are required"
+        });
+      }
+      const result = await AuthService.changePassword(
+        user.id,
+        currentPassword,
+        newPassword
+      );
+      if (result.success) {
+        await AuthEmailService.sendPasswordChangedEmail(
+          user.email,
+          `${user.firstName} ${user.lastName}`
+        );
+        res.json({
+          success: true,
+          message: "Password changed successfully"
+        });
+      } else {
+        res.status(400).json({
+          error: result.error || "Password change failed"
+        });
+      }
+    } catch (error) {
+      console.error("Change password error:", error);
+      res.status(500).json({
+        error: error.message || "Password change failed"
+      });
+    }
+  });
+  app2.get("/api/auth/sessions", requireAuth2, async (req, res) => {
+    try {
+      const user = req.user;
+      const sessions = await SessionService.getUserActiveSessions(user.id);
+      res.json({
+        sessions: sessions.map((s) => ({
+          createdAt: s.createdAt,
+          lastActivity: s.lastActivityAt,
+          expiresAt: s.expiresAt,
+          ipAddress: s.ipAddress,
+          device: s.userAgent
+        }))
+      });
+    } catch (error) {
+      console.error("Get sessions error:", error);
+      res.status(500).json({
+        error: "Failed to get sessions"
+      });
+    }
+  });
+  app2.delete("/api/auth/sessions", requireAuth2, async (req, res) => {
+    try {
+      const user = req.user;
+      await SessionService.invalidateAllUserSessions(user.id);
+      req.logout((err) => {
+        if (err) {
+          return res.status(500).json({
+            error: "Failed to logout"
+          });
+        }
+        res.json({
+          success: true,
+          message: "Logged out from all devices"
+        });
+      });
+    } catch (error) {
+      console.error("Logout all error:", error);
+      res.status(500).json({
+        error: "Failed to logout from all devices"
+      });
+    }
+  });
+}
+var init_authRoutes = __esm({
+  "server/auth/authRoutes.ts"() {
+    "use strict";
+    init_authService();
+    init_rbacService();
+    init_sessionService();
+    init_emailNotifications();
+    init_db();
+    init_schema();
+  }
+});
+
 // server/services/paynowService.ts
 import crypto from "crypto";
-import { eq as eq2 } from "drizzle-orm";
+import { eq as eq5 } from "drizzle-orm";
 function getPayNowService() {
   if (!paynowService) {
     const config = {
@@ -3825,7 +5162,7 @@ var init_paynowService = __esm({
           const status = this.mapPayNowStatus(callbackData.status);
           const paynowReference = callbackData.paynowreference;
           const amount = parseFloat(callbackData.amount || "0");
-          const [payment] = await db.select().from(payments).where(eq2(payments.referenceNumber, reference)).limit(1);
+          const [payment] = await db.select().from(payments).where(eq5(payments.referenceNumber, reference)).limit(1);
           if (!payment) {
             return {
               success: false,
@@ -3843,7 +5180,7 @@ var init_paynowService = __esm({
           } else if (status === "failed") {
             updateData.failureReason = callbackData.error || "Payment failed";
           }
-          await db.update(payments).set(updateData).where(eq2(payments.id, payment.id));
+          await db.update(payments).set(updateData).where(eq5(payments.id, payment.id));
           return {
             success: true,
             paymentId: payment.id,
@@ -3948,7 +5285,7 @@ var init_paynowService = __esm({
 });
 
 // server/paymentRoutes.ts
-import { eq as eq3, and as and2, desc as desc2, sql as sql5 } from "drizzle-orm";
+import { eq as eq6, and as and4, desc as desc2, sql as sql6 } from "drizzle-orm";
 import { z as z2 } from "zod";
 function registerPaymentRoutes(app2) {
   const paynow = getPayNowService();
@@ -4021,7 +5358,7 @@ function registerPaymentRoutes(app2) {
           await db.update(payments).set({
             gatewayResponse: JSON.stringify(initResult),
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq3(payments.id, payment.id));
+          }).where(eq6(payments.id, payment.id));
           return res.json({
             success: true,
             payment: {
@@ -4042,7 +5379,7 @@ function registerPaymentRoutes(app2) {
             status: "failed",
             failureReason: initResult.error,
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq3(payments.id, payment.id));
+          }).where(eq6(payments.id, payment.id));
           return res.status(400).json({
             success: false,
             error: initResult.error,
@@ -4083,7 +5420,7 @@ function registerPaymentRoutes(app2) {
       const result = await paynow.processCallback(req.body);
       if (result.success) {
         if (result.paymentId) {
-          const [payment] = await db.select().from(payments).where(eq3(payments.id, result.paymentId)).limit(1);
+          const [payment] = await db.select().from(payments).where(eq6(payments.id, result.paymentId)).limit(1);
           if (payment && result.status === "completed") {
             await handleSuccessfulPayment(payment);
           }
@@ -4109,7 +5446,7 @@ function registerPaymentRoutes(app2) {
   app2.get("/api/payments/:paymentId/status", async (req, res) => {
     try {
       const { paymentId } = req.params;
-      const [payment] = await db.select().from(payments).where(eq3(payments.id, paymentId)).limit(1);
+      const [payment] = await db.select().from(payments).where(eq6(payments.id, paymentId)).limit(1);
       if (!payment) {
         return res.status(404).json({
           success: false,
@@ -4128,7 +5465,7 @@ function registerPaymentRoutes(app2) {
                 externalPaymentId: statusResult.paynowReference,
                 paymentDate: newStatus === "completed" ? /* @__PURE__ */ new Date() : null,
                 updatedAt: /* @__PURE__ */ new Date()
-              }).where(eq3(payments.id, payment.id));
+              }).where(eq6(payments.id, payment.id));
               if (newStatus === "completed") {
                 await handleSuccessfulPayment({ ...payment, status: newStatus });
               }
@@ -4168,7 +5505,7 @@ function registerPaymentRoutes(app2) {
   app2.post("/api/payments/paynow/express-checkout", async (req, res) => {
     try {
       const checkoutData = paynowExpressCheckoutSchema.parse(req.body);
-      const [payment] = await db.select().from(payments).where(eq3(payments.id, checkoutData.paymentId)).limit(1);
+      const [payment] = await db.select().from(payments).where(eq6(payments.id, checkoutData.paymentId)).limit(1);
       if (!payment) {
         return res.status(404).json({
           success: false,
@@ -4192,7 +5529,7 @@ function registerPaymentRoutes(app2) {
         await db.update(payments).set({
           gatewayResponse: JSON.stringify(result),
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq3(payments.id, payment.id));
+        }).where(eq6(payments.id, payment.id));
         res.json({
           success: true,
           pollUrl: result.pollUrl,
@@ -4231,9 +5568,9 @@ function registerPaymentRoutes(app2) {
       }
       let query = db.select().from(payments);
       if (memberId) {
-        query = query.where(eq3(payments.memberId, memberId));
+        query = query.where(eq6(payments.memberId, memberId));
       } else if (organizationId) {
-        query = query.where(eq3(payments.organizationId, organizationId));
+        query = query.where(eq6(payments.organizationId, organizationId));
       }
       const paymentHistory = await query.orderBy(desc2(payments.createdAt)).limit(Number(limit)).offset(Number(offset));
       res.json({
@@ -4253,7 +5590,7 @@ function registerPaymentRoutes(app2) {
     try {
       const { paymentId } = req.params;
       const { numberOfInstallments, firstPaymentDate } = req.body;
-      const [payment] = await db.select().from(payments).where(eq3(payments.id, paymentId)).limit(1);
+      const [payment] = await db.select().from(payments).where(eq6(payments.id, paymentId)).limit(1);
       if (!payment) {
         return res.status(404).json({
           success: false,
@@ -4298,15 +5635,15 @@ async function handleSuccessfulPayment(payment) {
           await db.update(members).set({
             membershipStatus: "active",
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq3(members.id, payment.memberId));
+          }).where(eq6(members.id, payment.memberId));
         }
         break;
       case "renewal":
         if (payment.memberId) {
           const renewals = await db.select().from(memberRenewals).where(
-            and2(
-              eq3(memberRenewals.memberId, payment.memberId),
-              eq3(memberRenewals.status, "pending")
+            and4(
+              eq6(memberRenewals.memberId, payment.memberId),
+              eq6(memberRenewals.status, "pending")
             )
           ).limit(1);
           if (renewals.length > 0) {
@@ -4314,11 +5651,11 @@ async function handleSuccessfulPayment(payment) {
               status: "completed",
               paidAt: /* @__PURE__ */ new Date(),
               updatedAt: /* @__PURE__ */ new Date()
-            }).where(eq3(memberRenewals.id, renewals[0].id));
+            }).where(eq6(memberRenewals.id, renewals[0].id));
             await db.update(members).set({
-              expiryDate: sql5`${members.expiryDate} + INTERVAL '1 year'`,
+              expiryDate: sql6`${members.expiryDate} + INTERVAL '1 year'`,
               updatedAt: /* @__PURE__ */ new Date()
-            }).where(eq3(members.id, payment.memberId));
+            }).where(eq6(members.id, payment.memberId));
           }
         }
         break;
@@ -4810,7 +6147,7 @@ var init_eligibility = __esm({
 });
 
 // server/middleware/submissionGuard.ts
-import { eq as eq4 } from "drizzle-orm";
+import { eq as eq7 } from "drizzle-orm";
 async function requireApplicationFee(req, res, next) {
   try {
     if (req.query.submit !== "true") {
@@ -4828,10 +6165,10 @@ async function requireApplicationFee(req, res, next) {
     }
     let application = null;
     if (applicationType === "individual") {
-      const results = await db.select().from(individualApplications).where(eq4(individualApplications.applicationId, applicationId)).limit(1);
+      const results = await db.select().from(individualApplications).where(eq7(individualApplications.applicationId, applicationId)).limit(1);
       application = results[0];
     } else if (applicationType === "organization") {
-      const results = await db.select().from(organizationApplications).where(eq4(organizationApplications.applicationId, applicationId)).limit(1);
+      const results = await db.select().from(organizationApplications).where(eq7(organizationApplications.applicationId, applicationId)).limit(1);
       application = results[0];
     }
     if (!application) {
@@ -4901,10 +6238,10 @@ async function validateApplicationState(req, res, next) {
     }
     let application = null;
     if (applicationType === "individual") {
-      const results = await db.select().from(individualApplications).where(eq4(individualApplications.applicationId, applicationId)).limit(1);
+      const results = await db.select().from(individualApplications).where(eq7(individualApplications.applicationId, applicationId)).limit(1);
       application = results[0];
     } else if (applicationType === "organization") {
-      const results = await db.select().from(organizationApplications).where(eq4(organizationApplications.applicationId, applicationId)).limit(1);
+      const results = await db.select().from(organizationApplications).where(eq7(organizationApplications.applicationId, applicationId)).limit(1);
       application = results[0];
     }
     if (!application) {
@@ -5350,7 +6687,7 @@ var init_fileValidation = __esm({
 
 // server/applicationRoutes.ts
 import { z as z4 } from "zod";
-import { eq as eq5, and as and3, desc as desc3 } from "drizzle-orm";
+import { eq as eq8, and as and5, desc as desc3 } from "drizzle-orm";
 function generateOTP() {
   return Math.floor(1e5 + Math.random() * 9e5).toString();
 }
@@ -5443,7 +6780,7 @@ function registerApplicationRoutes(app2) {
   app2.post("/api/public/applications/organization/start", async (req, res) => {
     try {
       const applicationData = organizationApplicationSchema.parse(req.body);
-      const [preaMember] = await db.select().from(members).where(eq5(members.id, applicationData.preaMemberId)).limit(1);
+      const [preaMember] = await db.select().from(members).where(eq8(members.id, applicationData.preaMemberId)).limit(1);
       const preaIsActive = preaMember && preaMember.membershipStatus === "active";
       const eligibility = checkOrganizationEligibility(
         applicationData,
@@ -5533,15 +6870,15 @@ function registerApplicationRoutes(app2) {
   app2.get("/api/public/applications/:applicationId", async (req, res) => {
     try {
       const { applicationId } = req.params;
-      const [individualApp] = await db.select().from(individualApplications).where(eq5(individualApplications.applicationId, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
       if (individualApp) {
-        const documents2 = await db.select().from(uploadedDocuments).where(and3(
-          eq5(uploadedDocuments.applicationType, "individual"),
-          eq5(uploadedDocuments.applicationIdFk, applicationId)
+        const documents2 = await db.select().from(uploadedDocuments).where(and5(
+          eq8(uploadedDocuments.applicationType, "individual"),
+          eq8(uploadedDocuments.applicationIdFk, applicationId)
         ));
-        const history = await db.select().from(statusHistory).where(and3(
-          eq5(statusHistory.applicationType, "individual"),
-          eq5(statusHistory.applicationIdFk, applicationId)
+        const history = await db.select().from(statusHistory).where(and5(
+          eq8(statusHistory.applicationType, "individual"),
+          eq8(statusHistory.applicationIdFk, applicationId)
         )).orderBy(desc3(statusHistory.createdAt));
         return res.json({
           ...individualApp,
@@ -5550,15 +6887,15 @@ function registerApplicationRoutes(app2) {
           statusHistory: history
         });
       }
-      const [orgApp] = await db.select().from(organizationApplications).where(eq5(organizationApplications.applicationId, applicationId)).limit(1);
+      const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
       if (orgApp) {
-        const documents2 = await db.select().from(uploadedDocuments).where(and3(
-          eq5(uploadedDocuments.applicationType, "organization"),
-          eq5(uploadedDocuments.applicationIdFk, applicationId)
+        const documents2 = await db.select().from(uploadedDocuments).where(and5(
+          eq8(uploadedDocuments.applicationType, "organization"),
+          eq8(uploadedDocuments.applicationIdFk, applicationId)
         ));
-        const history = await db.select().from(statusHistory).where(and3(
-          eq5(statusHistory.applicationType, "organization"),
-          eq5(statusHistory.applicationIdFk, applicationId)
+        const history = await db.select().from(statusHistory).where(and5(
+          eq8(statusHistory.applicationType, "organization"),
+          eq8(statusHistory.applicationIdFk, applicationId)
         )).orderBy(desc3(statusHistory.createdAt));
         return res.json({
           ...orgApp,
@@ -5593,12 +6930,12 @@ function registerApplicationRoutes(app2) {
         const { applicationId } = req.params;
         let application = null;
         let applicationType = "individual";
-        const [individualApp] = await db.select().from(individualApplications).where(eq5(individualApplications.applicationId, applicationId)).limit(1);
+        const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
         if (individualApp) {
           application = individualApp;
           applicationType = "individual";
         } else {
-          const [orgApp] = await db.select().from(organizationApplications).where(eq5(organizationApplications.applicationId, applicationId)).limit(1);
+          const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
           if (orgApp) {
             application = orgApp;
             applicationType = "organization";
@@ -5613,9 +6950,9 @@ function registerApplicationRoutes(app2) {
             code: "APPLICATION_NOT_FOUND"
           });
         }
-        const uploadedDocs = await db.select().from(uploadedDocuments).where(and3(
-          eq5(uploadedDocuments.applicationType, applicationType),
-          eq5(uploadedDocuments.applicationIdFk, applicationId)
+        const uploadedDocs = await db.select().from(uploadedDocuments).where(and5(
+          eq8(uploadedDocuments.applicationType, applicationType),
+          eq8(uploadedDocuments.applicationIdFk, applicationId)
         ));
         const docTypes = uploadedDocs.map((doc) => doc.docType);
         const docValidation = validateDocumentRequirements(
@@ -5640,12 +6977,12 @@ function registerApplicationRoutes(app2) {
           await db.update(individualApplications).set({
             status: "eligibility_review",
             submittedAt: /* @__PURE__ */ new Date()
-          }).where(eq5(individualApplications.applicationId, applicationId));
+          }).where(eq8(individualApplications.applicationId, applicationId));
         } else {
           await db.update(organizationApplications).set({
             status: "eligibility_review",
             submittedAt: /* @__PURE__ */ new Date()
-          }).where(eq5(organizationApplications.applicationId, applicationId));
+          }).where(eq8(organizationApplications.applicationId, applicationId));
         }
         const submittedAt = /* @__PURE__ */ new Date();
         await db.insert(statusHistory).values({
@@ -5686,8 +7023,8 @@ function registerApplicationRoutes(app2) {
           code: "MISSING_EMAIL"
         });
       }
-      const [individualApp] = await db.select().from(individualApplications).where(eq5(individualApplications.applicationId, applicationId)).limit(1);
-      const [orgApp] = await db.select().from(organizationApplications).where(eq5(organizationApplications.applicationId, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
+      const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
       if (!individualApp && !orgApp) {
         return res.status(404).json({
           type: "https://tools.ietf.org/html/rfc7807",
@@ -5736,10 +7073,10 @@ function registerApplicationRoutes(app2) {
           code: "MISSING_CREDENTIALS"
         });
       }
-      const [token] = await db.select().from(appLoginTokens).where(and3(
-        eq5(appLoginTokens.applicationIdFk, applicationId),
-        eq5(appLoginTokens.email, email),
-        eq5(appLoginTokens.code, code)
+      const [token] = await db.select().from(appLoginTokens).where(and5(
+        eq8(appLoginTokens.applicationIdFk, applicationId),
+        eq8(appLoginTokens.email, email),
+        eq8(appLoginTokens.code, code)
       )).limit(1);
       if (!token) {
         return res.status(401).json({
@@ -5768,7 +7105,7 @@ function registerApplicationRoutes(app2) {
           code: "TOO_MANY_ATTEMPTS"
         });
       }
-      await db.update(appLoginTokens).set({ attempts: (token.attempts || 0) + 1 }).where(eq5(appLoginTokens.id, token.id));
+      await db.update(appLoginTokens).set({ attempts: (token.attempts || 0) + 1 }).where(eq8(appLoginTokens.id, token.id));
       const sessionToken = Buffer.from(`${applicationId}:${email}:${Date.now()}`).toString("base64");
       res.json({
         sessionToken,
@@ -5793,12 +7130,12 @@ function registerApplicationRoutes(app2) {
       const { method, amount, email, phone } = req.body;
       let application = null;
       let applicationType = "individual";
-      const [individualApp] = await db.select().from(individualApplications).where(eq5(individualApplications.applicationId, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
       if (individualApp) {
         application = individualApp;
         applicationType = "individual";
       } else {
-        const [orgApp] = await db.select().from(organizationApplications).where(eq5(organizationApplications.applicationId, applicationId)).limit(1);
+        const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
         if (orgApp) {
           application = orgApp;
           applicationType = "organization";
@@ -5842,9 +7179,9 @@ function registerApplicationRoutes(app2) {
       }
       const updateData = { feePaymentId: paymentResult.pollUrl };
       if (applicationType === "individual") {
-        await db.update(individualApplications).set(updateData).where(eq5(individualApplications.applicationId, applicationId));
+        await db.update(individualApplications).set(updateData).where(eq8(individualApplications.applicationId, applicationId));
       } else {
-        await db.update(organizationApplications).set(updateData).where(eq5(organizationApplications.applicationId, applicationId));
+        await db.update(organizationApplications).set(updateData).where(eq8(organizationApplications.applicationId, applicationId));
       }
       res.json({
         paymentUrl: paymentResult.redirectUrl,
@@ -5870,9 +7207,9 @@ function registerApplicationRoutes(app2) {
       const callbackResult = await paynowService2.verifyIPN(req.body);
       if (callbackResult && callbackResult.success && isPaymentSuccessful(callbackResult.status)) {
         const updateData = { feeStatus: "settled" };
-        const [individualApp] = await db.select().from(individualApplications).where(eq5(individualApplications.applicationId, applicationId)).limit(1);
+        const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
         if (individualApp) {
-          await db.update(individualApplications).set(updateData).where(eq5(individualApplications.applicationId, applicationId));
+          await db.update(individualApplications).set(updateData).where(eq8(individualApplications.applicationId, applicationId));
           await db.insert(statusHistory).values({
             applicationType: "individual",
             applicationIdFk: applicationId,
@@ -5881,9 +7218,9 @@ function registerApplicationRoutes(app2) {
             comment: "Application fee payment confirmed"
           });
         } else {
-          const [orgApp] = await db.select().from(organizationApplications).where(eq5(organizationApplications.applicationId, applicationId)).limit(1);
+          const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
           if (orgApp) {
-            await db.update(organizationApplications).set(updateData).where(eq5(organizationApplications.applicationId, applicationId));
+            await db.update(organizationApplications).set(updateData).where(eq8(organizationApplications.applicationId, applicationId));
             await db.insert(statusHistory).values({
               applicationType: "organization",
               applicationIdFk: applicationId,
@@ -5914,9 +7251,9 @@ function registerApplicationRoutes(app2) {
         });
       }
       let applicationType = "individual";
-      const [individualApp] = await db.select().from(individualApplications).where(eq5(individualApplications.applicationId, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
       if (!individualApp) {
-        const [orgApp] = await db.select().from(organizationApplications).where(eq5(organizationApplications.applicationId, applicationId)).limit(1);
+        const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
         if (orgApp) {
           applicationType = "organization";
         } else {
@@ -5944,9 +7281,9 @@ function registerApplicationRoutes(app2) {
         feeStatus: "proof_uploaded"
       };
       if (applicationType === "individual") {
-        await db.update(individualApplications).set(updateData).where(eq5(individualApplications.applicationId, applicationId));
+        await db.update(individualApplications).set(updateData).where(eq8(individualApplications.applicationId, applicationId));
       } else {
-        await db.update(organizationApplications).set(updateData).where(eq5(organizationApplications.applicationId, applicationId));
+        await db.update(organizationApplications).set(updateData).where(eq8(organizationApplications.applicationId, applicationId));
       }
       await db.insert(statusHistory).values({
         applicationType,
@@ -6032,7 +7369,7 @@ function registerApplicationRoutes(app2) {
         applicationIdFk: uploadedDocuments.applicationIdFk,
         docType: uploadedDocuments.docType,
         fileName: uploadedDocuments.fileName
-      }).from(uploadedDocuments).where(eq5(uploadedDocuments.sha256, calculatedHash)).limit(1);
+      }).from(uploadedDocuments).where(eq8(uploadedDocuments.sha256, calculatedHash)).limit(1);
       if (existingByHash.length > 0) {
         const existingDoc = existingByHash[0];
         console.log("Duplicate file detected with hash:", calculatedHash);
@@ -6052,12 +7389,12 @@ function registerApplicationRoutes(app2) {
       }
       let applicationType = "individual";
       let application;
-      const [individualApp] = await db.select().from(individualApplications).where(eq5(individualApplications.applicationId, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
       if (individualApp) {
         application = individualApp;
         applicationType = "individual";
       } else {
-        const [orgApp] = await db.select().from(organizationApplications).where(eq5(organizationApplications.applicationId, applicationId)).limit(1);
+        const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
         if (orgApp) {
           application = orgApp;
           applicationType = "organization";
@@ -6081,9 +7418,9 @@ function registerApplicationRoutes(app2) {
         });
       }
       const existingDocForType = await db.select().from(uploadedDocuments).where(
-        and3(
-          eq5(uploadedDocuments.applicationIdFk, applicationId),
-          eq5(uploadedDocuments.docType, docType)
+        and5(
+          eq8(uploadedDocuments.applicationIdFk, applicationId),
+          eq8(uploadedDocuments.docType, docType)
         )
       ).limit(1);
       const singleDocumentTypes = ["id_or_passport", "birth_certificate", "certificate_incorporation"];
@@ -6097,7 +7434,7 @@ function registerApplicationRoutes(app2) {
           sha256: calculatedHash,
           status: "uploaded",
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq5(uploadedDocuments.id, existingDocForType[0].id)).returning();
+        }).where(eq8(uploadedDocuments.id, existingDocForType[0].id)).returning();
         return res.status(200).json({
           documentId: document2.id,
           docType,
@@ -6152,7 +7489,7 @@ function registerApplicationRoutes(app2) {
   app2.get("/api/public/applications/:applicationId/documents", async (req, res) => {
     try {
       const { applicationId } = req.params;
-      const documents2 = await db.select().from(uploadedDocuments).where(eq5(uploadedDocuments.applicationIdFk, applicationId)).orderBy(desc3(uploadedDocuments.createdAt));
+      const documents2 = await db.select().from(uploadedDocuments).where(eq8(uploadedDocuments.applicationIdFk, applicationId)).orderBy(desc3(uploadedDocuments.createdAt));
       res.json(documents2);
     } catch (error) {
       console.error("Get documents error:", error);
@@ -6168,9 +7505,9 @@ function registerApplicationRoutes(app2) {
   app2.delete("/api/public/applications/:applicationId/documents/:documentId", async (req, res) => {
     try {
       const { applicationId, documentId } = req.params;
-      const [document] = await db.select().from(uploadedDocuments).where(and3(
-        eq5(uploadedDocuments.id, documentId),
-        eq5(uploadedDocuments.applicationIdFk, applicationId)
+      const [document] = await db.select().from(uploadedDocuments).where(and5(
+        eq8(uploadedDocuments.id, documentId),
+        eq8(uploadedDocuments.applicationIdFk, applicationId)
       )).limit(1);
       if (!document) {
         return res.status(404).json({
@@ -6190,7 +7527,7 @@ function registerApplicationRoutes(app2) {
           code: "DOCUMENT_PROCESSED"
         });
       }
-      await db.delete(uploadedDocuments).where(eq5(uploadedDocuments.id, documentId));
+      await db.delete(uploadedDocuments).where(eq8(uploadedDocuments.id, documentId));
       res.json({
         message: "Document deleted successfully"
       });
@@ -6205,7 +7542,7 @@ function registerApplicationRoutes(app2) {
       });
     }
   });
-  function requireAuth3(req, res, next) {
+  function requireAuth4(req, res, next) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
@@ -6234,8 +7571,8 @@ function registerApplicationRoutes(app2) {
       const { status, type, limit = 50, offset = 0 } = req.query;
       const individualQueryBase = db.select().from(individualApplications);
       const orgQueryBase = db.select().from(organizationApplications);
-      const individualQuery = status ? individualQueryBase.where(eq5(individualApplications.status, status)) : individualQueryBase;
-      const orgQuery = status ? orgQueryBase.where(eq5(organizationApplications.status, status)) : orgQueryBase;
+      const individualQuery = status ? individualQueryBase.where(eq8(individualApplications.status, status)) : individualQueryBase;
+      const orgQuery = status ? orgQueryBase.where(eq8(organizationApplications.status, status)) : orgQueryBase;
       let individualApps = [];
       if (!type || type === "individual") {
         individualApps = await individualQuery.limit(parseInt(limit)).offset(parseInt(offset)).orderBy(desc3(individualApplications.createdAt));
@@ -6257,14 +7594,14 @@ function registerApplicationRoutes(app2) {
   app2.get("/api/admin/applications/:applicationId", authorizeRole2(STAFF_ROLES2), async (req, res) => {
     try {
       const { applicationId } = req.params;
-      const [individualApp] = await db.select().from(individualApplications).where(eq5(individualApplications.applicationId, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
       let application = null;
       let applicationType = "individual";
       if (individualApp) {
         application = individualApp;
         applicationType = "individual";
       } else {
-        const [orgApp] = await db.select().from(organizationApplications).where(eq5(organizationApplications.applicationId, applicationId)).limit(1);
+        const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
         if (orgApp) {
           application = orgApp;
           applicationType = "organization";
@@ -6273,17 +7610,17 @@ function registerApplicationRoutes(app2) {
       if (!application) {
         return res.status(404).json({ message: "Application not found" });
       }
-      const documents2 = await db.select().from(uploadedDocuments).where(and3(
-        eq5(uploadedDocuments.applicationType, applicationType),
-        eq5(uploadedDocuments.applicationIdFk, applicationId)
+      const documents2 = await db.select().from(uploadedDocuments).where(and5(
+        eq8(uploadedDocuments.applicationType, applicationType),
+        eq8(uploadedDocuments.applicationIdFk, applicationId)
       ));
-      const history = await db.select().from(statusHistory).where(and3(
-        eq5(statusHistory.applicationType, applicationType),
-        eq5(statusHistory.applicationIdFk, applicationId)
+      const history = await db.select().from(statusHistory).where(and5(
+        eq8(statusHistory.applicationType, applicationType),
+        eq8(statusHistory.applicationIdFk, applicationId)
       )).orderBy(desc3(statusHistory.createdAt));
-      const decisions = await db.select().from(registryDecisions).where(and3(
-        eq5(registryDecisions.applicationType, applicationType),
-        eq5(registryDecisions.applicationIdFk, applicationId)
+      const decisions = await db.select().from(registryDecisions).where(and5(
+        eq8(registryDecisions.applicationType, applicationType),
+        eq8(registryDecisions.applicationIdFk, applicationId)
       )).orderBy(desc3(registryDecisions.decidedAt));
       res.json({
         ...application,
@@ -6307,12 +7644,12 @@ function registerApplicationRoutes(app2) {
       }
       let application = null;
       let applicationType = "individual";
-      const [individualApp] = await db.select().from(individualApplications).where(eq5(individualApplications.applicationId, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
       if (individualApp) {
         application = individualApp;
         applicationType = "individual";
       } else {
-        const [orgApp] = await db.select().from(organizationApplications).where(eq5(organizationApplications.applicationId, applicationId)).limit(1);
+        const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
         if (orgApp) {
           application = orgApp;
           applicationType = "organization";
@@ -6323,9 +7660,9 @@ function registerApplicationRoutes(app2) {
       }
       const updateData = { status, updatedAt: /* @__PURE__ */ new Date() };
       if (applicationType === "individual") {
-        await db.update(individualApplications).set(updateData).where(eq5(individualApplications.applicationId, applicationId));
+        await db.update(individualApplications).set(updateData).where(eq8(individualApplications.applicationId, applicationId));
       } else {
-        await db.update(organizationApplications).set(updateData).where(eq5(organizationApplications.applicationId, applicationId));
+        await db.update(organizationApplications).set(updateData).where(eq8(organizationApplications.applicationId, applicationId));
       }
       await db.insert(statusHistory).values({
         applicationType,
@@ -6353,9 +7690,9 @@ function registerApplicationRoutes(app2) {
       if (!status || !["verified", "rejected"].includes(status)) {
         return res.status(400).json({ message: "Valid status (verified/rejected) is required" });
       }
-      const [document] = await db.select().from(uploadedDocuments).where(and3(
-        eq5(uploadedDocuments.id, documentId),
-        eq5(uploadedDocuments.applicationIdFk, applicationId)
+      const [document] = await db.select().from(uploadedDocuments).where(and5(
+        eq8(uploadedDocuments.id, documentId),
+        eq8(uploadedDocuments.applicationIdFk, applicationId)
       )).limit(1);
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
@@ -6365,7 +7702,7 @@ function registerApplicationRoutes(app2) {
         verifierUserId: userId,
         notes,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq5(uploadedDocuments.id, documentId));
+      }).where(eq8(uploadedDocuments.id, documentId));
       res.json({
         documentId,
         status,
@@ -6395,12 +7732,12 @@ function registerApplicationRoutes(app2) {
       }
       let application = null;
       let applicationType = "individual";
-      const [individualApp] = await db.select().from(individualApplications).where(eq5(individualApplications.applicationId, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
       if (individualApp) {
         application = individualApp;
         applicationType = "individual";
       } else {
-        const [orgApp] = await db.select().from(organizationApplications).where(eq5(organizationApplications.applicationId, applicationId)).limit(1);
+        const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
         if (orgApp) {
           application = orgApp;
           applicationType = "organization";
@@ -6427,9 +7764,9 @@ function registerApplicationRoutes(app2) {
         Object.assign(updateData, { memberId: memberNumber });
       }
       if (applicationType === "individual") {
-        await db.update(individualApplications).set(updateData).where(eq5(individualApplications.applicationId, applicationId));
+        await db.update(individualApplications).set(updateData).where(eq8(individualApplications.applicationId, applicationId));
       } else {
-        await db.update(organizationApplications).set(updateData).where(eq5(organizationApplications.applicationId, applicationId));
+        await db.update(organizationApplications).set(updateData).where(eq8(organizationApplications.applicationId, applicationId));
       }
       await db.insert(statusHistory).values({
         applicationType,
@@ -6864,7 +8201,7 @@ __export(publicRoutes_exports, {
   registerPublicRoutes: () => registerPublicRoutes
 });
 import { z as z5 } from "zod";
-import { eq as eq6 } from "drizzle-orm";
+import { eq as eq9 } from "drizzle-orm";
 import crypto4 from "crypto";
 function generateVerificationToken2() {
   return crypto4.randomBytes(32).toString("hex");
@@ -6873,7 +8210,7 @@ function registerPublicRoutes(app2) {
   app2.post("/api/applicants/register", async (req, res) => {
     try {
       const registrationData = individualRegistrationSchema.parse(req.body);
-      const existingApplicant = await db.select().from(applicants).where(eq6(applicants.email, registrationData.email)).limit(1);
+      const existingApplicant = await db.select().from(applicants).where(eq9(applicants.email, registrationData.email)).limit(1);
       if (existingApplicant.length > 0) {
         return res.status(409).json({
           error: "Email already registered",
@@ -6934,7 +8271,7 @@ function registerPublicRoutes(app2) {
   app2.post("/api/organization-applicants/register", async (req, res) => {
     try {
       const registrationData = organizationRegistrationSchema.parse(req.body);
-      const existingApplicant = await db.select().from(organizationApplicants).where(eq6(organizationApplicants.email, registrationData.email)).limit(1);
+      const existingApplicant = await db.select().from(organizationApplicants).where(eq9(organizationApplicants.email, registrationData.email)).limit(1);
       if (existingApplicant.length > 0) {
         return res.status(409).json({
           error: "Email already registered",
@@ -6994,7 +8331,7 @@ function registerPublicRoutes(app2) {
           error: "Verification token is required"
         });
       }
-      const [individualApplicant] = await db.select().from(applicants).where(eq6(applicants.emailVerificationToken, token)).limit(1);
+      const [individualApplicant] = await db.select().from(applicants).where(eq9(applicants.emailVerificationToken, token)).limit(1);
       if (individualApplicant) {
         if (individualApplicant.emailVerificationExpires && /* @__PURE__ */ new Date() > individualApplicant.emailVerificationExpires) {
           return res.status(400).json({
@@ -7008,7 +8345,7 @@ function registerPublicRoutes(app2) {
           emailVerificationToken: null,
           emailVerificationExpires: null,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq6(applicants.id, individualApplicant.id));
+        }).where(eq9(applicants.id, individualApplicant.id));
         return res.json({
           success: true,
           applicantId: individualApplicant.applicantId,
@@ -7016,7 +8353,7 @@ function registerPublicRoutes(app2) {
           message: "Email verified successfully! You can now continue with your application."
         });
       }
-      const [orgApplicant] = await db.select().from(organizationApplicants).where(eq6(organizationApplicants.emailVerificationToken, token)).limit(1);
+      const [orgApplicant] = await db.select().from(organizationApplicants).where(eq9(organizationApplicants.emailVerificationToken, token)).limit(1);
       if (orgApplicant) {
         if (orgApplicant.emailVerificationExpires && /* @__PURE__ */ new Date() > orgApplicant.emailVerificationExpires) {
           return res.status(400).json({
@@ -7030,7 +8367,7 @@ function registerPublicRoutes(app2) {
           emailVerificationToken: null,
           emailVerificationExpires: null,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq6(organizationApplicants.id, orgApplicant.id));
+        }).where(eq9(organizationApplicants.id, orgApplicant.id));
         return res.json({
           success: true,
           applicantId: orgApplicant.applicantId,
@@ -7058,7 +8395,7 @@ function registerPublicRoutes(app2) {
           error: "Email and Applicant ID are required"
         });
       }
-      const [individualApplicant] = await db.select().from(applicants).where(eq6(applicants.email, email)).limit(1);
+      const [individualApplicant] = await db.select().from(applicants).where(eq9(applicants.email, email)).limit(1);
       if (individualApplicant && individualApplicant.applicantId === applicantId) {
         if (!individualApplicant.emailVerified) {
           return res.status(401).json({
@@ -7076,7 +8413,7 @@ function registerPublicRoutes(app2) {
           message: "Login successful"
         });
       }
-      const [orgApplicant] = await db.select().from(organizationApplicants).where(eq6(organizationApplicants.email, email)).limit(1);
+      const [orgApplicant] = await db.select().from(organizationApplicants).where(eq9(organizationApplicants.email, email)).limit(1);
       if (orgApplicant && orgApplicant.applicantId === applicantId) {
         if (!orgApplicant.emailVerified) {
           return res.status(401).json({
@@ -7213,7 +8550,7 @@ __export(idMigration_exports, {
   getMigrationStatus: () => getMigrationStatus,
   previewIdFormatMigration: () => previewIdFormatMigration
 });
-import { sql as sql6 } from "drizzle-orm";
+import { sql as sql7 } from "drizzle-orm";
 function getEnrollmentYear(joiningDate, createdAt) {
   if (joiningDate) {
     return joiningDate.getFullYear();
@@ -7230,7 +8567,7 @@ function isNewFormat(id) {
 }
 async function isMigrationCompleted() {
   try {
-    const result = await db.execute(sql6`
+    const result = await db.execute(sql7`
       SELECT value FROM system_settings 
       WHERE key = 'id_format_migration_2025_completed'
     `);
@@ -7240,14 +8577,14 @@ async function isMigrationCompleted() {
   }
 }
 async function markMigrationCompleted() {
-  await db.execute(sql6`
+  await db.execute(sql7`
     CREATE TABLE IF NOT EXISTS system_settings (
       key VARCHAR(255) PRIMARY KEY,
       value TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
-  await db.execute(sql6`
+  await db.execute(sql7`
     INSERT INTO system_settings (key, value) 
     VALUES ('id_format_migration_2025_completed', 'true')
     ON CONFLICT (key) 
@@ -7256,12 +8593,12 @@ async function markMigrationCompleted() {
 }
 async function previewIdFormatMigration() {
   console.log("\u{1F50D} Running ID format migration preview...");
-  const memberRecords = await db.execute(sql6`
+  const memberRecords = await db.execute(sql7`
     SELECT id, membership_number, joining_date, created_at 
     FROM members 
     ORDER BY created_at ASC
   `);
-  const orgRecords = await db.execute(sql6`
+  const orgRecords = await db.execute(sql7`
     SELECT id, registration_number, registration_date, created_at 
     FROM organizations 
     ORDER BY created_at ASC
@@ -7336,7 +8673,7 @@ async function executeIdFormatMigration() {
       let membersUpdated = 0;
       let organizationsUpdated = 0;
       for (const change of preview.members) {
-        await tx.execute(sql6`
+        await tx.execute(sql7`
           UPDATE members 
           SET membership_number = ${change.new}
           WHERE id = ${change.id}
@@ -7345,7 +8682,7 @@ async function executeIdFormatMigration() {
         console.log(`Updated member ${change.id}: ${change.old} \u2192 ${change.new}`);
       }
       for (const change of preview.organizations) {
-        await tx.execute(sql6`
+        await tx.execute(sql7`
           UPDATE organizations 
           SET registration_number = ${change.new}
           WHERE id = ${change.id}
@@ -7361,7 +8698,7 @@ async function executeIdFormatMigration() {
         }).onConflictDoUpdate({
           target: [namingSeriesCounters.seriesCode, namingSeriesCounters.year],
           set: {
-            counter: sql6`GREATEST(${namingSeriesCounters.counter}, ${count2})`
+            counter: sql7`GREATEST(${namingSeriesCounters.counter}, ${count2})`
           }
         });
       }
@@ -7373,7 +8710,7 @@ async function executeIdFormatMigration() {
         }).onConflictDoUpdate({
           target: [namingSeriesCounters.seriesCode, namingSeriesCounters.year],
           set: {
-            counter: sql6`GREATEST(${namingSeriesCounters.counter}, ${count2})`
+            counter: sql7`GREATEST(${namingSeriesCounters.counter}, ${count2})`
           }
         });
       }
@@ -7398,12 +8735,12 @@ async function executeIdFormatMigration() {
 }
 async function getMigrationStatus() {
   const completed = await isMigrationCompleted();
-  const membersOldFormat = await db.execute(sql6`
+  const membersOldFormat = await db.execute(sql7`
     SELECT COUNT(*) as count FROM members 
     WHERE membership_number IS NOT NULL 
     AND NOT (membership_number ~ '^EAC-MBR-\\d{4}-\\d{4}$')
   `);
-  const orgsOldFormat = await db.execute(sql6`
+  const orgsOldFormat = await db.execute(sql7`
     SELECT COUNT(*) as count FROM organizations 
     WHERE registration_number IS NOT NULL 
     AND NOT (registration_number ~ '^EAC-ORG-\\d{4}-\\d{4}$')
@@ -7435,9 +8772,9 @@ __export(routes_exports, {
 import { createServer } from "http";
 import { z as z6 } from "zod";
 import multer from "multer";
-import { eq as eq7 } from "drizzle-orm";
-import { randomUUID as randomUUID3, randomBytes as randomBytes2 } from "crypto";
-function requireAuth2(req, res, next) {
+import { eq as eq10 } from "drizzle-orm";
+import { randomUUID as randomUUID3, randomBytes as randomBytes4 } from "crypto";
+function requireAuth3(req, res, next) {
   console.log("Auth middleware: req.isAuthenticated():", req.isAuthenticated());
   console.log("Auth middleware: req.user:", req.user);
   if (!req.isAuthenticated()) {
@@ -7486,24 +8823,24 @@ async function checkApplicationAuthorization(userId, applicationId, applicationT
     let application = null;
     let appType = applicationType;
     if (appType === "individual") {
-      const individualApp = await db.select().from(individualApplications).where(eq7(individualApplications.id, applicationId)).limit(1);
+      const individualApp = await db.select().from(individualApplications).where(eq10(individualApplications.id, applicationId)).limit(1);
       if (individualApp.length === 0) {
         return { authorized: false, reason: "Individual application not found" };
       }
       application = individualApp[0];
     } else if (appType === "organization") {
-      const orgApp = await db.select().from(organizationApplications).where(eq7(organizationApplications.id, applicationId)).limit(1);
+      const orgApp = await db.select().from(organizationApplications).where(eq10(organizationApplications.id, applicationId)).limit(1);
       if (orgApp.length === 0) {
         return { authorized: false, reason: "Organization application not found" };
       }
       application = orgApp[0];
     } else {
-      const [individualApp] = await db.select().from(individualApplications).where(eq7(individualApplications.id, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq10(individualApplications.id, applicationId)).limit(1);
       if (individualApp) {
         application = individualApp;
         appType = "individual";
       } else {
-        const [orgApp] = await db.select().from(organizationApplications).where(eq7(organizationApplications.id, applicationId)).limit(1);
+        const [orgApp] = await db.select().from(organizationApplications).where(eq10(organizationApplications.id, applicationId)).limit(1);
         if (orgApp) {
           application = orgApp;
           appType = "organization";
@@ -7553,6 +8890,7 @@ async function registerRoutes(app2) {
   registerPublicRoutes2(app2);
   setupClerkAuth(app2);
   setupAuth(app2);
+  setupAuthRoutes(app2);
   registerApplicationRoutes(app2);
   app2.post("/api/applicants/register", async (req, res) => {
     try {
@@ -8119,7 +9457,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: error.message });
     }
   });
-  app2.get("/api/cases", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/cases", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const validatedQuery = casesQuerySchema2.safeParse(req.query);
       if (!validatedQuery.success) {
@@ -8154,7 +9492,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/cases", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.post("/api/cases", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const validatedData = insertCaseSchema.parse(req.body);
       const caseItem = await storage.createCase(validatedData);
@@ -8163,7 +9501,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: error.message });
     }
   });
-  app2.get("/api/cases/:id", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/cases/:id", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const caseItem = await storage.getCase(id);
@@ -8175,7 +9513,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.put("/api/cases/:id", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.put("/api/cases/:id", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const validatedUpdates = caseUpdateSchema2.parse(req.body);
@@ -8185,7 +9523,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: error.message });
     }
   });
-  app2.put("/api/cases/:id/assign", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.put("/api/cases/:id/assign", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = caseAssignmentSchema2.parse(req.body);
@@ -8195,7 +9533,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: error.message });
     }
   });
-  app2.post("/api/cases/bulk-action", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.post("/api/cases/bulk-action", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const validatedData = bulkCaseActionSchema2.parse(req.body);
       const { caseIds, action, assignedTo, resolution } = validatedData;
@@ -8215,7 +9553,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ message: error.message });
     }
   });
-  app2.get("/api/cases/reports/export", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/cases/reports/export", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { format = "json", status, priority } = req.query;
       let cases2;
@@ -8242,7 +9580,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/cases/staff", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/cases/staff", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const staff = await storage.getStaffUsers();
       res.json(staff);
@@ -8482,7 +9820,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/admin/members", requireAuth2, async (req, res) => {
+  app2.get("/api/admin/members", requireAuth3, async (req, res) => {
     try {
       const allMembers = await storage.getAllMembers();
       res.json(allMembers);
@@ -8491,7 +9829,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch members" });
     }
   });
-  app2.put("/api/members/:id", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.put("/api/members/:id", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -8506,7 +9844,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update member" });
     }
   });
-  app2.post("/api/admin/members/simplified-add", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.post("/api/admin/members/simplified-add", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const {
         firstName,
@@ -8546,8 +9884,7 @@ async function registerRoutes(app2) {
         membershipNumber,
         membershipStatus: "pending",
         // Additional fields based on form data
-        isMatureEntry: educationLevel === "mature_entry" ? true : false,
-        cpdPoints: 0
+        isMatureEntry: educationLevel === "mature_entry" ? true : false
       };
       const newMember = await storage.createMember(memberData);
       try {
@@ -8615,7 +9952,7 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.post("/api/admin/members/create-with-clerk", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.post("/api/admin/members/create-with-clerk", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const {
         firstName,
@@ -8741,8 +10078,7 @@ async function registerRoutes(app2) {
         memberType,
         membershipNumber,
         membershipStatus: "pending",
-        isMatureEntry: educationLevel === "mature_entry" ? true : false,
-        cpdPoints: 0
+        isMatureEntry: educationLevel === "mature_entry" ? true : false
       };
       const newMember = await storage.createMember(memberData);
       console.log(`Created Member record ${newMember.id} with membership number ${membershipNumber}`);
@@ -8812,7 +10148,7 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.get("/api/organizations/current/members", requireAuth2, async (req, res) => {
+  app2.get("/api/organizations/current/members", requireAuth3, async (req, res) => {
     try {
       const allMembers = await storage.getAllMembers();
       const userMember = allMembers.find((m) => m.userId === req.user?.id);
@@ -8831,7 +10167,7 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.post("/api/organizations/current/members/bulk-import", requireAuth2, upload.single("csvFile"), async (req, res) => {
+  app2.post("/api/organizations/current/members/bulk-import", requireAuth3, upload.single("csvFile"), async (req, res) => {
     try {
       const allMembers = await storage.getAllMembers();
       const userMember = allMembers.find((m) => m.userId === req.user?.id);
@@ -8954,7 +10290,7 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.post("/api/admin/members/bulk-import", requireAuth2, authorizeRole(STAFF_ROLES), upload.single("csvFile"), async (req, res) => {
+  app2.post("/api/admin/members/bulk-import", requireAuth3, authorizeRole(STAFF_ROLES), upload.single("csvFile"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -9119,8 +10455,7 @@ async function registerRoutes(app2) {
             membershipNumber,
             membershipStatus: "active",
             // Bulk imported members are active immediately
-            isMatureEntry: rowData.educationlevel === "mature_entry",
-            cpdPoints: 0
+            isMatureEntry: rowData.educationlevel === "mature_entry"
           };
           const newMember = await storage.createMember(memberData);
           const { generateVerificationToken: generateVerificationToken3 } = await Promise.resolve().then(() => (init_applicantUtils(), applicantUtils_exports));
@@ -9195,7 +10530,7 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.get("/api/admin/organizations", requireAuth2, async (req, res) => {
+  app2.get("/api/admin/organizations", requireAuth3, async (req, res) => {
     try {
       const allOrganizations = await storage.getAllOrganizations();
       res.json(allOrganizations);
@@ -9204,7 +10539,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch organizations" });
     }
   });
-  app2.get("/api/admin/applicants", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/admin/applicants", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const allApplicants = await storage.listApplicants();
       res.json(allApplicants);
@@ -9213,7 +10548,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch applicants" });
     }
   });
-  app2.get("/api/admin/organization-applicants", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.get("/api/admin/organization-applicants", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const allOrgApplicants = await storage.listOrganizationApplicants();
       res.json(allOrgApplicants);
@@ -9222,7 +10557,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch organization applicants" });
     }
   });
-  app2.put("/api/admin/applicants/:id", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.put("/api/admin/applicants/:id", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -9234,9 +10569,9 @@ async function registerRoutes(app2) {
       if (updates.status === "approved" && currentApplicant.status !== "approved") {
         console.log(`Converting approved applicant ${applicant.applicantId} to member...`);
         try {
-          const passwordResetToken = randomBytes2(32).toString("hex");
+          const passwordResetToken = randomBytes4(32).toString("hex");
           const passwordResetExpires = new Date(Date.now() + 24 * 60 * 60 * 1e3);
-          const hashedPassword = await hashPassword("temp_" + randomBytes2(8).toString("hex"));
+          const hashedPassword = await hashPassword("temp_" + randomBytes4(8).toString("hex"));
           const membershipNumber = await nextMemberNumber("individual");
           const newUser = await storage.createUser({
             email: applicant.email,
@@ -9258,10 +10593,9 @@ async function registerRoutes(app2) {
             memberType: "real_estate_agent",
             // Default type, can be customized
             membershipStatus: "active",
-            joiningDate: /* @__PURE__ */ new Date(),
-            expiryDate: new Date((/* @__PURE__ */ new Date()).setFullYear((/* @__PURE__ */ new Date()).getFullYear() + 1)),
+            joinedDate: /* @__PURE__ */ new Date(),
+            expiryDate: new Date((/* @__PURE__ */ new Date()).setFullYear((/* @__PURE__ */ new Date()).getFullYear() + 1))
             // 1 year from now
-            cpdPoints: 0
           });
           const { sendEmail: sendEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
           const { generateApprovedMemberWelcomeEmail: generateApprovedMemberWelcomeEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
@@ -9302,7 +10636,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update applicant" });
     }
   });
-  app2.put("/api/admin/organization-applicants/:id", requireAuth2, authorizeRole(STAFF_ROLES), async (req, res) => {
+  app2.put("/api/admin/organization-applicants/:id", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -9313,7 +10647,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update organization applicant" });
     }
   });
-  app2.get("/api/admin/applications", requireAuth2, async (req, res) => {
+  app2.get("/api/admin/applications", requireAuth3, async (req, res) => {
     try {
       const applications = await storage.getPendingApplications();
       res.json(applications);
@@ -9322,7 +10656,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch applications" });
     }
   });
-  app2.get("/api/members/profile", requireAuth2, async (req, res) => {
+  app2.get("/api/members/profile", requireAuth3, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9341,7 +10675,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch member profile" });
     }
   });
-  app2.put("/api/members/profile", requireAuth2, async (req, res) => {
+  app2.put("/api/members/profile", requireAuth3, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9359,7 +10693,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update profile" });
     }
   });
-  app2.put("/api/members/professional", requireAuth2, async (req, res) => {
+  app2.put("/api/members/professional", requireAuth3, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9382,7 +10716,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update professional details" });
     }
   });
-  app2.put("/api/auth/change-password", requireAuth2, async (req, res) => {
+  app2.put("/api/auth/change-password", requireAuth3, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
       if (!currentPassword || !newPassword) {
@@ -9403,7 +10737,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to change password" });
     }
   });
-  app2.get("/api/members/documents", requireAuth2, async (req, res) => {
+  app2.get("/api/members/documents", requireAuth3, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9420,7 +10754,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch documents" });
     }
   });
-  app2.get("/api/members/payments", requireAuth2, async (req, res) => {
+  app2.get("/api/members/payments", requireAuth3, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9437,7 +10771,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch payments" });
     }
   });
-  app2.get("/api/organization/profile", requireAuth2, async (req, res) => {
+  app2.get("/api/organization/profile", requireAuth3, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9454,7 +10788,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch organization profile" });
     }
   });
-  app2.put("/api/organization/profile", requireAuth2, async (req, res) => {
+  app2.put("/api/organization/profile", requireAuth3, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9472,7 +10806,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update organization profile" });
     }
   });
-  app2.get("/api/organization/members", requireAuth2, async (req, res) => {
+  app2.get("/api/organization/members", requireAuth3, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -9490,7 +10824,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch organization members" });
     }
   });
-  app2.get("/api/admin/users", requireAuth2, async (req, res) => {
+  app2.get("/api/admin/users", requireAuth3, async (req, res) => {
     try {
       const users2 = await storage.getAllUsers();
       res.json(users2);
@@ -9498,7 +10832,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/admin/users/role/:role", requireAuth2, async (req, res) => {
+  app2.get("/api/admin/users/role/:role", requireAuth3, async (req, res) => {
     try {
       const { role } = req.params;
       const users2 = await storage.getUsersByRole(role);
@@ -9507,7 +10841,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.put("/api/admin/users/:id", requireAuth2, async (req, res) => {
+  app2.put("/api/admin/users/:id", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -9517,7 +10851,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/admin/users/:id/lock", requireAuth2, async (req, res) => {
+  app2.post("/api/admin/users/:id/lock", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const { lockedUntil } = req.body;
@@ -9527,7 +10861,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/admin/users/:id/unlock", requireAuth2, async (req, res) => {
+  app2.post("/api/admin/users/:id/unlock", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const user = await storage.unlockUser(id);
@@ -9536,7 +10870,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/admin/users/welcome-emails", requireAuth2, async (req, res) => {
+  app2.post("/api/admin/users/welcome-emails", requireAuth3, async (req, res) => {
     try {
       const { userIds } = req.body;
       if (!Array.isArray(userIds) || userIds.length === 0) {
@@ -9559,7 +10893,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/admin/users/password-reset-emails", requireAuth2, async (req, res) => {
+  app2.post("/api/admin/users/password-reset-emails", requireAuth3, async (req, res) => {
     try {
       const { userIds } = req.body;
       if (!Array.isArray(userIds) || userIds.length === 0) {
@@ -9719,7 +11053,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/payments/range", requireAuth2, async (req, res) => {
+  app2.get("/api/payments/range", requireAuth3, async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
       const payments2 = await storage.getPaymentsByDateRange(
@@ -9731,7 +11065,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/payments/method/:method", requireAuth2, async (req, res) => {
+  app2.get("/api/payments/method/:method", requireAuth3, async (req, res) => {
     try {
       const { method } = req.params;
       const payments2 = await storage.getPaymentsByMethod(method);
@@ -9740,7 +11074,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/payments/:id/refund", requireAuth2, async (req, res) => {
+  app2.post("/api/payments/:id/refund", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const { refundAmount, reason } = req.body;
@@ -9750,7 +11084,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/payments/:id/installments", requireAuth2, async (req, res) => {
+  app2.get("/api/payments/:id/installments", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const installments = await storage.getInstallmentsByPayment(id);
@@ -9759,7 +11093,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/admin/applications", requireAuth2, async (req, res) => {
+  app2.get("/api/admin/applications", requireAuth3, async (req, res) => {
     try {
       const applications = await storage.getAllApplications();
       res.json(applications);
@@ -9767,7 +11101,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/organization-applications", requireAuth2, async (req, res) => {
+  app2.get("/api/organization-applications", requireAuth3, async (req, res) => {
     try {
       const applications = await storage.getAllOrganizationApplications();
       res.json(applications);
@@ -9775,7 +11109,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/organization-applications/:id", requireAuth2, async (req, res) => {
+  app2.get("/api/organization-applications/:id", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const application = await storage.getOrganizationApplication(id);
@@ -9787,7 +11121,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/organization-applications/:id/review", requireAuth2, async (req, res) => {
+  app2.post("/api/organization-applications/:id/review", requireAuth3, async (req, res) => {
     try {
       console.log("Organization review request:", { id: req.params.id, action: req.body.action, userId: req.user?.id });
       const { id } = req.params;
@@ -9812,7 +11146,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/applications/status/:status", requireAuth2, async (req, res) => {
+  app2.get("/api/applications/status/:status", requireAuth3, async (req, res) => {
     try {
       const { status } = req.params;
       const applications = await storage.getApplicationsByStatus(status);
@@ -9821,7 +11155,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/applications/stage/:stage", requireAuth2, async (req, res) => {
+  app2.get("/api/applications/stage/:stage", requireAuth3, async (req, res) => {
     try {
       const { stage } = req.params;
       const applications = await storage.getApplicationsByStage(stage);
@@ -9830,7 +11164,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/applications/:id/assign", requireAuth2, async (req, res) => {
+  app2.post("/api/applications/:id/assign", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const { reviewerId } = req.body;
@@ -9840,7 +11174,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/applications/:id/review", requireAuth2, async (req, res) => {
+  app2.post("/api/applications/:id/review", requireAuth3, async (req, res) => {
     try {
       console.log("Review application request:", { id: req.params.id, action: req.body.action, userId: req.user?.id });
       const { id } = req.params;
@@ -9869,7 +11203,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/applications/:id/workflows", requireAuth2, async (req, res) => {
+  app2.get("/api/applications/:id/workflows", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const workflows = await storage.getWorkflowsByApplication(id);
@@ -9878,7 +11212,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/workflows/stage/:stage", requireAuth2, async (req, res) => {
+  app2.get("/api/workflows/stage/:stage", requireAuth3, async (req, res) => {
     try {
       const { stage } = req.params;
       const workflows = await storage.getWorkflowsByStage(stage);
@@ -9887,7 +11221,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/workflows/assignee/:userId", requireAuth2, async (req, res) => {
+  app2.get("/api/workflows/assignee/:userId", requireAuth3, async (req, res) => {
     try {
       const { userId } = req.params;
       const workflows = await storage.getWorkflowsByAssignee(userId);
@@ -9896,7 +11230,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/users/:id/permissions", requireAuth2, async (req, res) => {
+  app2.get("/api/users/:id/permissions", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const permissions = await storage.getUserPermissions(id);
@@ -9905,7 +11239,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/users/:id/permissions/check", requireAuth2, async (req, res) => {
+  app2.get("/api/users/:id/permissions/check", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const { permission, resource } = req.query;
@@ -9919,7 +11253,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/notifications/user/:userId", requireAuth2, async (req, res) => {
+  app2.get("/api/notifications/user/:userId", requireAuth3, async (req, res) => {
     try {
       const { userId } = req.params;
       const notifications2 = await storage.getUserNotifications(userId);
@@ -9928,7 +11262,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/notifications/member/:memberId", requireAuth2, async (req, res) => {
+  app2.get("/api/notifications/member/:memberId", requireAuth3, async (req, res) => {
     try {
       const { memberId } = req.params;
       const notifications2 = await storage.getMemberNotifications(memberId);
@@ -9937,7 +11271,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/notifications/:id/opened", requireAuth2, async (req, res) => {
+  app2.post("/api/notifications/:id/opened", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const notification = await storage.markNotificationOpened(id);
@@ -9946,7 +11280,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/admin/notifications/pending", requireAuth2, async (req, res) => {
+  app2.get("/api/admin/notifications/pending", requireAuth3, async (req, res) => {
     try {
       const notifications2 = await storage.getPendingNotifications();
       res.json(notifications2);
@@ -9954,7 +11288,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/admin/audit-logs", requireAuth2, async (req, res) => {
+  app2.get("/api/admin/audit-logs", requireAuth3, async (req, res) => {
     try {
       const { userId, resource, action } = req.query;
       const logs = await storage.getAuditLogs({
@@ -9967,7 +11301,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.get("/api/users/:id/sessions", requireAuth2, async (req, res) => {
+  app2.get("/api/users/:id/sessions", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
       const sessions = await storage.getUserSessions(id);
@@ -9976,16 +11310,16 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/sessions/:id/deactivate", requireAuth2, async (req, res) => {
+  app2.post("/api/sessions/:id/deactivate", requireAuth3, async (req, res) => {
     try {
       const { id } = req.params;
-      const session3 = await storage.deactivateSession(id);
-      res.json(session3);
+      const session4 = await storage.deactivateSession(id);
+      res.json(session4);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
   });
-  app2.post("/api/admin/sessions/cleanup", requireAuth2, async (req, res) => {
+  app2.post("/api/admin/sessions/cleanup", requireAuth3, async (req, res) => {
     try {
       const count2 = await storage.cleanupExpiredSessions();
       res.json({ cleanedSessions: count2 });
@@ -10317,7 +11651,7 @@ async function registerRoutes(app2) {
       }
       const fileHash = validationResult.fileInfo.hash;
       const fileSizeActual = validationResult.fileInfo.size;
-      const existingDoc = await db.select().from(uploadedDocuments).where(eq7(uploadedDocuments.sha256, fileHash)).limit(1);
+      const existingDoc = await db.select().from(uploadedDocuments).where(eq10(uploadedDocuments.sha256, fileHash)).limit(1);
       if (existingDoc.length > 0) {
         const duplicate = existingDoc[0];
         return res.status(409).json({
@@ -10515,6 +11849,7 @@ var init_routes = __esm({
     "use strict";
     init_auth();
     init_clerkAuth();
+    init_authRoutes();
     init_storage();
     init_paymentRoutes();
     init_applicationRoutes();

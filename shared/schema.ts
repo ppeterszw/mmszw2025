@@ -582,22 +582,7 @@ export const membersRelations = relations(members, ({ one, many }) => ({
   activities: many(memberActivities)
 }));
 
-export const memberApplicationsRelations = relations(memberApplications, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [memberApplications.organizationId],
-    references: [organizations.id]
-  }),
-  reviewer: one(users, {
-    fields: [memberApplications.reviewedBy],
-    references: [users.id]
-  }),
-  payment: one(payments, {
-    fields: [memberApplications.paymentId],
-    references: [payments.id]
-  }),
-  documents: many(documents),
-  workflows: many(applicationWorkflows)
-}));
+// memberApplications is now an alias to individualApplications, so we use individualApplicationsRelations instead
 
 export const casesRelations = relations(cases, ({ one }) => ({
   member: one(members, {
@@ -766,12 +751,8 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
 
 // New Application Relations
 export const individualApplicationsRelations = relations(individualApplications, ({ one, many }) => ({
-  createdByUser: one(users, {
-    fields: [individualApplications.createdByUserId],
-    references: [users.id]
-  }),
-  member: one(members, {
-    fields: [individualApplications.memberId],
+  createdMember: one(members, {
+    fields: [individualApplications.createdMemberId],
     references: [members.id]
   }),
   documents: many(uploadedDocuments),
@@ -781,17 +762,9 @@ export const individualApplicationsRelations = relations(individualApplications,
 }));
 
 export const organizationApplicationsRelations = relations(organizationApplications, ({ one, many }) => ({
-  createdByUser: one(users, {
-    fields: [organizationApplications.createdByUserId],
-    references: [users.id]
-  }),
-  preaMember: one(members, {
-    fields: [organizationApplications.preaMemberId],
-    references: [members.id]
-  }),
-  member: one(members, {
-    fields: [organizationApplications.memberId],
-    references: [members.id]
+  createdOrganization: one(organizations, {
+    fields: [organizationApplications.createdOrganizationId],
+    references: [organizations.id]
   }),
   documents: many(uploadedDocuments),
   statusHistory: many(statusHistory),
