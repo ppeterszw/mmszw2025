@@ -1935,8 +1935,26 @@ var init_storage = __esm({
         const [app2] = await db.update(individualApplications).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(individualApplications.id, id)).returning();
         return app2;
       }
+      // Helper function to transform JSONB fields to flat structure for backward compatibility
+      transformApplication(app2) {
+        const personal = typeof app2.personal === "string" ? JSON.parse(app2.personal) : app2.personal || {};
+        const education = typeof app2.education === "string" ? JSON.parse(app2.education) : app2.education || {};
+        return {
+          ...app2,
+          firstName: personal.firstName || "",
+          lastName: personal.lastName || "",
+          phone: personal.phone || "",
+          address: personal.address || "",
+          nationalId: personal.nationalId || "",
+          dateOfBirth: personal.dateOfBirth || null,
+          educationLevel: education.level || "",
+          institution: education.institution || "",
+          yearCompleted: education.yearCompleted || null
+        };
+      }
       async getPendingApplications() {
-        return await db.select().from(individualApplications).where(sql4`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`).orderBy(desc(individualApplications.createdAt));
+        const apps = await db.select().from(individualApplications).where(sql4`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`).orderBy(desc(individualApplications.createdAt));
+        return apps.map((app2) => this.transformApplication(app2));
       }
       // Organization Application operations
       async getOrganizationApplication(id) {
@@ -2263,13 +2281,16 @@ var init_storage = __esm({
       }
       // Enhanced Application Methods
       async getApplicationsByStatus(status) {
-        return await db.select().from(individualApplications).where(eq(individualApplications.status, status)).orderBy(desc(individualApplications.createdAt));
+        const apps = await db.select().from(individualApplications).where(eq(individualApplications.status, status)).orderBy(desc(individualApplications.createdAt));
+        return apps.map((app2) => this.transformApplication(app2));
       }
       async getApplicationsByStage(stage) {
-        return await db.select().from(individualApplications).where(eq(individualApplications.currentStage, stage)).orderBy(desc(individualApplications.createdAt));
+        const apps = await db.select().from(individualApplications).where(eq(individualApplications.currentStage, stage)).orderBy(desc(individualApplications.createdAt));
+        return apps.map((app2) => this.transformApplication(app2));
       }
       async getAllApplications() {
-        return await db.select().from(individualApplications).orderBy(desc(individualApplications.createdAt));
+        const apps = await db.select().from(individualApplications).orderBy(desc(individualApplications.createdAt));
+        return apps.map((app2) => this.transformApplication(app2));
       }
       async assignApplicationReviewer(id, reviewerId) {
         const [application] = await db.update(individualApplications).set({

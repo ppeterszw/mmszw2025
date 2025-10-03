@@ -655,12 +655,33 @@ export class DatabaseStorage implements IStorage {
     return app;
   }
 
+  // Helper function to transform JSONB fields to flat structure for backward compatibility
+  private transformApplication(app: any): any {
+    const personal = typeof app.personal === 'string' ? JSON.parse(app.personal) : app.personal || {};
+    const education = typeof app.education === 'string' ? JSON.parse(app.education) : app.education || {};
+
+    return {
+      ...app,
+      firstName: personal.firstName || '',
+      lastName: personal.lastName || '',
+      phone: personal.phone || '',
+      address: personal.address || '',
+      nationalId: personal.nationalId || '',
+      dateOfBirth: personal.dateOfBirth || null,
+      educationLevel: education.level || '',
+      institution: education.institution || '',
+      yearCompleted: education.yearCompleted || null,
+    };
+  }
+
   async getPendingApplications(): Promise<MemberApplication[]> {
-    return await db
+    const apps = await db
       .select()
       .from(individualApplications)
       .where(sql`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`)
       .orderBy(desc(individualApplications.createdAt));
+
+    return apps.map(app => this.transformApplication(app)) as MemberApplication[];
   }
 
   // Organization Application operations
@@ -1186,23 +1207,26 @@ export class DatabaseStorage implements IStorage {
 
   // Enhanced Application Methods
   async getApplicationsByStatus(status: string): Promise<MemberApplication[]> {
-    return await db
+    const apps = await db
       .select()
       .from(individualApplications)
       .where(eq(individualApplications.status, status as any))
       .orderBy(desc(individualApplications.createdAt));
+    return apps.map(app => this.transformApplication(app)) as MemberApplication[];
   }
 
   async getApplicationsByStage(stage: string): Promise<MemberApplication[]> {
-    return await db
+    const apps = await db
       .select()
       .from(individualApplications)
       .where(eq(individualApplications.currentStage, stage as any))
       .orderBy(desc(individualApplications.createdAt));
+    return apps.map(app => this.transformApplication(app)) as MemberApplication[];
   }
 
   async getAllApplications(): Promise<MemberApplication[]> {
-    return await db.select().from(individualApplications).orderBy(desc(individualApplications.createdAt));
+    const apps = await db.select().from(individualApplications).orderBy(desc(individualApplications.createdAt));
+    return apps.map(app => this.transformApplication(app)) as MemberApplication[];
   }
 
   async assignApplicationReviewer(id: string, reviewerId: string): Promise<MemberApplication> {

@@ -36,21 +36,30 @@ async function testApplicationsQuery() {
       console.log('Sample:', JSON.stringify(submitted[0], null, 2));
     }
 
-    // Test 5: Test the actual Drizzle query
-    console.log('\n--- Testing Drizzle ORM query ---');
+    // Test 5: Test the actual Drizzle query with pending statuses
+    console.log('\n--- Testing Drizzle ORM query with pending statuses ---');
     const { db } = await import('../server/db');
     const { individualApplications } = await import('@shared/schema');
-    const { eq, desc } = await import('drizzle-orm');
+    const { desc, sql: drizzleSql } = await import('drizzle-orm');
 
     const apps = await db
       .select()
       .from(individualApplications)
-      .where(eq(individualApplications.status, "submitted"))
+      .where(drizzleSql`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`)
       .orderBy(desc(individualApplications.createdAt));
 
     console.log('Drizzle query result:', apps.length, 'applications');
     if (apps.length > 0) {
       console.log('Sample:', JSON.stringify(apps[0], null, 2));
+    }
+
+    // Test 6: Test the actual storage function
+    console.log('\n--- Testing storage.getPendingApplications() ---');
+    const { storage } = await import('../server/storage');
+    const pendingApps = await storage.getPendingApplications();
+    console.log('Storage function result:', pendingApps.length, 'applications');
+    if (pendingApps.length > 0) {
+      console.log('Sample:', JSON.stringify(pendingApps[0], null, 2));
     }
 
   } catch (error: any) {
