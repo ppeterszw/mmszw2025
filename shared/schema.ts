@@ -136,47 +136,8 @@ export const members = pgTable("members", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
-// Member Applications table - Enhanced for application tracking (Legacy)
-export const memberApplications = pgTable("member_applications", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  applicationNumber: text("application_number").unique(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
-  phone: text("phone"),
-  dateOfBirth: timestamp("date_of_birth"),
-  nationalId: text("national_id"),
-  memberType: memberTypeEnum("member_type").notNull(),
-  organizationId: varchar("organization_id").references(() => organizations.id),
-  status: applicationStatusEnum("status").default("draft"),
-  currentStage: applicationStageEnum("current_stage").default("initial_review"),
-  applicationFee: decimal("application_fee", { precision: 10, scale: 2 }),
-  feePaymentStatus: paymentStatusEnum("fee_payment_status").default("pending"),
-  paymentId: varchar("payment_id"),
-  educationLevel: educationLevelEnum("education_level"),
-  workExperience: integer("work_experience"), // in years
-  currentEmployer: text("current_employer"),
-  jobTitle: text("job_title"),
-  documentsUploaded: boolean("documents_uploaded").default(false),
-  documentsVerified: boolean("documents_verified").default(false),
-  backgroundCheckPassed: boolean("background_check_passed"),
-  interviewScheduled: boolean("interview_scheduled").default(false),
-  interviewDate: timestamp("interview_date"),
-  interviewNotes: text("interview_notes"),
-  reviewNotes: text("review_notes"),
-  rejectionReason: text("rejection_reason"),
-  reviewedBy: varchar("reviewed_by").references(() => users.id),
-  submittedAt: timestamp("submitted_at"),
-  reviewStartedAt: timestamp("review_started_at"),
-  approvedAt: timestamp("approved_at"),
-  rejectedAt: timestamp("rejected_at"),
-  expiresAt: timestamp("expires_at"),
-  priority: integer("priority").default(3), // 1=high, 3=normal, 5=low
-  estimatedProcessingDays: integer("estimated_processing_days").default(30),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-
+// Member Applications table - REMOVED (Legacy table doesn't exist in production)
+// Creating alias to individualApplications for backward compatibility
 // Individual Applications table - New application system
 export const individualApplications = pgTable("individual_applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -199,6 +160,9 @@ export const individualApplications = pgTable("individual_applications", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
+
+// Alias for backward compatibility - memberApplications points to individualApplications
+export const memberApplications = individualApplications;
 
 // Organization Applications table - New application system
 export const organizationApplications = pgTable("organization_applications", {
