@@ -11218,6 +11218,61 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: error.message });
     }
   });
+  app2.get("/api/admin/payments/recent", authorizeRole(FINANCE_ROLES), async (req, res) => {
+    try {
+      const payments2 = await storage.getRecentPayments(10);
+      res.json(payments2);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  app2.put("/api/admin/payments/:id/status", authorizeRole(FINANCE_ROLES), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      if (!status) {
+        return res.status(400).json({ message: "Status is required" });
+      }
+      const validStatuses = ["pending", "processing", "completed", "failed", "cancelled", "refunded"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+      const payment = await storage.updatePayment(id, { status });
+      res.json(payment);
+    } catch (error) {
+      console.error("Update payment status error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  app2.post("/api/admin/payments/record", authorizeRole(FINANCE_ROLES), async (req, res) => {
+    try {
+      const { amount, purpose, paymentMethod, reference, description, paidAt, memberId, organizationId } = req.body;
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Valid amount is required" });
+      }
+      if (!purpose) {
+        return res.status(400).json({ message: "Payment purpose is required" });
+      }
+      if (!paymentMethod) {
+        return res.status(400).json({ message: "Payment method is required" });
+      }
+      const payment = await storage.createPayment({
+        amount: amount.toString(),
+        purpose,
+        paymentMethod,
+        reference,
+        description,
+        status: "completed",
+        paidAt: paidAt ? new Date(paidAt) : /* @__PURE__ */ new Date(),
+        memberId,
+        organizationId
+      });
+      res.json(payment);
+    } catch (error) {
+      console.error("Record payment error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
   app2.get("/api/admin/settings", authorizeRole(ADMIN_ROLES), async (req, res) => {
     try {
       const settings = await storage.getSettings();

@@ -2933,15 +2933,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedQuery = financeStatsQuerySchema.safeParse(req.query);
       if (!validatedQuery.success) {
-        return res.status(400).json({ 
-          message: "Invalid query parameters", 
-          errors: validatedQuery.error.errors 
+        return res.status(400).json({
+          message: "Invalid query parameters",
+          errors: validatedQuery.error.errors
         });
       }
-      
+
       const stats = await storage.getFinanceStats(validatedQuery.data);
       res.json(stats);
     } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get recent payment transactions (Admin)
+  app.get("/api/admin/payments/recent", authorizeRole(FINANCE_ROLES), async (req, res) => {
+    try {
+      const payments = await storage.getRecentPayments(10); // Get last 10
+      res.json(payments);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update payment status (Admin/Accountant)
+  app.put("/api/admin/payments/:id/status", authorizeRole(FINANCE_ROLES), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!status) {
+        return res.status(400).json({ message: "Status is required" });
+      }
+
+      const validStatuses = ['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+
+      const payment = await storage.updatePayment(id, { status });
+      res.json(payment);
+    } catch (error: any) {
+      console.error("Update payment status error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Record manual payment (Admin/Accountant)
+  app.post("/api/admin/payments/record", authorizeRole(FINANCE_ROLES), async (req, res) => {
+    try {
+      const { amount, purpose, paymentMethod, reference, description, paidAt, memberId, organizationId } = req.body;
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Valid amount is required" });
+      }
+
+      if (!purpose) {
+        return res.status(400).json({ message: "Payment purpose is required" });
+      }
+
+      if (!paymentMethod) {
+        return res.status(400).json({ message: "Payment method is required" });
+      }
+
+      const payment = await storage.createPayment({
+        amount: amount.toString(),
+        purpose,
+        paymentMethod,
+        reference,
+        description,
+        status: 'completed',
+        paidAt: paidAt ? new Date(paidAt) : new Date(),
+        memberId,
+        organizationId
+      });
+
+      res.json(payment);
+    } catch (error: any) {
+      console.error("Record payment error:", error);
       res.status(500).json({ message: error.message });
     }
   });
