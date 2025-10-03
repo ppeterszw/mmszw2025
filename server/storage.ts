@@ -1500,12 +1500,18 @@ export class DatabaseStorage implements IStorage {
       ));
     const revenueThisMonth = Number(revenueResult[0]?.sum || 0);
 
-    // Get pending renewals count
-    const renewalsPendingResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(memberRenewals)
-      .where(sql`status IN ('pending', 'reminded', 'overdue')`);
-    const renewalsPending = renewalsPendingResult[0]?.count || 0;
+    // Get pending renewals count (if table exists)
+    let renewalsPending = 0;
+    try {
+      const renewalsPendingResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(memberRenewals)
+        .where(sql`status IN ('pending', 'reminded', 'overdue')`);
+      renewalsPending = renewalsPendingResult[0]?.count || 0;
+    } catch (error) {
+      // Table may not exist yet - skip renewals count
+      console.log('Renewals table not available, skipping renewals count');
+    }
 
     return {
       totalMembers,
