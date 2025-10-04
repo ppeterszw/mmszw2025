@@ -2431,8 +2431,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/applicants", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
-      const allApplicants = await storage.listApplicants();
-      res.json(allApplicants);
+      // Use new application system tables instead of old applicants table
+      const individualApps = await storage.listIndividualApplications();
+      res.json(individualApps || []);
     } catch (error: any) {
       console.error("Admin applicants fetch error:", error);
       res.status(500).json({ message: "Failed to fetch applicants" });
@@ -2441,8 +2442,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/organization-applicants", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
-      const allOrgApplicants = await storage.listOrganizationApplicants();
-      res.json(allOrgApplicants);
+      // Use new application system tables instead of old organization_applicants table
+      const orgApps = await storage.listOrganizationApplications();
+      res.json(orgApps || []);
     } catch (error: any) {
       console.error("Admin organization applicants fetch error:", error);
       res.status(500).json({ message: "Failed to fetch organization applicants" });
