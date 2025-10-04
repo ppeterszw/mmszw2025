@@ -65,7 +65,8 @@ export function setupAuth(app: Express) {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax", // Changed from strict to lax for custom domain compatibility
+      domain: process.env.COOKIE_DOMAIN || undefined, // Allow custom domain configuration
     },
     rolling: true, // Reset expiration on every request
   };

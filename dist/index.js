@@ -3817,7 +3817,10 @@ function setupAuth(app2) {
       // 24 hours
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax"
+      sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
+      // Changed from strict to lax for custom domain compatibility
+      domain: process.env.COOKIE_DOMAIN || void 0
+      // Allow custom domain configuration
     },
     rolling: true
     // Reset expiration on every request
@@ -12542,6 +12545,12 @@ function serveStatic(app2) {
 // server/index.ts
 dotenv.config({ path: ".env.local" });
 var app = express2();
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === "production" && req.headers["x-forwarded-proto"] !== "https") {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
 app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
 app.use((req, res, next) => {
