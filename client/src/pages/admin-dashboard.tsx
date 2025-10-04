@@ -40,7 +40,7 @@ const addMemberSchema = z.object({
   countryOfResidence: z.string().min(1, "Country of residence is required"),
   nationality: z.string().min(1, "Nationality is required"),
   email: z.string().email("Invalid email address"),
-  memberType: z.enum(["real_estate_agent", "property_manager", "principal_agent", "negotiator"], {
+  memberType: z.enum(["real_estate_agent", "property_manager", "principal_real_estate_agent", "real_estate_negotiator"], {
     errorMap: () => ({ message: "Please select a member type" })
   }),
   educationLevel: z.enum(["normal_entry", "mature_entry"], {
@@ -704,8 +704,8 @@ export default function AdminDashboard() {
                         <SelectContent>
                           <SelectItem value="real_estate_agent">Real Estate Agent</SelectItem>
                           <SelectItem value="property_manager">Property Manager</SelectItem>
-                          <SelectItem value="principal_agent">Principal Agent</SelectItem>
-                          <SelectItem value="negotiator">Negotiator</SelectItem>
+                          <SelectItem value="principal_real_estate_agent">Principal Real Estate Agent</SelectItem>
+                          <SelectItem value="real_estate_negotiator">Real Estate Negotiator</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

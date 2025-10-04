@@ -325,8 +325,8 @@ export default function MemberManagement() {
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="real_estate_agent">Real Estate Agent</SelectItem>
                 <SelectItem value="property_manager">Property Manager</SelectItem>
-                <SelectItem value="principal_agent">Principal Agent</SelectItem>
-                <SelectItem value="negotiator">Negotiator</SelectItem>
+                <SelectItem value="principal_real_estate_agent">Principal Real Estate Agent</SelectItem>
+                <SelectItem value="real_estate_negotiator">Real Estate Negotiator</SelectItem>
               </SelectContent>
             </Select>
           </div>

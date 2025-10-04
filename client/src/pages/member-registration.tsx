@@ -676,7 +676,7 @@ export default function MemberRegistration() {
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItem value="agent">Estate Agent</SelectItem>
-                                  <SelectItem value="negotiator">Negotiator</SelectItem>
+                                  <SelectItem value="real_estate_negotiator">Real Estate Negotiator</SelectItem>
                                   <SelectItem value="manager">Property Manager</SelectItem>
                                   <SelectItem value="principal">Principal Agent</SelectItem>
                                 </SelectContent>
