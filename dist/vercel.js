@@ -2612,7 +2612,7 @@ var init_storage = __esm({
         const openCases = openCasesResult[0]?.count || 0;
         const totalUsersResult = await db.select({ count: sql4`count(*)` }).from(users);
         const totalUsers = totalUsersResult[0]?.count || 0;
-        const upcomingEventsResult = await db.select({ count: sql4`count(*)` }).from(events).where(sql4`start_date >= NOW()`);
+        const upcomingEventsResult = await db.select({ count: sql4`count(*)` }).from(events).where(sql4`"startDate" >= NOW()`);
         const upcomingEvents = upcomingEventsResult[0]?.count || 0;
         const startOfMonth = /* @__PURE__ */ new Date();
         startOfMonth.setDate(1);

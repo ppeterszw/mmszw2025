@@ -1599,7 +1599,7 @@ export class DatabaseStorage implements IStorage {
     const upcomingEventsResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(events)
-      .where(sql`start_date >= NOW()`);
+      .where(sql`"startDate" >= NOW()`);
     const upcomingEvents = upcomingEventsResult[0]?.count || 0;
 
     // Get revenue this month
