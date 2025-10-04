@@ -32,7 +32,7 @@ const addMemberSchema = z.object({
   email: z.string().email("Invalid email address"),
 
   // Step 2: Professional Details
-  memberType: z.enum(["real_estate_agent", "property_manager", "principal_agent", "negotiator"], {
+  memberType: z.enum(["real_estate_agent", "property_manager", "principal_real_estate_agent", "real_estate_negotiator"], {
     errorMap: () => ({ message: "Please select a member type" })
   }),
   educationLevel: z.enum(["normal_entry", "mature_entry"], {
@@ -191,7 +191,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
     createMemberMutation.mutate(data);
   };
 
-  const isPREA = watchMemberType === "principal_agent";
+  const isPREA = watchMemberType === "principal_real_estate_agent";
 
   return (
     <>
@@ -334,8 +334,8 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
                     <SelectContent>
                       <SelectItem value="real_estate_agent">Real Estate Agent</SelectItem>
                       <SelectItem value="property_manager">Property Manager</SelectItem>
-                      <SelectItem value="principal_agent">Principal Agent (PREA)</SelectItem>
-                      <SelectItem value="negotiator">Negotiator</SelectItem>
+                      <SelectItem value="principal_real_estate_agent">Principal Real Estate Agent (PREA)</SelectItem>
+                      <SelectItem value="real_estate_negotiator">Real Estate Negotiator</SelectItem>
                     </SelectContent>
                   </Select>
                   {errors.memberType && (
@@ -632,7 +632,7 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
                   <span className="font-semibold text-green-900">Member ID:</span>
                   <span className="text-green-800 font-mono">{newMember.membershipNumber}</span>
                 </div>
-                {newMember.memberType === "principal_agent" && (
+                {newMember.memberType === "principal_real_estate_agent" && (
                   <div className="mt-3 pt-3 border-t border-green-300">
                     <div className="flex items-center space-x-2 text-purple-700">
                       <Shield className="w-4 h-4" />
