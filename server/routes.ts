@@ -1768,14 +1768,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             firstName,
             lastName: surname,
             skipPasswordRequirement: false,
+            skipPasswordChecks: true, // Skip Clerk's password validation since we generate our own
             publicMetadata: {
               accountType,
               memberType,
               role: "member"
             },
             privateMetadata: {
-              educationLevel,
-              employmentStatus,
+              educationLevel: educationLevel || '',
+              employmentStatus: employmentStatus || '',
               tempPassword // Store temp password in private metadata for reference
             }
           });
@@ -1784,10 +1785,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Created Clerk user ${clerkUserId} with account type: ${accountType}`);
         } catch (clerkError: any) {
           console.error("Clerk user creation error:", clerkError);
-          return res.status(500).json({
-            message: "Failed to create user account",
-            details: clerkError.message || "Clerk API error"
-          });
+          const errorDetails = clerkError.errors?.[0]?.message || clerkError.message || "Clerk API error";
+          console.error("Full Clerk error:", JSON.stringify(clerkError, null, 2));
+
+          // Check if it's a duplicate email error - if so, skip Clerk and create member only
+          if (errorDetails.includes('already exists') || errorDetails.includes('duplicate')) {
+            console.warn(`Email ${email} already exists in Clerk, creating member without Clerk integration`);
+            clerkUserId = null; // Continue without Clerk ID
+          } else {
+            return res.status(500).json({
+              message: "Failed to create user account",
+              details: errorDetails
+            });
+          }
         }
       }
 
