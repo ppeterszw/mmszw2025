@@ -9350,8 +9350,10 @@ async function registerRoutes(app2) {
       });
     } catch (error) {
       console.error("Registration error:", error);
+      console.error("Full error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
       res.status(500).json({
         error: "Registration failed",
+        message: "An error occurred during registration. Please try again.",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }
