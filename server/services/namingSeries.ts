@@ -33,44 +33,21 @@ export async function nextMemberNumber(kind: 'individual' | 'organization'): Pro
   const currentYear = new Date().getFullYear();
   const seriesCode = kind === 'individual' ? 'member_ind' : 'member_org';
   const prefix = kind === 'individual' ? 'EAC-MBR-' : 'EAC-ORG-';
-  
-  // Use transaction to ensure atomicity
-  const result = await db.transaction(async (tx) => {
-    // Lock the row for update to prevent race conditions
-    const existing = await tx
-      .select()
-      .from(namingSeriesCounters)
-      .where(sql`${namingSeriesCounters.seriesCode} = ${seriesCode} AND ${namingSeriesCounters.year} = ${currentYear}`)
-      .for('update');
-    
-    let counter: number;
-    
-    if (existing.length === 0) {
-      // First entry for this year
-      await tx
-        .insert(namingSeriesCounters)
-        .values({
-          seriesCode,
-          year: currentYear,
-          counter: 1
-        });
-      counter = 1;
-    } else {
-      // Increment existing counter
-      const updateResult = await tx
-        .update(namingSeriesCounters)
-        .set({ counter: sql`${namingSeriesCounters.counter} + 1` })
-        .where(sql`${namingSeriesCounters.seriesCode} = ${seriesCode} AND ${namingSeriesCounters.year} = ${currentYear}`)
-        .returning();
-      
-      counter = updateResult[0]?.counter || 1;
-    }
-    
-    return counter;
-  });
-  
+  const counterKey = `${seriesCode}_${currentYear}`;
+
+  // Use UPSERT pattern compatible with Neon serverless (no transactions needed)
+  const result = await db.execute(sql`
+    INSERT INTO naming_series_counters (series_code, year, counter)
+    VALUES (${counterKey}, ${currentYear}, 1)
+    ON CONFLICT (series_code, year)
+    DO UPDATE SET counter = naming_series_counters.counter + 1
+    RETURNING counter
+  `);
+
+  const counter = result.rows[0]?.counter || 1;
+
   // Format: EAC-MBR-YYYY-XXXX or EAC-ORG-YYYY-XXXX (using full 4-digit year)
-  return `${prefix}${currentYear}-${String(result).padStart(4, '0')}`;
+  return `${prefix}${currentYear}-${String(counter).padStart(4, '0')}`;
 }
 
 /**
