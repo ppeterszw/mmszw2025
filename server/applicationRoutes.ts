@@ -11,9 +11,8 @@ import {
   members
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { 
-  nextApplicationId, 
-  nextMemberNumber 
+import {
+  nextApplicationId
 } from "./services/namingSeries";
 import { 
   createPaynowService, 
@@ -1715,15 +1714,16 @@ export function registerApplicationRoutes(app: Express) {
 
       // Update application status based on decision
       const newStatus = decision === 'accepted' ? 'accepted' : 'rejected';
-      
-      const updateData = { 
-        status: newStatus as any, 
+
+      const updateData = {
+        status: newStatus as any,
         updatedAt: new Date()
       };
 
-      // If approved, generate member number
+      // If approved, convert Application ID to Member ID (APP-xxx-YYYY-XXXX → EAC-xxx-YYYY-XXXX)
       if (decision === 'accepted') {
-        const memberNumber = await nextMemberNumber(applicationType);
+        // Convert Application ID: APP-MBR-YYYY-XXXX → EAC-MBR-YYYY-XXXX or APP-ORG-YYYY-XXXX → EAC-ORG-YYYY-XXXX
+        const memberNumber = applicationId.replace('APP-', 'EAC-');
         Object.assign(updateData, { memberId: memberNumber });
       }
 

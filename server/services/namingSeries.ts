@@ -9,17 +9,17 @@ import { namingSeriesCounters } from "@shared/schema";
  */
 export async function nextApplicationId(type: 'individual' | 'organization'): Promise<string> {
   const currentYear = new Date().getFullYear();
-  const prefix = type === 'individual' ? 'MBR-APP-' : 'ORG-APP-';
-  
+  const prefix = type === 'individual' ? 'APP-MBR-' : 'APP-ORG-';
+
   // Year-based counter for application IDs
   const result = await db.execute(sql`
-    INSERT INTO application_id_counters (type, counter) 
+    INSERT INTO application_id_counters (type, counter)
     VALUES (${type + '_' + currentYear}, 1)
-    ON CONFLICT (type) 
+    ON CONFLICT (type)
     DO UPDATE SET counter = application_id_counters.counter + 1
     RETURNING counter
   `);
-  
+
   const counter = result.rows[0]?.counter || 1;
   return `${prefix}${currentYear}-${String(counter).padStart(4, '0')}`;
 }

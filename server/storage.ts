@@ -564,10 +564,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMember(insertMember: InsertMember): Promise<Member> {
-    // Use the naming series to generate proper membership number
-    const { nextMemberNumber } = await import('./services/namingSeries');
-    const membershipNumber = await nextMemberNumber('individual');
-    
+    // Use provided membership number or generate new one
+    let membershipNumber = insertMember.membershipNumber;
+
+    if (!membershipNumber) {
+      // Only generate if not provided (for direct member creation)
+      const { nextMemberNumber } = await import('./services/namingSeries');
+      membershipNumber = await nextMemberNumber('individual');
+    }
+
     const [member] = await db
       .insert(members)
       .values({ ...insertMember, membershipNumber })

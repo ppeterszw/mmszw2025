@@ -2466,15 +2466,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if status was changed to 'approved' - trigger member conversion
       if (updates.status === 'approved' && currentApplicant.status !== 'approved') {
         console.log(`Converting approved applicant ${applicant.applicantId} to member...`);
-        
+
         try {
           // Generate password reset token instead of plaintext password
           const passwordResetToken = randomBytes(32).toString('hex');
           const passwordResetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
           const hashedPassword = await hashPassword('temp_' + randomBytes(8).toString('hex')); // Temporary, will be reset
-          
-          // Generate membership number
-          const membershipNumber = await nextMemberNumber('individual');
+
+          // Convert Application ID to Member ID (APP-MBR-YYYY-XXXX → EAC-MBR-YYYY-XXXX)
+          const membershipNumber = applicant.applicantId.replace('APP-', 'EAC-');
           
           // Create user account
           const newUser = await storage.createUser({
@@ -2497,9 +2497,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: applicant.email,
             memberType: 'real_estate_agent', // Default type, can be customized
             membershipStatus: 'active',
+            membershipNumber, // Use converted application ID
             joinedDate: new Date(),
             expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // 1 year from now
-            
+
           });
           
           // Send welcome email with credentials
