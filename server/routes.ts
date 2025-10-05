@@ -3214,6 +3214,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === GOOGLE PAY PAYMENT ROUTES ===
+
+  // Process Google Pay payment
+  app.post("/api/payments/google-pay", async (req, res) => {
+    try {
+      const { processGooglePayPayment } = await import("./services/googlePayService");
+      const paymentRequest = req.body;
+      const result = await processGooglePayPayment(paymentRequest);
+
+      if (result.success) {
+        res.status(201).json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        status: "failed",
+        message: "Payment processing failed",
+        error: error.message
+      });
+    }
+  });
+
+  // Get Google Pay configuration
+  app.get("/api/payments/google-pay/config", (req, res) => {
+    try {
+      const { getGooglePayConfig } = require("./services/googlePayService");
+      const config = getGooglePayConfig();
+      res.json(config);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Verify Google Pay token
+  app.post("/api/payments/google-pay/verify-token", async (req, res) => {
+    try {
+      const { verifyGooglePayToken } = await import("./services/googlePayService");
+      const { token } = req.body;
+      const isValid = await verifyGooglePayToken(token);
+      res.json({ valid: isValid });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Refund Google Pay payment
+  app.post("/api/payments/google-pay/:id/refund", requireAuth, async (req, res) => {
+    try {
+      const { refundGooglePayPayment } = await import("./services/googlePayService");
+      const { id } = req.params;
+      const { amount, reason } = req.body;
+      const result = await refundGooglePayPayment(id, amount, reason);
+
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        status: "failed",
+        message: "Refund processing failed",
+        error: error.message
+      });
+    }
+  });
+
   // === ENHANCED APPLICATION MANAGEMENT ROUTES ===
   
   // Get all applications (Admin)
