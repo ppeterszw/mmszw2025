@@ -95,8 +95,8 @@ export function registerPublicRoutes(app: Express) {
         console.log(`Welcome and verification emails sent to: ${registrationData.email}`);
       };
 
-      // Send emails with timeout (don't wait more than 5 seconds)
-      Promise.race([
+      // Send emails with timeout (wait up to 5 seconds)
+      await Promise.race([
         sendEmailsWithTimeout(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Email sending timeout')), 5000))
       ]).catch(emailError => {
@@ -181,8 +181,8 @@ export function registerPublicRoutes(app: Express) {
         console.log(`Organization verification email sent to: ${registrationData.email}`);
       };
 
-      // Send email with timeout (don't wait more than 5 seconds)
-      Promise.race([
+      // Send email with timeout (wait up to 5 seconds)
+      await Promise.race([
         sendEmailWithTimeout(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Email sending timeout')), 5000))
       ]).catch(emailError => {
