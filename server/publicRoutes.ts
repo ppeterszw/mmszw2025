@@ -81,7 +81,7 @@ export function registerPublicRoutes(app: Express) {
 
         // Send verification email
         const baseUrl = process.env.NODE_ENV === 'production'
-          ? `https://${process.env.REPL_SLUG}.${process.env.REPLIT_DEV_DOMAIN}`
+          ? 'https://mms.estateagentscouncil.org'
           : 'http://localhost:5000';
 
         const verificationEmail = generateVerificationEmail(fullName, verificationToken, baseUrl);
@@ -361,7 +361,7 @@ export function registerPublicRoutes(app: Express) {
             });
 
             const baseUrl = process.env.NODE_ENV === 'production'
-              ? `https://${process.env.REPL_SLUG}.${process.env.REPLIT_DEV_DOMAIN}`
+              ? 'https://mms.estateagentscouncil.org'
               : 'http://localhost:5000';
 
             const verificationEmail = generateVerificationEmail(fullName, verificationToken, baseUrl);

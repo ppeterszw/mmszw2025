@@ -71,15 +71,20 @@ export function generateWelcomeEmail(fullName: string, applicantId: string): { s
     <head>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #1e40af; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .logo-container { text-align: center; padding: 20px; background: #ffffff; }
+        .logo { max-width: 200px; height: auto; }
+        .header { background: #1e40af; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { padding: 20px; background: #f9f9f9; }
         .applicant-id { background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; }
-        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #ddd; }
       </style>
     </head>
     <body>
       <div class="container">
+        <div class="logo-container">
+          <img src="https://mms.estateagentscouncil.org/logo.png" alt="Estate Agents Council of Zimbabwe" class="logo" />
+        </div>
         <div class="header">
           <h1>Estate Agents Council of Zimbabwe</h1>
         </div>
@@ -128,20 +133,22 @@ export function generateWelcomeEmail(fullName: string, applicantId: string): { s
 }
 
 export function generateOrgApplicantVerificationEmail(companyName: string, verificationToken: string): { subject: string; html: string; text: string } {
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? `https://${process.env.REPL_SLUG}.${process.env.REPLIT_DEV_DOMAIN}` 
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? 'https://mms.estateagentscouncil.org'
     : 'http://localhost:5000';
   const verificationUrl = `${baseUrl}/organization/verify-email?token=${verificationToken}`;
   const subject = 'Verify Your Email Address - EACZ Organization Application';
-  
+
   const html = `
     <!DOCTYPE html>
     <html>
     <head>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #1e40af; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .logo-container { text-align: center; padding: 20px; background: #ffffff; }
+        .logo { max-width: 200px; height: auto; }
+        .header { background: #1e40af; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { padding: 20px; background: #f9f9f9; }
         .button { display: inline-block; background: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
         .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
@@ -149,6 +156,9 @@ export function generateOrgApplicantVerificationEmail(companyName: string, verif
     </head>
     <body>
       <div class="container">
+        <div class="logo-container">
+          <img src="https://mms.estateagentscouncil.org/logo.png" alt="Estate Agents Council of Zimbabwe" class="logo" />
+        </div>
         <div class="header">
           <h1>Email Verification Required</h1>
         </div>
@@ -201,22 +211,27 @@ export function generateOrgApplicantVerificationEmail(companyName: string, verif
 export function generateVerificationEmail(fullName: string, verificationToken: string, baseUrl: string): { subject: string; html: string; text: string } {
   const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
   const subject = 'Verify Your Email Address - EACZ Application';
-  
+
   const html = `
     <!DOCTYPE html>
     <html>
     <head>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #1e40af; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .logo-container { text-align: center; padding: 20px; background: #ffffff; }
+        .logo { max-width: 200px; height: auto; }
+        .header { background: #1e40af; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { padding: 20px; background: #f9f9f9; }
         .button { display: inline-block; background: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #ddd; }
       </style>
     </head>
     <body>
       <div class="container">
+        <div class="logo-container">
+          <img src="https://mms.estateagentscouncil.org/logo.png" alt="Estate Agents Council of Zimbabwe" class="logo" />
+        </div>
         <div class="header">
           <h1>Email Verification Required</h1>
         </div>
