@@ -2105,7 +2105,7 @@ async function initializeDemoData() {
     const demoOrganizations = [
       {
         name: "Premier Estate Agents",
-        businessType: "real_estate_firm" as const,
+        businessType: "real_estate_agency" as const,
         registrationNumber: "REF-2023-001",
         email: "info@premierestate.com",
         phone: "+263 4 123 4567",
