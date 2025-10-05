@@ -68,8 +68,8 @@ export function registerPublicRoutes(app: Express) {
         emailVerificationExpires: verificationExpires
       }).returning();
 
-      // Send welcome email with applicant ID
-      try {
+      // Send welcome email with applicant ID (with 5 second timeout)
+      const sendEmailsWithTimeout = async () => {
         const fullName = `${registrationData.firstName} ${registrationData.surname}`;
         const welcomeEmail = generateWelcomeEmail(fullName, applicantId);
 
@@ -93,10 +93,16 @@ export function registerPublicRoutes(app: Express) {
         });
 
         console.log(`Welcome and verification emails sent to: ${registrationData.email}`);
-      } catch (emailError) {
+      };
+
+      // Send emails with timeout (don't wait more than 5 seconds)
+      Promise.race([
+        sendEmailsWithTimeout(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Email sending timeout')), 5000))
+      ]).catch(emailError => {
         console.error('Failed to send welcome/verification emails:', emailError);
         // Don't fail the registration if email fails
-      }
+      });
 
       res.status(201).json({
         success: true,
@@ -159,8 +165,8 @@ export function registerPublicRoutes(app: Express) {
         emailVerificationExpires: verificationExpires
       }).returning();
 
-      // Send verification email
-      try {
+      // Send verification email with timeout
+      const sendEmailWithTimeout = async () => {
         const verificationEmail = generateOrgApplicantVerificationEmail(
           registrationData.companyName,
           verificationToken
@@ -173,10 +179,16 @@ export function registerPublicRoutes(app: Express) {
         });
 
         console.log(`Organization verification email sent to: ${registrationData.email}`);
-      } catch (emailError) {
+      };
+
+      // Send email with timeout (don't wait more than 5 seconds)
+      Promise.race([
+        sendEmailWithTimeout(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Email sending timeout')), 5000))
+      ]).catch(emailError => {
         console.error('Failed to send organization verification email:', emailError);
         // Don't fail the registration if email fails
-      }
+      });
 
       res.status(201).json({
         success: true,
