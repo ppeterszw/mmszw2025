@@ -181,7 +181,7 @@ export default function VerifyEmail() {
                     onClick={() => {
                       const redirectPath = applicantData?.applicantType === 'organization'
                         ? "/organization-application"
-                        : "/individual-application";
+                        : "/apply/individual";
                       setLocation(redirectPath);
                     }}
                     className="gradient-button text-white border-0 w-full"
