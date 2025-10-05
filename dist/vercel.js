@@ -1136,11 +1136,11 @@ __export(namingSeries_exports, {
 import { sql as sql3 } from "drizzle-orm";
 async function nextApplicationId(type) {
   const currentYear = (/* @__PURE__ */ new Date()).getFullYear();
-  const prefix = type === "individual" ? "MBR-APP-" : "ORG-APP-";
+  const prefix = type === "individual" ? "APP-MBR-" : "APP-ORG-";
   const result = await db.execute(sql3`
-    INSERT INTO application_id_counters (type, counter) 
+    INSERT INTO application_id_counters (type, counter)
     VALUES (${type + "_" + currentYear}, 1)
-    ON CONFLICT (type) 
+    ON CONFLICT (type)
     DO UPDATE SET counter = application_id_counters.counter + 1
     RETURNING counter
   `);
@@ -1151,23 +1151,16 @@ async function nextMemberNumber(kind) {
   const currentYear = (/* @__PURE__ */ new Date()).getFullYear();
   const seriesCode = kind === "individual" ? "member_ind" : "member_org";
   const prefix = kind === "individual" ? "EAC-MBR-" : "EAC-ORG-";
-  const result = await db.transaction(async (tx) => {
-    const existing = await tx.select().from(namingSeriesCounters).where(sql3`${namingSeriesCounters.seriesCode} = ${seriesCode} AND ${namingSeriesCounters.year} = ${currentYear}`).for("update");
-    let counter;
-    if (existing.length === 0) {
-      await tx.insert(namingSeriesCounters).values({
-        seriesCode,
-        year: currentYear,
-        counter: 1
-      });
-      counter = 1;
-    } else {
-      const updateResult = await tx.update(namingSeriesCounters).set({ counter: sql3`${namingSeriesCounters.counter} + 1` }).where(sql3`${namingSeriesCounters.seriesCode} = ${seriesCode} AND ${namingSeriesCounters.year} = ${currentYear}`).returning();
-      counter = updateResult[0]?.counter || 1;
-    }
-    return counter;
-  });
-  return `${prefix}${currentYear}-${String(result).padStart(4, "0")}`;
+  const counterKey = `${seriesCode}_${currentYear}`;
+  const result = await db.execute(sql3`
+    INSERT INTO naming_series_counters (series_code, year, counter)
+    VALUES (${counterKey}, ${currentYear}, 1)
+    ON CONFLICT (series_code, year)
+    DO UPDATE SET counter = naming_series_counters.counter + 1
+    RETURNING counter
+  `);
+  const counter = result.rows[0]?.counter || 1;
+  return `${prefix}${currentYear}-${String(counter).padStart(4, "0")}`;
 }
 async function initializeApplicationCounters() {
   await db.execute(sql3`
@@ -1434,42 +1427,30 @@ async function initializeDemoData() {
     const demoOrganizations = [
       {
         name: "Premier Estate Agents",
-        type: "real_estate_firm",
+        businessType: "real_estate_firm",
         registrationNumber: "REF-2023-001",
         email: "info@premierestate.com",
         phone: "+263 4 123 4567",
-        address: "123 Union Avenue, Harare",
-        membershipStatus: "active",
-        registrationDate: /* @__PURE__ */ new Date("2023-01-15"),
-        expiryDate: /* @__PURE__ */ new Date("2024-01-15"),
-        annualFee: "5000.00",
-        trustAccountDetails: "Premier Trust Account - Standard Chartered Bank"
+        physicalAddress: "123 Union Avenue, Harare",
+        status: "active"
       },
       {
         name: "Harare Property Management",
-        type: "property_management_firm",
+        businessType: "property_management_firm",
         registrationNumber: "PMF-2023-002",
         email: "contact@harareprop.com",
         phone: "+263 4 234 5678",
-        address: "456 Second Street, Harare",
-        membershipStatus: "active",
-        registrationDate: /* @__PURE__ */ new Date("2023-03-20"),
-        expiryDate: /* @__PURE__ */ new Date("2024-03-20"),
-        annualFee: "3500.00",
-        trustAccountDetails: "HPM Trust Account - CBZ Bank"
+        physicalAddress: "456 Second Street, Harare",
+        status: "active"
       },
       {
         name: "Zimbabwe Brokerage Services",
-        type: "brokerage_firm",
+        businessType: "brokerage_firm",
         registrationNumber: "BRK-2023-003",
         email: "admin@zim-brokerage.com",
         phone: "+263 4 345 6789",
-        address: "789 Third Avenue, Bulawayo",
-        membershipStatus: "pending",
-        registrationDate: /* @__PURE__ */ new Date("2023-11-01"),
-        expiryDate: /* @__PURE__ */ new Date("2024-11-01"),
-        annualFee: "4200.00",
-        trustAccountDetails: "ZBS Trust Account - CABS"
+        physicalAddress: "789 Third Avenue, Bulawayo",
+        status: "pending"
       }
     ];
     const createdOrgs = [];
@@ -2031,8 +2012,11 @@ var init_storage = __esm({
         return member || void 0;
       }
       async createMember(insertMember) {
-        const { nextMemberNumber: nextMemberNumber2 } = await Promise.resolve().then(() => (init_namingSeries(), namingSeries_exports));
-        const membershipNumber = await nextMemberNumber2("individual");
+        let membershipNumber = insertMember.membershipNumber;
+        if (!membershipNumber) {
+          const { nextMemberNumber: nextMemberNumber2 } = await Promise.resolve().then(() => (init_namingSeries(), namingSeries_exports));
+          membershipNumber = await nextMemberNumber2("individual");
+        }
         const [member] = await db.insert(members).values({ ...insertMember, membershipNumber }).returning();
         return member;
       }
@@ -2053,8 +2037,15 @@ var init_storage = __esm({
         return org || void 0;
       }
       async createOrganization(insertOrg) {
-        const registrationNumber = `EAC-ORG-${String(Math.floor(Math.random() * 9999) + 1).padStart(4, "0")}`;
-        const [org] = await db.insert(organizations).values({ ...insertOrg, registrationNumber }).returning();
+        let registrationNumber = insertOrg.registrationNumber;
+        if (!registrationNumber) {
+          registrationNumber = `EAC-ORG-${String(Math.floor(Math.random() * 9999) + 1).padStart(4, "0")}`;
+        }
+        let organizationId = insertOrg.organizationId;
+        if (!organizationId) {
+          organizationId = registrationNumber;
+        }
+        const [org] = await db.insert(organizations).values({ ...insertOrg, organizationId, registrationNumber }).returning();
         return org;
       }
       async updateOrganization(id, updates) {
@@ -2612,7 +2603,7 @@ var init_storage = __esm({
         const openCases = openCasesResult[0]?.count || 0;
         const totalUsersResult = await db.select({ count: sql4`count(*)` }).from(users);
         const totalUsers = totalUsersResult[0]?.count || 0;
-        const upcomingEventsResult = await db.select({ count: sql4`count(*)` }).from(events).where(sql4`"startDate" >= NOW()`);
+        const upcomingEventsResult = await db.select({ count: sql4`count(*)` }).from(events).where(sql4`start_date >= NOW()`);
         const upcomingEvents = upcomingEventsResult[0]?.count || 0;
         const startOfMonth = /* @__PURE__ */ new Date();
         startOfMonth.setDate(1);
@@ -7988,7 +7979,7 @@ function registerApplicationRoutes(app2) {
         updatedAt: /* @__PURE__ */ new Date()
       };
       if (decision === "accepted") {
-        const memberNumber = await nextMemberNumber(applicationType);
+        const memberNumber = applicationId.replace("APP-", "EAC-");
         Object.assign(updateData, { memberId: memberNumber });
       }
       if (applicationType === "individual") {
@@ -10962,8 +10953,8 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/admin/applicants", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
-      const allApplicants = await storage.listApplicants();
-      res.json(allApplicants);
+      const individualApps = await storage.listIndividualApplications();
+      res.json(individualApps || []);
     } catch (error) {
       console.error("Admin applicants fetch error:", error);
       res.status(500).json({ message: "Failed to fetch applicants" });
@@ -10971,8 +10962,8 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/admin/organization-applicants", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
-      const allOrgApplicants = await storage.listOrganizationApplicants();
-      res.json(allOrgApplicants);
+      const orgApps = await storage.listOrganizationApplications();
+      res.json(orgApps || []);
     } catch (error) {
       console.error("Admin organization applicants fetch error:", error);
       res.status(500).json({ message: "Failed to fetch organization applicants" });
@@ -10993,7 +10984,7 @@ async function registerRoutes(app2) {
           const passwordResetToken = randomBytes4(32).toString("hex");
           const passwordResetExpires = new Date(Date.now() + 24 * 60 * 60 * 1e3);
           const hashedPassword = await hashPassword("temp_" + randomBytes4(8).toString("hex"));
-          const membershipNumber = await nextMemberNumber("individual");
+          const membershipNumber = applicant.applicantId.replace("APP-", "EAC-");
           const newUser = await storage.createUser({
             email: applicant.email,
             password: hashedPassword,
@@ -11014,6 +11005,8 @@ async function registerRoutes(app2) {
             memberType: "real_estate_agent",
             // Default type, can be customized
             membershipStatus: "active",
+            membershipNumber,
+            // Use converted application ID
             joinedDate: /* @__PURE__ */ new Date(),
             expiryDate: new Date((/* @__PURE__ */ new Date()).setFullYear((/* @__PURE__ */ new Date()).getFullYear() + 1))
             // 1 year from now

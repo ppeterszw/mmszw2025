@@ -605,12 +605,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrganization(insertOrg: InsertOrganization): Promise<Organization> {
-    // Generate registration number in EAC-ORG-XXXX format
-    const registrationNumber = `EAC-ORG-${String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0')}`;
-    
+    // Use provided registration number or generate new one
+    let registrationNumber = insertOrg.registrationNumber;
+    if (!registrationNumber) {
+      registrationNumber = `EAC-ORG-${String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0')}`;
+    }
+
+    // Use provided organizationId or generate new one (same as registration number for consistency)
+    let organizationId = insertOrg.organizationId;
+    if (!organizationId) {
+      organizationId = registrationNumber;
+    }
+
     const [org] = await db
       .insert(organizations)
-      .values({ ...insertOrg, registrationNumber })
+      .values({ ...insertOrg, organizationId, registrationNumber })
       .returning();
     return org;
   }
@@ -2096,42 +2105,30 @@ async function initializeDemoData() {
     const demoOrganizations = [
       {
         name: "Premier Estate Agents",
-        type: "real_estate_firm" as const,
+        businessType: "real_estate_firm" as const,
         registrationNumber: "REF-2023-001",
         email: "info@premierestate.com",
         phone: "+263 4 123 4567",
-        address: "123 Union Avenue, Harare",
-        membershipStatus: "active" as const,
-        registrationDate: new Date("2023-01-15"),
-        expiryDate: new Date("2024-01-15"),
-        annualFee: "5000.00",
-        trustAccountDetails: "Premier Trust Account - Standard Chartered Bank",
+        physicalAddress: "123 Union Avenue, Harare",
+        status: "active" as const,
       },
       {
         name: "Harare Property Management",
-        type: "property_management_firm" as const,
+        businessType: "property_management_firm" as const,
         registrationNumber: "PMF-2023-002",
         email: "contact@harareprop.com",
         phone: "+263 4 234 5678",
-        address: "456 Second Street, Harare",
-        membershipStatus: "active" as const,
-        registrationDate: new Date("2023-03-20"),
-        expiryDate: new Date("2024-03-20"),
-        annualFee: "3500.00",
-        trustAccountDetails: "HPM Trust Account - CBZ Bank",
+        physicalAddress: "456 Second Street, Harare",
+        status: "active" as const,
       },
       {
         name: "Zimbabwe Brokerage Services",
-        type: "brokerage_firm" as const,
+        businessType: "brokerage_firm" as const,
         registrationNumber: "BRK-2023-003",
         email: "admin@zim-brokerage.com",
         phone: "+263 4 345 6789",
-        address: "789 Third Avenue, Bulawayo",
-        membershipStatus: "pending" as const,
-        registrationDate: new Date("2023-11-01"),
-        expiryDate: new Date("2024-11-01"),
-        annualFee: "4200.00",
-        trustAccountDetails: "ZBS Trust Account - CABS",
+        physicalAddress: "789 Third Avenue, Bulawayo",
+        status: "pending" as const,
       }
     ];
 
