@@ -243,9 +243,9 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
 CLERK_SECRET_KEY=sk_live_...
 
 # Email Service
-Sender_Address="noreply@estateagentscouncil.org"
+Sender_Address="sysadmin@estateagentscouncil.org"
 Host="api.zeptomail.eu"
-Send_Mail_Token="Zoho-enczapikey yA6KbHtf7A/zwm0EFkQ5hpnd9I1j/6A/gS2ztiu3e5QkLIPnjKFqhBRvJ9e6JDHZ24SFsK0EaY4Ydtu9uokNd5ExPYMALpTGTuv4P2uV48xh8ciEYNYljJWhA7UTEKJJeRkmCig0RfAgWA=="
+Send_Mail_Token="yA6KbHtf7A/zwm0EFkQ5hpnd9I1j/6A/gS2ztiu3e5QkLIPnjKFqhBRvJ9e6JDHZ24SFsK0EaY4Ydtu9uokNd5ExPYMALpTGTuv4P2uV48xh8ciEYNYljJWhA7UTEKJJeRkmCig0RfAgWA=="
 
 # Security
 SESSION_SECRET="secure-production-session-secret"

@@ -1,42 +1,25 @@
-import { SendMailClient } from 'zeptomail';
+import nodemailer from 'nodemailer';
+import type { Transporter } from 'nodemailer';
 
-// Check if ZeptoMail API key is properly configured
+// Initialize Nodemailer transport for ZeptoMail SMTP
+let transporter: Transporter | null = null;
+
 if (!process.env.ZEPTOMAIL_API_KEY) {
   console.warn("ZEPTOMAIL_API_KEY environment variable not set - email functionality will be disabled");
 } else {
-  console.log("ZeptoMail API key configured successfully");
-  console.log("API key format check:", process.env.ZEPTOMAIL_API_KEY.substring(0, 10) + "...");
-}
-
-// Get the correct region endpoint for ZeptoMail
-// IMPORTANT: URL should NOT include https:// - just the domain with trailing slash
-// Examples: "api.zeptomail.com/" or "api.zeptomail.eu/"
-const getZeptoMailUrl = () => {
-  const baseUrl = process.env.ZEPTOMAIL_BASE_URL || "api.zeptomail.eu/";
-
-  // Remove https:// if present (ZeptoMail client adds it automatically)
-  let cleanUrl = baseUrl.replace(/^https?:\/\//, '');
-
-  // Ensure trailing slash
-  cleanUrl = cleanUrl.endsWith('/') ? cleanUrl : `${cleanUrl}/`;
-
-  return cleanUrl;
-};
-
-// Initialize ZeptoMail client with correct configuration
-let zeptoMailClient: SendMailClient | null = null;
-if (process.env.ZEPTOMAIL_API_KEY) {
+  console.log("ZeptoMail SMTP configured successfully");
   try {
-    const url = getZeptoMailUrl();
-    console.log("Using ZeptoMail URL:", url);
-    console.log("Token length:", process.env.ZEPTOMAIL_API_KEY.length);
-    zeptoMailClient = new SendMailClient({
-      url: url,
-      token: process.env.ZEPTOMAIL_API_KEY
+    transporter = nodemailer.createTransport({
+      host: "smtp.zeptomail.eu",
+      port: 587,
+      auth: {
+        user: "emailapikey",
+        pass: process.env.ZEPTOMAIL_API_KEY
+      }
     });
-    console.log("ZeptoMail client initialized successfully");
+    console.log("Nodemailer transport initialized successfully");
   } catch (error) {
-    console.error("Failed to initialize ZeptoMail client:", error);
+    console.error("Failed to initialize Nodemailer transport:", error);
   }
 }
 
@@ -50,67 +33,31 @@ interface EmailParams {
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
-    if (!process.env.ZEPTOMAIL_API_KEY || !zeptoMailClient) {
+    if (!process.env.ZEPTOMAIL_API_KEY || !transporter) {
       console.log('Email would be sent to:', params.to, 'Subject:', params.subject);
       console.log('Note: ZEPTOMAIL_API_KEY not configured - email functionality disabled');
       return true; // Return success for development without API key
     }
 
-    // ZeptoMail email format according to API documentation
-    // Use the verified sender address
-    const fromAddress = 'sysadmin@estateagentscouncil.org';
-      
-    const mailData = {
-      from: {
-        address: fromAddress,
-        name: "Estate Agents Council of Zimbabwe"
-      },
-      to: [{
-        email_address: {
-          address: params.to,
-          name: params.to.split('@')[0] // Use part before @ as name
-        }
-      }],
+    // Nodemailer email format
+    const mailOptions = {
+      from: '"Estate Agents Council of Zimbabwe" <sysadmin@estateagentscouncil.org>',
+      to: params.to,
       subject: params.subject,
-      htmlbody: params.html || params.text || '',
-      track_opens: true,
-      track_clicks: true
+      text: params.text,
+      html: params.html
     };
 
-    // Add textbody only if we have text content
-    if (params.text) {
-      (mailData as any).textbody = params.text;
-    }
+    console.log('Sending email via ZeptoMail SMTP to:', params.to);
 
-    console.log('Sending email via ZeptoMail to:', params.to);
-    console.log('Mail data:', JSON.stringify(mailData, null, 2));
-    
-    const result = await zeptoMailClient.sendMail(mailData);
-    console.log('ZeptoMail response:', JSON.stringify(result, null, 2));
-    console.log('ZeptoMail email sent successfully to:', params.to);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.messageId);
     return true;
   } catch (error: any) {
-    console.error('ZeptoMail email error:', error.error?.message || error.message);
-
-    if (error.error?.details) {
-      console.error('Error details:', error.error.details);
-
-      // Check for specific error codes
-      const errorDetails = error.error.details;
-      if (Array.isArray(errorDetails)) {
-        errorDetails.forEach((detail: any) => {
-          if (detail.code === 'SERR_157') {
-            console.error('❌ INVALID API TOKEN - Please check your ZeptoMail API token');
-            console.error('   → Log in to ZeptoMail → Settings → Mail Agents → Send Mail API');
-            console.error('   → Generate a new token and update ZEPTOMAIL_API_KEY in .env.local');
-          } else if (detail.code === 'SERR_101') {
-            console.error('❌ SENDER ADDRESS NOT VERIFIED');
-            console.error('   → Verify your sender address in ZeptoMail account');
-          }
-        });
-      }
+    console.error('Email sending error:', error.message);
+    if (error.code) {
+      console.error('Error code:', error.code);
     }
-
     return false;
   }
 }
