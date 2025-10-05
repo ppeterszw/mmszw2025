@@ -313,6 +313,139 @@ export function registerPublicRoutes(app: Express) {
   });
 
   /**
+   * Resend welcome and verification emails
+   * POST /api/applicants/resend-emails
+   */
+  app.post("/api/applicants/resend-emails", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          error: "Email is required"
+        });
+      }
+
+      // Try to find individual applicant
+      const [individualApplicant] = await db
+        .select()
+        .from(applicants)
+        .where(eq(applicants.email, email))
+        .limit(1);
+
+      if (individualApplicant) {
+        // Generate new verification token if not verified
+        const verificationToken = generateVerificationToken();
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        // Update verification token
+        await db
+          .update(applicants)
+          .set({
+            emailVerificationToken: verificationToken,
+            emailVerificationExpires: verificationExpires,
+            updatedAt: new Date()
+          })
+          .where(eq(applicants.id, individualApplicant.id));
+
+        // Send emails
+        const fullName = `${individualApplicant.firstName} ${individualApplicant.surname}`;
+        const welcomeEmail = generateWelcomeEmail(fullName, individualApplicant.applicantId);
+
+        await Promise.race([
+          (async () => {
+            await sendEmail({
+              to: email,
+              from: 'sysadmin@estateagentscouncil.org',
+              ...welcomeEmail
+            });
+
+            const baseUrl = process.env.NODE_ENV === 'production'
+              ? `https://${process.env.REPL_SLUG}.${process.env.REPLIT_DEV_DOMAIN}`
+              : 'http://localhost:5000';
+
+            const verificationEmail = generateVerificationEmail(fullName, verificationToken, baseUrl);
+
+            await sendEmail({
+              to: email,
+              from: 'sysadmin@estateagentscouncil.org',
+              ...verificationEmail
+            });
+          })(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Email sending timeout')), 5000))
+        ]).catch(emailError => {
+          console.error('Failed to resend emails:', emailError);
+        });
+
+        return res.json({
+          success: true,
+          message: "Welcome and verification emails have been resent. Please check your inbox."
+        });
+      }
+
+      // Try organization applicants
+      const [orgApplicant] = await db
+        .select()
+        .from(organizationApplicants)
+        .where(eq(organizationApplicants.email, email))
+        .limit(1);
+
+      if (orgApplicant) {
+        // Generate new verification token
+        const verificationToken = generateVerificationToken();
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        // Update verification token
+        await db
+          .update(organizationApplicants)
+          .set({
+            emailVerificationToken: verificationToken,
+            emailVerificationExpires: verificationExpires,
+            updatedAt: new Date()
+          })
+          .where(eq(organizationApplicants.id, orgApplicant.id));
+
+        // Send verification email
+        await Promise.race([
+          (async () => {
+            const verificationEmail = generateOrgApplicantVerificationEmail(
+              orgApplicant.companyName,
+              verificationToken
+            );
+
+            await sendEmail({
+              to: email,
+              from: 'sysadmin@estateagentscouncil.org',
+              ...verificationEmail
+            });
+          })(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Email sending timeout')), 5000))
+        ]).catch(emailError => {
+          console.error('Failed to resend emails:', emailError);
+        });
+
+        return res.json({
+          success: true,
+          message: "Verification email has been resent. Please check your inbox."
+        });
+      }
+
+      // Email not found
+      return res.status(404).json({
+        error: "Email not found",
+        message: "No applicant found with this email address."
+      });
+
+    } catch (error: any) {
+      console.error('Resend emails error:', error);
+      res.status(500).json({
+        error: "Failed to resend emails",
+        message: "An error occurred while resending emails. Please try again."
+      });
+    }
+  });
+
+  /**
    * Applicant login endpoint (using Applicant ID as password)
    * POST /api/applicants/login
    */
