@@ -93,8 +93,8 @@ export default function OrganizationManagement() {
       org.registrationNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       org.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || org.membershipStatus === statusFilter;
-    const matchesType = typeFilter === "all" || org.type === typeFilter;
+    const matchesStatus = statusFilter === "all" || org.status === statusFilter;
+    const matchesType = typeFilter === "all" || org.businessType === typeFilter;
 
     return matchesSearch && matchesStatus && matchesType;
   });
@@ -133,7 +133,7 @@ export default function OrganizationManagement() {
   const handleStatusChange = (orgId: string, newStatus: string) => {
     updateOrgMutation.mutate({
       id: orgId,
-      updates: { membershipStatus: newStatus as any }
+      updates: { status: newStatus as any }
     });
   };
 
@@ -143,11 +143,11 @@ export default function OrganizationManagement() {
       ...filteredOrganizations.map(org => [
         `"${org.name}"`,
         org.registrationNumber || "",
-        org.type.replace(/_/g, " "),
-        org.membershipStatus || "",
+        org.businessType?.replace(/_/g, " ") || "",
+        org.status || "",
         org.email,
         org.phone || "",
-        `"${org.address || ""}"`,
+        `"${org.physicalAddress || ""}"`,
         org.memberCount || 0
       ].join(","))
     ].join("\\n");
@@ -370,7 +370,7 @@ export default function OrganizationManagement() {
                   <div className="space-y-2">
                     <div className="flex items-center text-sm">
                       <Building2 className="w-4 h-4 mr-2 text-muted-foreground" />
-                      {org.type.replace(/_/g, " ")}
+                      {org.businessType?.replace(/_/g, " ") || "Not specified"}
                     </div>
 
                     <div className="flex items-center text-sm">
@@ -402,10 +402,10 @@ export default function OrganizationManagement() {
                       </div>
                     )}
 
-                    {org.address && (
+                    {org.physicalAddress && (
                       <div className="flex items-start text-sm">
                         <MapPin className="w-4 h-4 mr-2 mt-0.5 text-muted-foreground" />
-                        <span className="line-clamp-2">{org.address}</span>
+                        <span className="line-clamp-2">{org.physicalAddress}</span>
                       </div>
                     )}
 
@@ -443,8 +443,8 @@ export default function OrganizationManagement() {
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <label className="text-sm font-semibold text-purple-700 mb-2 block">Membership Status</label>
-                                  <Select 
-                                    value={selectedOrg.membershipStatus || ""} 
+                                  <Select
+                                    value={selectedOrg.status || ""}
                                     onValueChange={(value) => handleStatusChange(selectedOrg.id, value)}
                                   >
                                     <SelectTrigger className="border-purple-300 focus:border-purple-500 bg-white/80">
@@ -462,7 +462,7 @@ export default function OrganizationManagement() {
                                 <div>
                                   <label className="text-sm font-semibold text-purple-700 mb-2 block">Organization Type</label>
                                   <div className="p-3 bg-purple-100 border border-purple-300 rounded-lg text-purple-800 font-medium capitalize">
-                                    {selectedOrg.type.replace(/_/g, " ")}
+                                    {selectedOrg.businessType?.replace(/_/g, " ") || "Not specified"}
                                   </div>
                                 </div>
                               </div>
@@ -501,7 +501,7 @@ export default function OrganizationManagement() {
                               <div>
                                 <label className="text-sm font-semibold text-blue-700 mb-2 block">Physical Address</label>
                                 <div className="p-3 bg-blue-100 border border-blue-300 rounded-lg text-blue-800 font-medium">
-                                  {selectedOrg.address || "Not provided"}
+                                  {selectedOrg.physicalAddress || "Not provided"}
                                 </div>
                               </div>
                             </div>
