@@ -17,7 +17,7 @@ const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string()
     .min(1, "Password is required")
-    .regex(/^MBR-APP-\d{4}-\d{4}$/, "Password should be your Applicant ID (format: MBR-APP-YYYY-XXXX)"),
+    .regex(/^APP-MBR-\d{4}-\d{4}$/, "Password should be your Applicant ID (format: APP-MBR-YYYY-XXXX)"),
 });
 
 type LoginData = z.infer<typeof loginSchema>;
@@ -108,7 +108,7 @@ export default function ApplicantLogin() {
                         <FormControl>
                           <Input
                             type="password"
-                            placeholder="MBR-APP-2025-0001"
+                            placeholder="APP-MBR-2025-0001"
                             data-testid="input-password"
                             {...field}
                           />
