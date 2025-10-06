@@ -6,6 +6,7 @@ import { setupAuthRoutes } from "./auth/authRoutes";
 import { storage } from "./storage";
 import { registerPaymentRoutes } from "./paymentRoutes";
 import { registerApplicationRoutes } from "./applicationRoutes";
+import { registerNotificationRoutes } from "./notificationRoutes";
 import { z } from "zod";
 import multer from "multer";
 import { 
@@ -324,6 +325,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register application routes
   registerApplicationRoutes(app);
+
+  // Register notification routes
+  registerNotificationRoutes(app);
 
   // Setup Organization Portal routes
   const { setupOrganizationPortalRoutes } = await import("./organizationPortalRoutes");

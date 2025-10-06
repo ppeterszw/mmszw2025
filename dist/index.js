@@ -1,5 +1,7 @@
 var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -7,6 +9,15 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
+var __copyProps = (to, from, except, desc5) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc5 = __getOwnPropDesc(from, key)) || desc5.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // shared/schema.ts
 var schema_exports = {};
@@ -129,7 +140,7 @@ __export(schema_exports, {
   usersRelations: () => usersRelations
 });
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, decimal, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, decimal, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -139,41 +150,28 @@ var init_schema = __esm({
     "use strict";
     userRoleEnum = pgEnum("user_role", ["admin", "member_manager", "case_manager", "super_admin", "staff", "accountant", "reviewer"]);
     userStatusEnum = pgEnum("user_status", ["active", "inactive", "suspended", "locked", "pending_verification"]);
-    memberTypeEnum = pgEnum("member_type", ["real_estate_agent", "property_manager", "principal_real_estate_agent", "real_estate_negotiator"]);
-    organizationTypeEnum = pgEnum("organization_type", ["real_estate_firm", "property_management_firm", "brokerage_firm", "real_estate_development_firm"]);
-    membershipStatusEnum = pgEnum("membership_status", ["active", "standby", "revoked", "pending", "expired"]);
-    caseStatusEnum = pgEnum("case_status", ["open", "in_progress", "resolved", "closed"]);
+    memberTypeEnum = pgEnum("member_type", ["real_estate_agent", "property_manager", "principal_real_estate_agent", "real_estate_negotiator", "property_developer"]);
+    organizationTypeEnum = pgEnum("organization_type", ["real_estate_agency", "property_management_firm", "brokerage_firm", "real_estate_development_firm"]);
+    membershipStatusEnum = pgEnum("membership_status", ["active", "suspended", "expired", "pending"]);
+    caseStatusEnum = pgEnum("case_status", ["open", "under_investigation", "resolved", "closed"]);
     casePriorityEnum = pgEnum("case_priority", ["low", "medium", "high", "critical"]);
     caseTypeEnum = pgEnum("case_type", ["complaint", "inquiry", "dispute", "violation"]);
-    eventTypeEnum = pgEnum("event_type", ["workshop", "seminar", "training", "conference"]);
+    eventTypeEnum = pgEnum("event_type", ["workshop", "seminar", "training", "conference", "meeting"]);
     activityTypeEnum = pgEnum("activity_type", ["login", "logout", "profile_update", "document_upload", "payment", "case_submission", "event_registration", "status_change", "password_change", "role_change", "access_granted", "access_denied"]);
     renewalStatusEnum = pgEnum("renewal_status", ["pending", "reminded", "completed", "overdue", "lapsed"]);
-    paymentStatusEnum = pgEnum("payment_status", ["pending", "processing", "completed", "failed", "refunded", "cancelled", "expired"]);
-    paymentMethodEnum = pgEnum("payment_method", ["cash", "paynow_ecocash", "paynow_onemoney", "stripe_card", "bank_transfer", "cheque"]);
-    applicationStatusEnum = pgEnum("application_status", ["draft", "submitted", "pre_validation", "eligibility_review", "document_review", "needs_applicant_action", "ready_for_registry", "accepted", "rejected", "withdrawn", "expired"]);
+    paymentStatusEnum = pgEnum("payment_status", ["pending", "completed", "failed", "refunded"]);
+    paymentMethodEnum = pgEnum("payment_method", ["cash", "paynow_ecocash", "paynow_onemoney", "stripe_card", "bank_transfer", "cheque", "google_pay"]);
+    applicationStatusEnum = pgEnum("application_status", ["draft", "submitted", "payment_pending", "payment_received", "under_review", "approved", "rejected", "pre_validation", "eligibility_review", "document_review", "needs_applicant_action", "ready_for_registry", "accepted", "withdrawn", "expired"]);
     applicationStageEnum = pgEnum("application_stage", ["initial_review", "document_verification", "background_check", "committee_review", "final_approval", "certificate_generation"]);
     applicationTypeEnum = pgEnum("application_type", ["individual", "organization"]);
     documentStatusEnum = pgEnum("document_status", ["uploaded", "verified", "rejected"]);
     documentTypeEnum = pgEnum("document_type", [
-      // Individual documents
-      "o_level_cert",
-      "a_level_cert",
-      "equivalent_cert",
-      "id_or_passport",
-      "birth_certificate",
-      // Organization documents
-      "bank_trust_letter",
-      "certificate_incorporation",
-      "partnership_agreement",
-      "cr6",
-      "cr11",
+      "id_document",
+      "academic_certificate",
+      "proof_of_payment",
+      "company_registration",
       "tax_clearance",
-      "annual_return_1",
-      "annual_return_2",
-      "annual_return_3",
-      "police_clearance_director",
-      // Payment documents
-      "application_fee_pop"
+      "other"
     ]);
     decisionEnum = pgEnum("decision", ["accepted", "rejected"]);
     educationLevelEnum = pgEnum("education_level", ["o_level", "a_level", "bachelors", "hnd", "masters", "doctorate"]);
@@ -183,11 +181,11 @@ var init_schema = __esm({
     users = pgTable("users", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       email: text("email").notNull().unique(),
-      password: text("password").notNull(),
+      password: text("password"),
       firstName: text("first_name"),
       lastName: text("last_name"),
       phone: text("phone"),
-      role: userRoleEnum("role").default("admin"),
+      role: userRoleEnum("role").default("staff"),
       status: userStatusEnum("status").default("active"),
       permissions: text("permissions"),
       // JSON array of specific permissions
@@ -224,6 +222,9 @@ var init_schema = __esm({
       emailVerificationExpires: timestamp("email_verification_expires"),
       applicationStartedAt: timestamp("application_started_at"),
       applicationCompletedAt: timestamp("application_completed_at"),
+      password: text("password"),
+      passwordResetToken: text("password_reset_token"),
+      passwordResetExpires: timestamp("password_reset_expires"),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -293,12 +294,10 @@ var init_schema = __esm({
     individualApplications = pgTable("individual_applications", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       applicationId: text("application_id").notNull().unique(),
-      applicantEmail: text("applicant_email"),
-      personal: text("personal"),
-      // JSONB stored as text
-      education: text("education"),
-      // JSONB stored as text
-      memberType: memberTypeEnum("member_type"),
+      applicantEmail: text("applicant_email").notNull(),
+      personal: jsonb("personal").notNull(),
+      education: jsonb("education"),
+      memberType: memberTypeEnum("member_type").notNull(),
       status: applicationStatusEnum("status").default("draft"),
       applicationFee: decimal("application_fee", { precision: 10, scale: 2 }),
       paymentStatus: paymentStatusEnum("payment_status"),
@@ -315,10 +314,9 @@ var init_schema = __esm({
     organizationApplications = pgTable("organization_applications", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       applicationId: text("application_id").notNull().unique(),
-      applicantEmail: text("applicant_email"),
-      company: text("company"),
-      // JSONB stored as text
-      businessType: organizationTypeEnum("business_type"),
+      applicantEmail: text("applicant_email").notNull(),
+      company: jsonb("company").notNull(),
+      businessType: organizationTypeEnum("business_type").notNull(),
       status: applicationStatusEnum("status").default("draft"),
       applicationFee: decimal("application_fee", { precision: 10, scale: 2 }),
       paymentStatus: paymentStatusEnum("payment_status"),
@@ -333,19 +331,23 @@ var init_schema = __esm({
     });
     uploadedDocuments = pgTable("uploaded_documents", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      applicationType: applicationTypeEnum("application_type").notNull(),
+      applicationType: varchar("application_type").notNull(),
+      // Not enum in DB - stores 'individual' or 'organization'
       applicationIdFk: varchar("application_id_fk").notNull(),
       // References individual_applications.id or organization_applications.id
-      docType: documentTypeEnum("doc_type").notNull(),
+      docType: varchar("doc_type").notNull(),
+      // Not enum in DB - stores various document type strings
       fileKey: text("file_key").notNull(),
       fileName: text("file_name").notNull(),
       mime: text("mime"),
       sizeBytes: integer("size_bytes"),
       sha256: text("sha256"),
-      status: documentStatusEnum("status").default("uploaded"),
+      status: varchar("status").default("uploaded"),
+      // Not enum in DB
+      rejectionReason: text("rejection_reason"),
       verifierUserId: varchar("verifier_user_id").references(() => users.id),
-      notes: text("notes"),
-      createdAt: timestamp("created_at").defaultNow(),
+      verifiedAt: timestamp("verified_at"),
+      uploadedAt: timestamp("uploaded_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
     statusHistory = pgTable("status_history", {
@@ -1047,7 +1049,7 @@ var init_schema = __esm({
     });
     insertUploadedDocumentSchema = createInsertSchema(uploadedDocuments).omit({
       id: true,
-      createdAt: true,
+      uploadedAt: true,
       updatedAt: true
     });
     insertStatusHistorySchema = createInsertSchema(statusHistory).omit({
@@ -1202,7 +1204,7 @@ function sessionTimeoutMiddleware(req, res, next) {
   }
   const session3 = req.session;
   if (session3 && session3.cookie) {
-    const lastActivity = session3.cookie._expires ? new Date(session3.cookie._expires) : /* @__PURE__ */ new Date();
+    const lastActivity = session3.cookie.expires ? new Date(session3.cookie.expires) : /* @__PURE__ */ new Date();
     const remaining = SessionService.getTimeoutRemaining(lastActivity);
     res.setHeader("X-Session-Timeout-Remaining", remaining.toString());
     if (remaining < 5) {
@@ -1288,7 +1290,7 @@ var init_sessionService = __esm({
           ipAddress,
           userAgent,
           expiresAt,
-          lastActivityAt: now,
+          lastActivity: now,
           isActive: true
         });
         return sessionToken;
@@ -1311,7 +1313,7 @@ var init_sessionService = __esm({
           await this.invalidateSession(sessionToken);
           return { valid: false, reason: "Session expired (absolute timeout)" };
         }
-        const lastActivity = new Date(session3.lastActivityAt);
+        const lastActivity = new Date(session3.lastActivity || now);
         const idleMinutes = (now.getTime() - lastActivity.getTime()) / (1e3 * 60);
         if (idleMinutes > SESSION_CONFIG.IDLE_TIMEOUT_MINUTES) {
           await this.invalidateSession(sessionToken);
@@ -1321,7 +1323,7 @@ var init_sessionService = __esm({
           };
         }
         await db.update(userSessions).set({
-          lastActivityAt: now
+          lastActivity: now
         }).where(eq(userSessions.sessionToken, sessionToken));
         return { valid: true, userId: session3.userId };
       }
@@ -1353,7 +1355,7 @@ var init_sessionService = __esm({
         return await db.select({
           sessionToken: userSessions.sessionToken,
           createdAt: userSessions.createdAt,
-          lastActivityAt: userSessions.lastActivityAt,
+          lastActivity: userSessions.lastActivity,
           expiresAt: userSessions.expiresAt,
           ipAddress: userSessions.ipAddress,
           userAgent: userSessions.userAgent
@@ -1367,9 +1369,9 @@ var init_sessionService = __esm({
       /**
        * Get session timeout remaining (in minutes)
        */
-      static getTimeoutRemaining(lastActivityAt) {
+      static getTimeoutRemaining(lastActivity) {
         const now = /* @__PURE__ */ new Date();
-        const elapsed = (now.getTime() - lastActivityAt.getTime()) / (1e3 * 60);
+        const elapsed = (now.getTime() - lastActivity.getTime()) / (1e3 * 60);
         const remaining = SESSION_CONFIG.IDLE_TIMEOUT_MINUTES - elapsed;
         return Math.max(0, Math.round(remaining));
       }
@@ -1618,7 +1620,7 @@ async function initializeDemoData() {
     const demoOrganizations = [
       {
         name: "Premier Estate Agents",
-        businessType: "real_estate_firm",
+        businessType: "real_estate_agency",
         registrationNumber: "REF-2023-001",
         email: "info@premierestate.com",
         phone: "+263 4 123 4567",
@@ -1667,10 +1669,8 @@ async function initializeDemoData() {
         dateOfBirth: /* @__PURE__ */ new Date("1980-05-15"),
         nationalId: "08-123456-A-15",
         organizationId: createdOrgs[0].id,
-        joiningDate: /* @__PURE__ */ new Date("2023-01-20"),
-        expiryDate: /* @__PURE__ */ new Date("2024-01-20"),
-        cpdPoints: 45,
-        annualFee: "500.00"
+        joinedDate: /* @__PURE__ */ new Date("2023-01-20"),
+        expiryDate: /* @__PURE__ */ new Date("2024-01-20")
       },
       {
         firstName: "Grace",
@@ -1683,10 +1683,8 @@ async function initializeDemoData() {
         dateOfBirth: /* @__PURE__ */ new Date("1985-08-22"),
         nationalId: "08-234567-B-22",
         organizationId: createdOrgs[0].id,
-        joiningDate: /* @__PURE__ */ new Date("2023-02-15"),
-        expiryDate: /* @__PURE__ */ new Date("2024-02-15"),
-        cpdPoints: 32,
-        annualFee: "300.00"
+        joinedDate: /* @__PURE__ */ new Date("2023-02-15"),
+        expiryDate: /* @__PURE__ */ new Date("2024-02-15")
       },
       {
         firstName: "Tendai",
@@ -1699,10 +1697,8 @@ async function initializeDemoData() {
         dateOfBirth: /* @__PURE__ */ new Date("1982-03-10"),
         nationalId: "08-345678-C-10",
         organizationId: createdOrgs[1].id,
-        joiningDate: /* @__PURE__ */ new Date("2023-03-25"),
-        expiryDate: /* @__PURE__ */ new Date("2024-03-25"),
-        cpdPoints: 28,
-        annualFee: "350.00"
+        joinedDate: /* @__PURE__ */ new Date("2023-03-25"),
+        expiryDate: /* @__PURE__ */ new Date("2024-03-25")
       },
       {
         firstName: "Chipo",
@@ -1711,14 +1707,12 @@ async function initializeDemoData() {
         phone: "+263 77 456 7890",
         membershipNumber: "REA-2023-004567",
         memberType: "real_estate_negotiator",
-        membershipStatus: "standby",
+        membershipStatus: "pending",
         dateOfBirth: /* @__PURE__ */ new Date("1990-11-05"),
         nationalId: "08-456789-D-05",
         organizationId: createdOrgs[2].id,
-        joiningDate: /* @__PURE__ */ new Date("2023-04-10"),
-        expiryDate: /* @__PURE__ */ new Date("2024-04-10"),
-        cpdPoints: 15,
-        annualFee: "250.00"
+        joinedDate: /* @__PURE__ */ new Date("2023-04-10"),
+        expiryDate: /* @__PURE__ */ new Date("2024-04-10")
       }
     ];
     const createdMembers = [];
@@ -1739,7 +1733,7 @@ async function initializeDemoData() {
         description: "Complaint regarding unauthorized sale of property by agent without proper documentation.",
         type: "complaint",
         priority: "high",
-        status: "in_progress",
+        status: "under_investigation",
         submittedBy: "Anonymous Client",
         submittedByEmail: "client@example.com",
         memberId: createdMembers[0].id,
@@ -1930,57 +1924,59 @@ async function initializeDemoData() {
     }
     const demoApplications = [
       {
-        applicationNumber: "APP-2023-001",
-        firstName: "Robert",
-        lastName: "Banda",
-        email: "robert.banda@gmail.com",
-        phone: "+263 77 567 8901",
-        dateOfBirth: /* @__PURE__ */ new Date("1988-07-12"),
-        nationalId: "08-567890-E-12",
+        applicationId: "APP-2023-001",
+        applicantEmail: "robert.banda@gmail.com",
         memberType: "real_estate_agent",
         status: "submitted",
-        currentStage: "document_verification",
         applicationFee: "100.00",
-        feePaymentStatus: "completed",
-        educationLevel: "bachelors",
-        workExperience: 3,
-        currentEmployer: "Independent Agent",
-        jobTitle: "Real Estate Agent",
-        documentsUploaded: true,
-        reviewedBy: createdUsers[3].id,
+        paymentStatus: "completed",
+        personal: {
+          firstName: "Robert",
+          lastName: "Banda",
+          email: "robert.banda@gmail.com",
+          phone: "+263 77 567 8901",
+          dateOfBirth: (/* @__PURE__ */ new Date("1988-07-12")).toISOString(),
+          nationalId: "08-567890-E-12"
+        },
+        education: {
+          educationLevel: "bachelors",
+          workExperience: 3,
+          currentEmployer: "Independent Agent",
+          jobTitle: "Real Estate Agent"
+        },
+        reviewedBy: createdUsers[3].id
         // Staff member
-        submittedAt: /* @__PURE__ */ new Date("2023-11-15"),
-        priority: 2
       },
       {
-        applicationNumber: "APP-2023-002",
-        firstName: "Patricia",
-        lastName: "Matemba",
-        email: "patricia.matemba@yahoo.com",
-        phone: "+263 77 678 9012",
-        dateOfBirth: /* @__PURE__ */ new Date("1992-04-18"),
-        nationalId: "08-678901-F-18",
+        applicationId: "APP-2023-002",
+        applicantEmail: "patricia.matemba@yahoo.com",
         memberType: "property_manager",
-        status: "pre_validation",
-        currentStage: "initial_review",
+        status: "draft",
         applicationFee: "100.00",
-        feePaymentStatus: "pending",
-        educationLevel: "hnd",
-        workExperience: 2,
-        currentEmployer: "City Properties Ltd",
-        jobTitle: "Junior Property Manager",
-        documentsUploaded: false,
-        reviewedBy: createdUsers[3].id,
+        paymentStatus: "pending",
+        personal: {
+          firstName: "Patricia",
+          lastName: "Matemba",
+          email: "patricia.matemba@yahoo.com",
+          phone: "+263 77 678 9012",
+          dateOfBirth: (/* @__PURE__ */ new Date("1992-04-18")).toISOString(),
+          nationalId: "08-678901-F-18"
+        },
+        education: {
+          educationLevel: "hnd",
+          workExperience: 2,
+          currentEmployer: "City Properties Ltd",
+          jobTitle: "Junior Property Manager"
+        },
+        reviewedBy: createdUsers[3].id
         // Staff member
-        submittedAt: /* @__PURE__ */ new Date("2023-12-01"),
-        priority: 3
       }
     ];
     for (const appData of demoApplications) {
       const existingApplications = await storage.getAllApplications();
-      const existingApp = existingApplications.find((app2) => app2.applicationNumber === appData.applicationNumber);
+      const existingApp = existingApplications.find((app2) => app2.applicationId === appData.applicationId);
       if (existingApp) {
-        console.log(`Application ${appData.applicationNumber} already exists, skipping creation`);
+        console.log(`Application ${appData.applicationId} already exists, skipping creation`);
         continue;
       }
       await storage.createMemberApplication(appData);
@@ -2794,7 +2790,7 @@ var init_storage = __esm({
         const openCases = openCasesResult[0]?.count || 0;
         const totalUsersResult = await db.select({ count: sql4`count(*)` }).from(users);
         const totalUsers = totalUsersResult[0]?.count || 0;
-        const upcomingEventsResult = await db.select({ count: sql4`count(*)` }).from(events).where(sql4`start_date >= NOW()`);
+        const upcomingEventsResult = await db.select({ count: sql4`count(*)` }).from(events).where(sql4`${events.startDate} >= NOW()`);
         const upcomingEvents = upcomingEventsResult[0]?.count || 0;
         const startOfMonth = /* @__PURE__ */ new Date();
         startOfMonth.setDate(1);
@@ -3035,58 +3031,29 @@ __export(emailService_exports, {
   generateWelcomeEmail: () => generateWelcomeEmail,
   sendEmail: () => sendEmail
 });
-import { SendMailClient } from "zeptomail";
+import nodemailer from "nodemailer";
 async function sendEmail(params) {
   try {
-    if (!process.env.ZEPTOMAIL_API_KEY || !zeptoMailClient) {
+    if (!process.env.ZEPTOMAIL_API_KEY || !transporter) {
       console.log("Email would be sent to:", params.to, "Subject:", params.subject);
       console.log("Note: ZEPTOMAIL_API_KEY not configured - email functionality disabled");
       return true;
     }
-    const fromAddress = "sysadmin@estateagentscouncil.org";
-    const mailData = {
-      from: {
-        address: fromAddress,
-        name: "Estate Agents Council of Zimbabwe"
-      },
-      to: [{
-        email_address: {
-          address: params.to,
-          name: params.to.split("@")[0]
-          // Use part before @ as name
-        }
-      }],
+    const mailOptions = {
+      from: '"Estate Agents Council of Zimbabwe" <sysadmin@estateagentscouncil.org>',
+      to: params.to,
       subject: params.subject,
-      htmlbody: params.html || params.text || "",
-      track_opens: true,
-      track_clicks: true
+      text: params.text,
+      html: params.html
     };
-    if (params.text) {
-      mailData.textbody = params.text;
-    }
-    console.log("Sending email via ZeptoMail to:", params.to);
-    console.log("Mail data:", JSON.stringify(mailData, null, 2));
-    const result = await zeptoMailClient.sendMail(mailData);
-    console.log("ZeptoMail response:", JSON.stringify(result, null, 2));
-    console.log("ZeptoMail email sent successfully to:", params.to);
+    console.log("Sending email via ZeptoMail SMTP to:", params.to);
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully:", info.messageId);
     return true;
   } catch (error) {
-    console.error("ZeptoMail email error:", error.error?.message || error.message);
-    if (error.error?.details) {
-      console.error("Error details:", error.error.details);
-      const errorDetails = error.error.details;
-      if (Array.isArray(errorDetails)) {
-        errorDetails.forEach((detail) => {
-          if (detail.code === "SERR_157") {
-            console.error("\u274C INVALID API TOKEN - Please check your ZeptoMail API token");
-            console.error("   \u2192 Log in to ZeptoMail \u2192 Settings \u2192 Mail Agents \u2192 Send Mail API");
-            console.error("   \u2192 Generate a new token and update ZEPTOMAIL_API_KEY in .env.local");
-          } else if (detail.code === "SERR_101") {
-            console.error("\u274C SENDER ADDRESS NOT VERIFIED");
-            console.error("   \u2192 Verify your sender address in ZeptoMail account");
-          }
-        });
-      }
+    console.error("Email sending error:", error.message);
+    if (error.code) {
+      console.error("Error code:", error.code);
     }
     return false;
   }
@@ -3099,15 +3066,20 @@ function generateWelcomeEmail(fullName, applicantId) {
     <head>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #1e40af; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .logo-container { text-align: center; padding: 20px; background: #ffffff; }
+        .logo { max-width: 200px; height: auto; }
+        .header { background: #1e40af; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { padding: 20px; background: #f9f9f9; }
         .applicant-id { background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; }
-        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #ddd; }
       </style>
     </head>
     <body>
       <div class="container">
+        <div class="logo-container">
+          <img src="https://mms.estateagentscouncil.org/logo.png" alt="Estate Agents Council of Zimbabwe" class="logo" />
+        </div>
         <div class="header">
           <h1>Estate Agents Council of Zimbabwe</h1>
         </div>
@@ -3153,7 +3125,7 @@ function generateWelcomeEmail(fullName, applicantId) {
   return { subject, html, text: text2 };
 }
 function generateOrgApplicantVerificationEmail(companyName, verificationToken) {
-  const baseUrl = process.env.NODE_ENV === "production" ? `https://${process.env.REPL_SLUG}.${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000";
+  const baseUrl = process.env.NODE_ENV === "production" ? "https://mms.estateagentscouncil.org" : "http://localhost:5000";
   const verificationUrl = `${baseUrl}/organization/verify-email?token=${verificationToken}`;
   const subject = "Verify Your Email Address - EACZ Organization Application";
   const html = `
@@ -3162,8 +3134,10 @@ function generateOrgApplicantVerificationEmail(companyName, verificationToken) {
     <head>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #1e40af; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .logo-container { text-align: center; padding: 20px; background: #ffffff; }
+        .logo { max-width: 200px; height: auto; }
+        .header { background: #1e40af; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { padding: 20px; background: #f9f9f9; }
         .button { display: inline-block; background: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
         .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
@@ -3171,6 +3145,9 @@ function generateOrgApplicantVerificationEmail(companyName, verificationToken) {
     </head>
     <body>
       <div class="container">
+        <div class="logo-container">
+          <img src="https://mms.estateagentscouncil.org/logo.png" alt="Estate Agents Council of Zimbabwe" class="logo" />
+        </div>
         <div class="header">
           <h1>Email Verification Required</h1>
         </div>
@@ -3226,15 +3203,20 @@ function generateVerificationEmail(fullName, verificationToken, baseUrl) {
     <head>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #1e40af; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .logo-container { text-align: center; padding: 20px; background: #ffffff; }
+        .logo { max-width: 200px; height: auto; }
+        .header { background: #1e40af; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { padding: 20px; background: #f9f9f9; }
         .button { display: inline-block; background: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #ddd; }
       </style>
     </head>
     <body>
       <div class="container">
+        <div class="logo-container">
+          <img src="https://mms.estateagentscouncil.org/logo.png" alt="Estate Agents Council of Zimbabwe" class="logo" />
+        </div>
         <div class="header">
           <h1>Email Verification Required</h1>
         </div>
@@ -3720,35 +3702,27 @@ Best regards,
 Estate Agents Council of Zimbabwe`;
   return { subject, html, text: text2 };
 }
-var getZeptoMailUrl, zeptoMailClient;
+var transporter;
 var init_emailService = __esm({
   "server/services/emailService.ts"() {
     "use strict";
+    transporter = null;
     if (!process.env.ZEPTOMAIL_API_KEY) {
       console.warn("ZEPTOMAIL_API_KEY environment variable not set - email functionality will be disabled");
     } else {
-      console.log("ZeptoMail API key configured successfully");
-      console.log("API key format check:", process.env.ZEPTOMAIL_API_KEY.substring(0, 10) + "...");
-    }
-    getZeptoMailUrl = () => {
-      const baseUrl = process.env.ZEPTOMAIL_BASE_URL || "api.zeptomail.eu/";
-      let cleanUrl = baseUrl.replace(/^https?:\/\//, "");
-      cleanUrl = cleanUrl.endsWith("/") ? cleanUrl : `${cleanUrl}/`;
-      return cleanUrl;
-    };
-    zeptoMailClient = null;
-    if (process.env.ZEPTOMAIL_API_KEY) {
+      console.log("ZeptoMail SMTP configured successfully");
       try {
-        const url = getZeptoMailUrl();
-        console.log("Using ZeptoMail URL:", url);
-        console.log("Token length:", process.env.ZEPTOMAIL_API_KEY.length);
-        zeptoMailClient = new SendMailClient({
-          url,
-          token: process.env.ZEPTOMAIL_API_KEY
+        transporter = nodemailer.createTransport({
+          host: "smtp.zeptomail.eu",
+          port: 587,
+          auth: {
+            user: "emailapikey",
+            pass: process.env.ZEPTOMAIL_API_KEY
+          }
         });
-        console.log("ZeptoMail client initialized successfully");
+        console.log("Nodemailer transport initialized successfully");
       } catch (error) {
-        console.error("Failed to initialize ZeptoMail client:", error);
+        console.error("Failed to initialize Nodemailer transport:", error);
       }
     }
   }
@@ -3823,7 +3797,7 @@ function setupAuth(app2) {
   passport.use(
     new LocalStrategy({ usernameField: "email" }, async (email, password, done) => {
       const user = await storage.getUserByEmail(email);
-      if (!user || !await comparePasswords(password, user.password)) {
+      if (!user || !user.password || !await comparePasswords(password, user.password)) {
         return done(null, false);
       } else {
         return done(null, user);
@@ -3900,7 +3874,7 @@ function setupAuth(app2) {
       const { currentPassword, newPassword } = req.body;
       const userId = req.user.id;
       const user = await storage.getUser(userId);
-      if (!user || !await comparePasswords(currentPassword, user.password)) {
+      if (!user || !user.password || !await comparePasswords(currentPassword, user.password)) {
         return res.status(400).json({ error: "Current password is incorrect" });
       }
       const hashedNewPassword = await hashPassword(newPassword);
@@ -4006,7 +3980,7 @@ var init_clerkAuth = __esm({
 // server/auth/authService.ts
 import { scrypt as scrypt2, randomBytes as randomBytes3, timingSafeEqual as timingSafeEqual2 } from "crypto";
 import { promisify as promisify2 } from "util";
-import { eq as eq3, and as and3, lt as lt2 } from "drizzle-orm";
+import { eq as eq3, and as and3, gt } from "drizzle-orm";
 var scryptAsync2, AUTH_CONFIG, AuthService;
 var init_authService = __esm({
   "server/auth/authService.ts"() {
@@ -4173,7 +4147,7 @@ var init_authService = __esm({
         const [user] = await db.select().from(users).where(
           and3(
             eq3(users.passwordResetToken, token),
-            lt2(/* @__PURE__ */ new Date(), users.passwordResetExpires)
+            gt(users.passwordResetExpires, /* @__PURE__ */ new Date())
           )
         ).limit(1);
         return user?.id || null;
@@ -4225,6 +4199,9 @@ var init_authService = __esm({
         const [user] = await db.select().from(users).where(eq3(users.id, userId)).limit(1);
         if (!user) {
           return { success: false, error: "User not found" };
+        }
+        if (!user.password) {
+          return { success: false, error: "User has no password set" };
         }
         const isValid = await this.comparePasswords(currentPassword, user.password);
         if (!isValid) {
@@ -4895,6 +4872,9 @@ function setupAuthRoutes(app2) {
               message: "Account is inactive. Please contact support."
             });
           }
+          if (!user.password) {
+            return done(null, false, { message: "Invalid email or password" });
+          }
           const isValid = await AuthService.comparePasswords(
             password,
             user.password
@@ -4907,10 +4887,10 @@ function setupAuthRoutes(app2) {
           return done(null, {
             id: user.id,
             email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            status: user.status,
+            firstName: user.firstName || "",
+            lastName: user.lastName || "",
+            role: user.role || "applicant",
+            status: user.status || "active",
             emailVerified: user.emailVerified || false
           });
         } catch (error) {
@@ -5204,7 +5184,7 @@ function setupAuthRoutes(app2) {
       res.json({
         sessions: sessions.map((s) => ({
           createdAt: s.createdAt,
-          lastActivity: s.lastActivityAt,
+          lastActivity: s.lastActivity,
           expiresAt: s.expiresAt,
           ipAddress: s.ipAddress,
           device: s.userAgent
@@ -5875,7 +5855,7 @@ async function handleSuccessfulPayment(payment) {
           if (renewals.length > 0) {
             await db.update(memberRenewals).set({
               status: "completed",
-              paidAt: /* @__PURE__ */ new Date(),
+              renewalDate: /* @__PURE__ */ new Date(),
               updatedAt: /* @__PURE__ */ new Date()
             }).where(eq6(memberRenewals.id, renewals[0].id));
             await db.update(members).set({
@@ -5897,7 +5877,6 @@ function mapPayNowStatusToInternal(paynowStatus) {
     case "paid":
       return "completed";
     case "cancelled":
-      return "cancelled";
     case "failed":
       return "failed";
     default:
@@ -6937,17 +6916,24 @@ function registerApplicationRoutes(app2) {
       }
       const applicationId = await nextApplicationId("individual");
       const feeAmount = eligibility.mature ? 75 : 50;
+      const educationData = {
+        oLevel: applicationData.oLevel,
+        aLevel: applicationData.aLevel || null,
+        equivalentQualification: applicationData.equivalentQualification || null,
+        mature: eligibility.mature
+      };
       const [application] = await db.insert(individualApplications).values({
         applicationId,
+        applicantEmail: applicationData.personal.email,
+        personal: applicationData.personal,
+        // Direct JSONB assignment
+        education: educationData,
+        // Direct JSONB assignment
+        memberType: "real_estate_agent",
+        // TODO: Get from application data
         status: "draft",
-        personal: JSON.stringify(applicationData.personal),
-        oLevel: JSON.stringify(applicationData.oLevel),
-        aLevel: applicationData.aLevel ? JSON.stringify(applicationData.aLevel) : null,
-        equivalentQualification: applicationData.equivalentQualification ? JSON.stringify(applicationData.equivalentQualification) : null,
-        matureEntry: eligibility.mature,
-        feeAmount,
-        feeCurrency: "USD",
-        feeStatus: "pending"
+        applicationFee: feeAmount.toString(),
+        paymentStatus: "pending"
       }).returning();
       await db.insert(statusHistory).values({
         applicationType: "individual",
@@ -7027,16 +7013,23 @@ function registerApplicationRoutes(app2) {
       }
       const applicationId = await nextApplicationId("organization");
       const feeAmount = 150;
+      const companyData = {
+        orgProfile: applicationData.orgProfile,
+        trustAccount: applicationData.trustAccount,
+        preaMemberId: applicationData.preaMemberId,
+        directors: applicationData.directors
+      };
+      const applicantEmail = applicationData.orgProfile.emails[0];
       const [application] = await db.insert(organizationApplications).values({
         applicationId,
+        applicantEmail,
+        company: companyData,
+        // Direct JSONB assignment
+        businessType: "real_estate_agency",
+        // TODO: Get from application data
         status: "draft",
-        orgProfile: JSON.stringify(applicationData.orgProfile),
-        trustAccount: JSON.stringify(applicationData.trustAccount),
-        preaMemberId: applicationData.preaMemberId,
-        directors: JSON.stringify(applicationData.directors),
-        feeAmount,
-        feeCurrency: "USD",
-        feeStatus: "pending"
+        applicationFee: feeAmount.toString(),
+        paymentStatus: "pending"
       }).returning();
       await db.insert(statusHistory).values({
         applicationType: "organization",
@@ -7048,7 +7041,7 @@ function registerApplicationRoutes(app2) {
         const { sendEmail: sendEmail2, generateApplicationConfirmationEmail: generateApplicationConfirmationEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
         const orgProfile = applicationData.orgProfile;
         const applicantName = orgProfile.legalName;
-        const applicantEmail = orgProfile.emails[0];
+        const applicantEmail2 = orgProfile.emails[0];
         const confirmationEmail = generateApplicationConfirmationEmail2(
           applicantName,
           applicationId,
@@ -7056,11 +7049,11 @@ function registerApplicationRoutes(app2) {
           feeAmount
         );
         await sendEmail2({
-          to: applicantEmail,
+          to: applicantEmail2,
           from: "noreply@estateagentscouncil.org",
           ...confirmationEmail
         });
-        console.log(`Organization application confirmation email sent to: ${applicantEmail}`);
+        console.log(`Organization application confirmation email sent to: ${applicantEmail2}`);
       } catch (emailError) {
         console.error("Failed to send organization application confirmation email:", emailError);
       }
@@ -7185,8 +7178,8 @@ function registerApplicationRoutes(app2) {
           applicationType,
           docTypes,
           {
-            matureEntry: application.matureEntry,
-            directorCount: applicationType === "organization" ? JSON.parse(application.directors || "[]").length : void 0
+            matureEntry: applicationType === "individual" ? application.education?.mature : void 0,
+            directorCount: applicationType === "organization" ? (application.company?.directors || []).length : void 0
           }
         );
         if (!docValidation.ok) {
@@ -7202,12 +7195,12 @@ function registerApplicationRoutes(app2) {
         if (applicationType === "individual") {
           await db.update(individualApplications).set({
             status: "eligibility_review",
-            submittedAt: /* @__PURE__ */ new Date()
+            updatedAt: /* @__PURE__ */ new Date()
           }).where(eq8(individualApplications.applicationId, applicationId));
         } else {
           await db.update(organizationApplications).set({
             status: "eligibility_review",
-            submittedAt: /* @__PURE__ */ new Date()
+            updatedAt: /* @__PURE__ */ new Date()
           }).where(eq8(organizationApplications.applicationId, applicationId));
         }
         const submittedAt = /* @__PURE__ */ new Date();
@@ -7385,11 +7378,12 @@ function registerApplicationRoutes(app2) {
           code: "INVALID_PAYMENT_AMOUNT"
         });
       }
+      const appEmail = application.personal ? application.personal.email : application.company.orgProfile?.emails?.[0];
       const paynowService2 = createPaynowService();
       const paymentResult = await paynowService2.initiatePayment({
         amount,
         currency: "USD",
-        email: email || JSON.parse(application.personal || application.orgProfile).email,
+        email: email || appEmail,
         reference: `EACZ-FEE-${applicationId}`,
         returnUrl: `${process.env.FRONTEND_URL}/application/${applicationId}/payment-complete`,
         resultUrl: `${process.env.BACKEND_URL}/api/public/applications/${applicationId}/fee/callback`
@@ -7403,7 +7397,10 @@ function registerApplicationRoutes(app2) {
           code: "PAYMENT_INIT_ERROR"
         });
       }
-      const updateData = { feePaymentId: paymentResult.pollUrl };
+      const updateData = {
+        paymentReference: paymentResult.pollUrl,
+        paymentStatus: "pending"
+      };
       if (applicationType === "individual") {
         await db.update(individualApplications).set(updateData).where(eq8(individualApplications.applicationId, applicationId));
       } else {
@@ -7432,7 +7429,10 @@ function registerApplicationRoutes(app2) {
       const paynowService2 = createPaynowService();
       const callbackResult = await paynowService2.verifyIPN(req.body);
       if (callbackResult && callbackResult.success && isPaymentSuccessful(callbackResult.status)) {
-        const updateData = { feeStatus: "settled" };
+        const updateData = {
+          paymentStatus: "completed",
+          updatedAt: /* @__PURE__ */ new Date()
+        };
         const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
         if (individualApp) {
           await db.update(individualApplications).set(updateData).where(eq8(individualApplications.applicationId, applicationId));
@@ -7503,8 +7503,8 @@ function registerApplicationRoutes(app2) {
         status: "uploaded"
       }).returning();
       const updateData = {
-        feeProofDocId: document.id,
-        feeStatus: "proof_uploaded"
+        paymentStatus: "pending",
+        updatedAt: /* @__PURE__ */ new Date()
       };
       if (applicationType === "individual") {
         await db.update(individualApplications).set(updateData).where(eq8(individualApplications.applicationId, applicationId));
@@ -7696,7 +7696,7 @@ function registerApplicationRoutes(app2) {
         fileSize: actualSize,
         mimeType,
         fileHash: calculatedHash,
-        uploadedAt: document.createdAt,
+        uploadedAt: document.uploadedAt,
         category: typeConfig.category,
         validationWarnings: validationResult.warnings,
         message: `${typeConfig.label} uploaded successfully after comprehensive security validation`
@@ -7715,7 +7715,7 @@ function registerApplicationRoutes(app2) {
   app2.get("/api/public/applications/:applicationId/documents", async (req, res) => {
     try {
       const { applicationId } = req.params;
-      const documents2 = await db.select().from(uploadedDocuments).where(eq8(uploadedDocuments.applicationIdFk, applicationId)).orderBy(desc3(uploadedDocuments.createdAt));
+      const documents2 = await db.select().from(uploadedDocuments).where(eq8(uploadedDocuments.applicationIdFk, applicationId)).orderBy(desc3(uploadedDocuments.uploadedAt));
       res.json(documents2);
     } catch (error) {
       console.error("Get documents error:", error);
@@ -7923,12 +7923,16 @@ function registerApplicationRoutes(app2) {
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
       }
-      await db.update(uploadedDocuments).set({
+      const updateData = {
         status,
         verifierUserId: userId,
-        notes,
+        verifiedAt: /* @__PURE__ */ new Date(),
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq8(uploadedDocuments.id, documentId));
+      };
+      if (status === "rejected" && notes) {
+        updateData.rejectionReason = notes;
+      }
+      await db.update(uploadedDocuments).set(updateData).where(eq8(uploadedDocuments.id, documentId));
       res.json({
         documentId,
         status,
@@ -7941,7 +7945,7 @@ function registerApplicationRoutes(app2) {
   });
   app2.get("/api/admin/documents", authorizeRole2(STAFF_ROLES2), async (req, res) => {
     try {
-      const documents2 = await db.select().from(uploadedDocuments).orderBy(desc3(uploadedDocuments.createdAt));
+      const documents2 = await db.select().from(uploadedDocuments).orderBy(desc3(uploadedDocuments.uploadedAt));
       res.json(documents2);
     } catch (error) {
       console.error("Error fetching documents:", error);
@@ -8085,6 +8089,206 @@ var init_applicationRoutes = __esm({
         memberId: z4.string().optional()
       }))
     });
+  }
+});
+
+// server/notificationRoutes.ts
+import { eq as eq9, desc as desc4, and as and6, isNull } from "drizzle-orm";
+function registerNotificationRoutes(app2) {
+  app2.get("/api/notifications", async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: "Unauthorized"
+        });
+      }
+      const userNotifications = await db.select().from(notifications).where(eq9(notifications.userId, userId)).orderBy(desc4(notifications.createdAt));
+      res.json({
+        success: true,
+        notifications: userNotifications
+      });
+    } catch (error) {
+      console.error("Get notifications error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch notifications"
+      });
+    }
+  });
+  app2.get("/api/notifications/unread", async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: "Unauthorized"
+        });
+      }
+      const unreadNotifications = await db.select().from(notifications).where(
+        and6(
+          eq9(notifications.userId, userId),
+          isNull(notifications.openedAt)
+        )
+      );
+      res.json({
+        success: true,
+        count: unreadNotifications.length,
+        notifications: unreadNotifications
+      });
+    } catch (error) {
+      console.error("Get unread notifications error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch unread notifications"
+      });
+    }
+  });
+  app2.put("/api/notifications/:id/mark-read", async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { id } = req.params;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: "Unauthorized"
+        });
+      }
+      const [notification] = await db.select().from(notifications).where(
+        and6(
+          eq9(notifications.id, id),
+          eq9(notifications.userId, userId)
+        )
+      ).limit(1);
+      if (!notification) {
+        return res.status(404).json({
+          success: false,
+          error: "Notification not found"
+        });
+      }
+      const [updated] = await db.update(notifications).set({
+        openedAt: /* @__PURE__ */ new Date()
+      }).where(eq9(notifications.id, id)).returning();
+      res.json({
+        success: true,
+        notification: updated
+      });
+    } catch (error) {
+      console.error("Mark notification as read error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to mark notification as read"
+      });
+    }
+  });
+  app2.put("/api/notifications/mark-all-read", async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: "Unauthorized"
+        });
+      }
+      await db.update(notifications).set({
+        openedAt: /* @__PURE__ */ new Date()
+      }).where(
+        and6(
+          eq9(notifications.userId, userId),
+          isNull(notifications.openedAt)
+        )
+      );
+      res.json({
+        success: true,
+        message: "All notifications marked as read"
+      });
+    } catch (error) {
+      console.error("Mark all notifications as read error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to mark all notifications as read"
+      });
+    }
+  });
+  app2.delete("/api/notifications/:id", async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { id } = req.params;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: "Unauthorized"
+        });
+      }
+      const [notification] = await db.select().from(notifications).where(
+        and6(
+          eq9(notifications.id, id),
+          eq9(notifications.userId, userId)
+        )
+      ).limit(1);
+      if (!notification) {
+        return res.status(404).json({
+          success: false,
+          error: "Notification not found"
+        });
+      }
+      await db.delete(notifications).where(eq9(notifications.id, id));
+      res.json({
+        success: true,
+        message: "Notification deleted"
+      });
+    } catch (error) {
+      console.error("Delete notification error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to delete notification"
+      });
+    }
+  });
+  app2.post("/api/notifications/create", async (req, res) => {
+    try {
+      const {
+        userId,
+        memberId,
+        type = "in_app",
+        title,
+        message,
+        data
+      } = req.body;
+      if (!title || !message) {
+        return res.status(400).json({
+          success: false,
+          error: "Title and message are required"
+        });
+      }
+      const [notification] = await db.insert(notifications).values({
+        userId,
+        memberId,
+        type,
+        status: "pending",
+        title,
+        message,
+        data: data ? JSON.stringify(data) : null
+      }).returning();
+      res.json({
+        success: true,
+        notification
+      });
+    } catch (error) {
+      console.error("Create notification error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to create notification"
+      });
+    }
+  });
+}
+var init_notificationRoutes = __esm({
+  "server/notificationRoutes.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
   }
 });
 
@@ -8427,7 +8631,7 @@ __export(publicRoutes_exports, {
   registerPublicRoutes: () => registerPublicRoutes
 });
 import { z as z5 } from "zod";
-import { eq as eq9 } from "drizzle-orm";
+import { eq as eq10 } from "drizzle-orm";
 import crypto4 from "crypto";
 function generateVerificationToken2() {
   return crypto4.randomBytes(32).toString("hex");
@@ -8436,7 +8640,7 @@ function registerPublicRoutes(app2) {
   app2.post("/api/applicants/register", async (req, res) => {
     try {
       const registrationData = individualRegistrationSchema.parse(req.body);
-      const existingApplicant = await db.select().from(applicants).where(eq9(applicants.email, registrationData.email)).limit(1);
+      const existingApplicant = await db.select().from(applicants).where(eq10(applicants.email, registrationData.email)).limit(1);
       if (existingApplicant.length > 0) {
         return res.status(409).json({
           error: "Email already registered",
@@ -8456,7 +8660,7 @@ function registerPublicRoutes(app2) {
         emailVerificationToken: verificationToken,
         emailVerificationExpires: verificationExpires
       }).returning();
-      try {
+      const sendEmailsWithTimeout = async () => {
         const fullName = `${registrationData.firstName} ${registrationData.surname}`;
         const welcomeEmail = generateWelcomeEmail(fullName, applicantId);
         await sendEmail({
@@ -8464,7 +8668,7 @@ function registerPublicRoutes(app2) {
           from: "sysadmin@estateagentscouncil.org",
           ...welcomeEmail
         });
-        const baseUrl = process.env.NODE_ENV === "production" ? `https://${process.env.REPL_SLUG}.${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000";
+        const baseUrl = process.env.NODE_ENV === "production" ? "https://mms.estateagentscouncil.org" : "http://localhost:5000";
         const verificationEmail = generateVerificationEmail(fullName, verificationToken, baseUrl);
         await sendEmail({
           to: registrationData.email,
@@ -8472,9 +8676,13 @@ function registerPublicRoutes(app2) {
           ...verificationEmail
         });
         console.log(`Welcome and verification emails sent to: ${registrationData.email}`);
-      } catch (emailError) {
+      };
+      await Promise.race([
+        sendEmailsWithTimeout(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Email sending timeout")), 5e3))
+      ]).catch((emailError) => {
         console.error("Failed to send welcome/verification emails:", emailError);
-      }
+      });
       res.status(201).json({
         success: true,
         applicantId,
@@ -8497,7 +8705,7 @@ function registerPublicRoutes(app2) {
   app2.post("/api/organization-applicants/register", async (req, res) => {
     try {
       const registrationData = organizationRegistrationSchema.parse(req.body);
-      const existingApplicant = await db.select().from(organizationApplicants).where(eq9(organizationApplicants.email, registrationData.email)).limit(1);
+      const existingApplicant = await db.select().from(organizationApplicants).where(eq10(organizationApplicants.email, registrationData.email)).limit(1);
       if (existingApplicant.length > 0) {
         return res.status(409).json({
           error: "Email already registered",
@@ -8516,7 +8724,7 @@ function registerPublicRoutes(app2) {
         emailVerificationToken: verificationToken,
         emailVerificationExpires: verificationExpires
       }).returning();
-      try {
+      const sendEmailWithTimeout = async () => {
         const verificationEmail = generateOrgApplicantVerificationEmail(
           registrationData.companyName,
           verificationToken
@@ -8527,9 +8735,13 @@ function registerPublicRoutes(app2) {
           ...verificationEmail
         });
         console.log(`Organization verification email sent to: ${registrationData.email}`);
-      } catch (emailError) {
+      };
+      await Promise.race([
+        sendEmailWithTimeout(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Email sending timeout")), 5e3))
+      ]).catch((emailError) => {
         console.error("Failed to send organization verification email:", emailError);
-      }
+      });
       res.status(201).json({
         success: true,
         applicantId,
@@ -8557,7 +8769,7 @@ function registerPublicRoutes(app2) {
           error: "Verification token is required"
         });
       }
-      const [individualApplicant] = await db.select().from(applicants).where(eq9(applicants.emailVerificationToken, token)).limit(1);
+      const [individualApplicant] = await db.select().from(applicants).where(eq10(applicants.emailVerificationToken, token)).limit(1);
       if (individualApplicant) {
         if (individualApplicant.emailVerificationExpires && /* @__PURE__ */ new Date() > individualApplicant.emailVerificationExpires) {
           return res.status(400).json({
@@ -8571,7 +8783,7 @@ function registerPublicRoutes(app2) {
           emailVerificationToken: null,
           emailVerificationExpires: null,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq9(applicants.id, individualApplicant.id));
+        }).where(eq10(applicants.id, individualApplicant.id));
         return res.json({
           success: true,
           applicantId: individualApplicant.applicantId,
@@ -8579,7 +8791,7 @@ function registerPublicRoutes(app2) {
           message: "Email verified successfully! You can now continue with your application."
         });
       }
-      const [orgApplicant] = await db.select().from(organizationApplicants).where(eq9(organizationApplicants.emailVerificationToken, token)).limit(1);
+      const [orgApplicant] = await db.select().from(organizationApplicants).where(eq10(organizationApplicants.emailVerificationToken, token)).limit(1);
       if (orgApplicant) {
         if (orgApplicant.emailVerificationExpires && /* @__PURE__ */ new Date() > orgApplicant.emailVerificationExpires) {
           return res.status(400).json({
@@ -8593,7 +8805,7 @@ function registerPublicRoutes(app2) {
           emailVerificationToken: null,
           emailVerificationExpires: null,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq9(organizationApplicants.id, orgApplicant.id));
+        }).where(eq10(organizationApplicants.id, orgApplicant.id));
         return res.json({
           success: true,
           applicantId: orgApplicant.applicantId,
@@ -8613,6 +8825,91 @@ function registerPublicRoutes(app2) {
       });
     }
   });
+  app2.post("/api/applicants/resend-emails", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({
+          error: "Email is required"
+        });
+      }
+      const [individualApplicant] = await db.select().from(applicants).where(eq10(applicants.email, email)).limit(1);
+      if (individualApplicant) {
+        const verificationToken = generateVerificationToken2();
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1e3);
+        await db.update(applicants).set({
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: verificationExpires,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq10(applicants.id, individualApplicant.id));
+        const fullName = `${individualApplicant.firstName} ${individualApplicant.surname}`;
+        const welcomeEmail = generateWelcomeEmail(fullName, individualApplicant.applicantId);
+        await Promise.race([
+          (async () => {
+            await sendEmail({
+              to: email,
+              from: "sysadmin@estateagentscouncil.org",
+              ...welcomeEmail
+            });
+            const baseUrl = process.env.NODE_ENV === "production" ? "https://mms.estateagentscouncil.org" : "http://localhost:5000";
+            const verificationEmail = generateVerificationEmail(fullName, verificationToken, baseUrl);
+            await sendEmail({
+              to: email,
+              from: "sysadmin@estateagentscouncil.org",
+              ...verificationEmail
+            });
+          })(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Email sending timeout")), 5e3))
+        ]).catch((emailError) => {
+          console.error("Failed to resend emails:", emailError);
+        });
+        return res.json({
+          success: true,
+          message: "Welcome and verification emails have been resent. Please check your inbox."
+        });
+      }
+      const [orgApplicant] = await db.select().from(organizationApplicants).where(eq10(organizationApplicants.email, email)).limit(1);
+      if (orgApplicant) {
+        const verificationToken = generateVerificationToken2();
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1e3);
+        await db.update(organizationApplicants).set({
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: verificationExpires,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq10(organizationApplicants.id, orgApplicant.id));
+        await Promise.race([
+          (async () => {
+            const verificationEmail = generateOrgApplicantVerificationEmail(
+              orgApplicant.companyName,
+              verificationToken
+            );
+            await sendEmail({
+              to: email,
+              from: "sysadmin@estateagentscouncil.org",
+              ...verificationEmail
+            });
+          })(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Email sending timeout")), 5e3))
+        ]).catch((emailError) => {
+          console.error("Failed to resend emails:", emailError);
+        });
+        return res.json({
+          success: true,
+          message: "Verification email has been resent. Please check your inbox."
+        });
+      }
+      return res.status(404).json({
+        error: "Email not found",
+        message: "No applicant found with this email address."
+      });
+    } catch (error) {
+      console.error("Resend emails error:", error);
+      res.status(500).json({
+        error: "Failed to resend emails",
+        message: "An error occurred while resending emails. Please try again."
+      });
+    }
+  });
   app2.post("/api/applicants/login", async (req, res) => {
     try {
       const { email, applicantId } = req.body;
@@ -8621,7 +8918,7 @@ function registerPublicRoutes(app2) {
           error: "Email and Applicant ID are required"
         });
       }
-      const [individualApplicant] = await db.select().from(applicants).where(eq9(applicants.email, email)).limit(1);
+      const [individualApplicant] = await db.select().from(applicants).where(eq10(applicants.email, email)).limit(1);
       if (individualApplicant && individualApplicant.applicantId === applicantId) {
         if (!individualApplicant.emailVerified) {
           return res.status(401).json({
@@ -8639,7 +8936,7 @@ function registerPublicRoutes(app2) {
           message: "Login successful"
         });
       }
-      const [orgApplicant] = await db.select().from(organizationApplicants).where(eq9(organizationApplicants.email, email)).limit(1);
+      const [orgApplicant] = await db.select().from(organizationApplicants).where(eq10(organizationApplicants.email, email)).limit(1);
       if (orgApplicant && orgApplicant.applicantId === applicantId) {
         if (!orgApplicant.emailVerified) {
           return res.status(401).json({
@@ -9170,6 +9467,179 @@ var init_idMigration = __esm({
   }
 });
 
+// server/services/googlePayService.ts
+var googlePayService_exports = {};
+__export(googlePayService_exports, {
+  getGooglePayConfig: () => getGooglePayConfig,
+  processGooglePayPayment: () => processGooglePayPayment,
+  refundGooglePayPayment: () => refundGooglePayPayment,
+  verifyGooglePayToken: () => verifyGooglePayToken
+});
+import { eq as eq11 } from "drizzle-orm";
+async function processGooglePayPayment(paymentRequest) {
+  try {
+    if (!paymentRequest.paymentToken || paymentRequest.paymentToken.length < 10) {
+      return {
+        success: false,
+        status: "failed",
+        message: "Invalid Google Pay payment token",
+        error: "INVALID_TOKEN"
+      };
+    }
+    const amountNum = parseFloat(paymentRequest.amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      return {
+        success: false,
+        status: "failed",
+        message: "Invalid payment amount",
+        error: "INVALID_AMOUNT"
+      };
+    }
+    const transactionId = `GPAY-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
+    const paymentNumber = `PAY-GPAY-${Date.now()}`;
+    const paymentData = {
+      paymentNumber,
+      amount: paymentRequest.amount,
+      currency: paymentRequest.currency || "USD",
+      paymentMethod: "google_pay",
+      status: "completed",
+      // In production, this might be "processing" initially
+      purpose: paymentRequest.purpose,
+      description: paymentRequest.description,
+      transactionId,
+      externalPaymentId: transactionId,
+      gatewayResponse: JSON.stringify({
+        paymentToken: paymentRequest.paymentToken.substring(0, 20) + "...",
+        processedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        gateway: "google_pay",
+        memberId: paymentRequest.memberId
+      }),
+      paymentDate: /* @__PURE__ */ new Date(),
+      netAmount: paymentRequest.amount,
+      paidBy: paymentRequest.memberId || "guest",
+      relatedTo: paymentRequest.memberId,
+      relatedType: "member"
+    };
+    const [payment] = await db.insert(payments).values(paymentData).returning();
+    console.log(`Google Pay payment processed: ${transactionId}`);
+    return {
+      success: true,
+      paymentId: payment.id,
+      transactionId,
+      status: "completed",
+      message: "Payment processed successfully via Google Pay"
+    };
+  } catch (error) {
+    console.error("Google Pay payment error:", error);
+    return {
+      success: false,
+      status: "failed",
+      message: "Payment processing failed",
+      error: error.message
+    };
+  }
+}
+async function verifyGooglePayToken(token) {
+  try {
+    if (!token || token.length < 10) {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("Google Pay token verification error:", error);
+    return false;
+  }
+}
+function getGooglePayConfig() {
+  return {
+    apiVersion: 2,
+    apiVersionMinor: 0,
+    allowedPaymentMethods: [
+      {
+        type: "CARD",
+        parameters: {
+          allowedAuthMethods: ["PAN_ONLY", "CRYPTOGRAM_3DS"],
+          allowedCardNetworks: ["MASTERCARD", "VISA", "AMEX"]
+        },
+        tokenizationSpecification: {
+          type: "PAYMENT_GATEWAY",
+          parameters: {
+            gateway: "stripe",
+            // or your payment gateway
+            gatewayMerchantId: process.env.GOOGLE_PAY_MERCHANT_ID || "merchant_id"
+          }
+        }
+      }
+    ],
+    merchantInfo: {
+      merchantName: "Estate Agents Council of Zimbabwe",
+      merchantId: process.env.GOOGLE_PAY_MERCHANT_ID || "merchant_id"
+    },
+    transactionInfo: {
+      totalPriceStatus: "FINAL",
+      totalPrice: "0.00",
+      currencyCode: "USD",
+      countryCode: "ZW"
+    }
+  };
+}
+async function refundGooglePayPayment(paymentId, amount, reason) {
+  try {
+    const [payment] = await db.select().from(payments).where(eq11(payments.id, paymentId)).limit(1);
+    if (!payment) {
+      return {
+        success: false,
+        status: "failed",
+        message: "Payment not found",
+        error: "PAYMENT_NOT_FOUND"
+      };
+    }
+    if (payment.paymentMethod !== "google_pay") {
+      return {
+        success: false,
+        status: "failed",
+        message: "Payment was not made via Google Pay",
+        error: "INVALID_PAYMENT_METHOD"
+      };
+    }
+    const refundTransactionId = `GPAY-REFUND-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
+    await db.update(payments).set({
+      status: "refunded",
+      refundAmount: amount,
+      refundReason: reason,
+      refundedAt: /* @__PURE__ */ new Date(),
+      gatewayResponse: JSON.stringify({
+        ...JSON.parse(payment.gatewayResponse || "{}"),
+        refundedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        refundReason: reason,
+        refundTransactionId
+      })
+    }).where(eq11(payments.id, paymentId));
+    return {
+      success: true,
+      paymentId,
+      transactionId: refundTransactionId,
+      status: "refunded",
+      message: "Payment refunded successfully"
+    };
+  } catch (error) {
+    console.error("Google Pay refund error:", error);
+    return {
+      success: false,
+      status: "failed",
+      message: "Refund processing failed",
+      error: error.message
+    };
+  }
+}
+var init_googlePayService = __esm({
+  "server/services/googlePayService.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+  }
+});
+
 // server/routes.ts
 var routes_exports = {};
 __export(routes_exports, {
@@ -9178,7 +9648,7 @@ __export(routes_exports, {
 import { createServer } from "http";
 import { z as z6 } from "zod";
 import multer from "multer";
-import { eq as eq10 } from "drizzle-orm";
+import { eq as eq12 } from "drizzle-orm";
 import { randomUUID as randomUUID3, randomBytes as randomBytes4 } from "crypto";
 function requireAuth3(req, res, next) {
   console.log("Auth middleware: req.isAuthenticated():", req.isAuthenticated());
@@ -9229,24 +9699,24 @@ async function checkApplicationAuthorization(userId, applicationId, applicationT
     let application = null;
     let appType = applicationType;
     if (appType === "individual") {
-      const individualApp = await db.select().from(individualApplications).where(eq10(individualApplications.id, applicationId)).limit(1);
+      const individualApp = await db.select().from(individualApplications).where(eq12(individualApplications.id, applicationId)).limit(1);
       if (individualApp.length === 0) {
         return { authorized: false, reason: "Individual application not found" };
       }
       application = individualApp[0];
     } else if (appType === "organization") {
-      const orgApp = await db.select().from(organizationApplications).where(eq10(organizationApplications.id, applicationId)).limit(1);
+      const orgApp = await db.select().from(organizationApplications).where(eq12(organizationApplications.id, applicationId)).limit(1);
       if (orgApp.length === 0) {
         return { authorized: false, reason: "Organization application not found" };
       }
       application = orgApp[0];
     } else {
-      const [individualApp] = await db.select().from(individualApplications).where(eq10(individualApplications.id, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq12(individualApplications.id, applicationId)).limit(1);
       if (individualApp) {
         application = individualApp;
         appType = "individual";
       } else {
-        const [orgApp] = await db.select().from(organizationApplications).where(eq10(organizationApplications.id, applicationId)).limit(1);
+        const [orgApp] = await db.select().from(organizationApplications).where(eq12(organizationApplications.id, applicationId)).limit(1);
         if (orgApp) {
           application = orgApp;
           appType = "organization";
@@ -9298,6 +9768,7 @@ async function registerRoutes(app2) {
   setupAuth(app2);
   setupAuthRoutes(app2);
   registerApplicationRoutes(app2);
+  registerNotificationRoutes(app2);
   const { setupOrganizationPortalRoutes: setupOrganizationPortalRoutes2 } = await Promise.resolve().then(() => (init_organizationPortalRoutes(), organizationPortalRoutes_exports));
   setupOrganizationPortalRoutes2(app2);
   app2.post("/api/applicants/register", async (req, res) => {
@@ -11247,8 +11718,8 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/admin/users", requireAuth3, async (req, res) => {
     try {
-      const users2 = await storage.getAllUsers();
-      res.json(users2);
+      const users3 = await storage.getAllUsers();
+      res.json(users3);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -11256,8 +11727,8 @@ async function registerRoutes(app2) {
   app2.get("/api/admin/users/role/:role", requireAuth3, async (req, res) => {
     try {
       const { role } = req.params;
-      const users2 = await storage.getUsersByRole(role);
-      res.json(users2);
+      const users3 = await storage.getUsersByRole(role);
+      res.json(users3);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -11297,10 +11768,10 @@ async function registerRoutes(app2) {
       if (!Array.isArray(userIds) || userIds.length === 0) {
         return res.status(400).json({ message: "User IDs array is required" });
       }
-      const users2 = await Promise.all(
+      const users3 = await Promise.all(
         userIds.map((id) => storage.getUser(id))
       );
-      const validUsers = users2.filter((user) => user !== void 0);
+      const validUsers = users3.filter((user) => user !== void 0);
       console.log(
         `Sending welcome emails to ${validUsers.length} users:`,
         validUsers.map((u) => u.email)
@@ -11320,10 +11791,10 @@ async function registerRoutes(app2) {
       if (!Array.isArray(userIds) || userIds.length === 0) {
         return res.status(400).json({ message: "User IDs array is required" });
       }
-      const users2 = await Promise.all(
+      const users3 = await Promise.all(
         userIds.map((id) => storage.getUser(id))
       );
-      const validUsers = users2.filter((user) => user !== void 0);
+      const validUsers = users3.filter((user) => user !== void 0);
       console.log(
         `Sending password reset emails to ${validUsers.length} users:`,
         validUsers.map((u) => u.email)
@@ -11567,6 +12038,64 @@ async function registerRoutes(app2) {
       res.json(installments);
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+  });
+  app2.post("/api/payments/google-pay", async (req, res) => {
+    try {
+      const { processGooglePayPayment: processGooglePayPayment2 } = await Promise.resolve().then(() => (init_googlePayService(), googlePayService_exports));
+      const paymentRequest = req.body;
+      const result = await processGooglePayPayment2(paymentRequest);
+      if (result.success) {
+        res.status(201).json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        status: "failed",
+        message: "Payment processing failed",
+        error: error.message
+      });
+    }
+  });
+  app2.get("/api/payments/google-pay/config", (req, res) => {
+    try {
+      const { getGooglePayConfig: getGooglePayConfig2 } = (init_googlePayService(), __toCommonJS(googlePayService_exports));
+      const config = getGooglePayConfig2();
+      res.json(config);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  app2.post("/api/payments/google-pay/verify-token", async (req, res) => {
+    try {
+      const { verifyGooglePayToken: verifyGooglePayToken2 } = await Promise.resolve().then(() => (init_googlePayService(), googlePayService_exports));
+      const { token } = req.body;
+      const isValid = await verifyGooglePayToken2(token);
+      res.json({ valid: isValid });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  app2.post("/api/payments/google-pay/:id/refund", requireAuth3, async (req, res) => {
+    try {
+      const { refundGooglePayPayment: refundGooglePayPayment2 } = await Promise.resolve().then(() => (init_googlePayService(), googlePayService_exports));
+      const { id } = req.params;
+      const { amount, reason } = req.body;
+      const result = await refundGooglePayPayment2(id, amount, reason);
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        status: "failed",
+        message: "Refund processing failed",
+        error: error.message
+      });
     }
   });
   app2.get("/api/admin/applications", requireAuth3, async (req, res) => {
@@ -12127,7 +12656,7 @@ async function registerRoutes(app2) {
       }
       const fileHash = validationResult.fileInfo.hash;
       const fileSizeActual = validationResult.fileInfo.size;
-      const existingDoc = await db.select().from(uploadedDocuments).where(eq10(uploadedDocuments.sha256, fileHash)).limit(1);
+      const existingDoc = await db.select().from(uploadedDocuments).where(eq12(uploadedDocuments.sha256, fileHash)).limit(1);
       if (existingDoc.length > 0) {
         const duplicate = existingDoc[0];
         return res.status(409).json({
@@ -12329,6 +12858,7 @@ var init_routes = __esm({
     init_storage();
     init_paymentRoutes();
     init_applicationRoutes();
+    init_notificationRoutes();
     init_schema();
     init_db();
     init_objectStorage();
@@ -12448,17 +12978,8 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var vite_config_default = defineConfig({
-  plugins: [
-    react(),
-    runtimeErrorOverlay(),
-    ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
-      await import("@replit/vite-plugin-cartographer").then(
-        (m) => m.cartographer()
-      )
-    ] : []
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),

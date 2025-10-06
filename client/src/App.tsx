@@ -60,6 +60,7 @@ import MemberEvents from "@/pages/member/events";
 import MemberPayments from "@/pages/member/payment-history";
 import MemberCertificate from "@/pages/member/certificate";
 import MemberSubscriptions from "@/pages/member/subscriptions";
+import NotificationsPage from "@/pages/notifications";
 
 // Organization Portal Pages
 import OrganizationProfile from "@/pages/organization/organization-profile";
@@ -130,6 +131,7 @@ function Router() {
       <ProtectedRoute path="/member/payments" component={MemberPayments} />
       <ProtectedRoute path="/member/subscriptions" component={MemberSubscriptions} />
       <ProtectedRoute path="/member/certificate" component={MemberCertificate} />
+      <ProtectedRoute path="/notifications" component={NotificationsPage} />
       
       {/* Organization Portal Routes */}
       <ProtectedRoute path="/organization/dashboard" component={OrganizationDashboard} />

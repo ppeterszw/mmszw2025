@@ -1,52 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
 import { LogIn, UserPlus, Building2, Search, FileText, Phone, Mail, MapPin } from "lucide-react";
-import { useState } from "react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import logoUrl from "@assets/eaclogo_1756763778691.png";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { toast } = useToast();
-
-  const handleLogin = async () => {
-    setIsLoggingIn(true);
-    try {
-      const res = await apiRequest("POST", "/api/login", loginData);
-      const userData = await res.json();
-      
-      // Update the auth context with user data
-      queryClient.setQueryData(["/api/user"], userData);
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-
-      // Redirect based on user role
-      if (userData.role === "admin" || userData.role === "member_manager" || userData.role === "case_manager" || userData.role === "super_admin") {
-        setLocation("/admin-dashboard");
-      } else {
-        setLocation("/member-portal");
-      }
-    } catch (error: any) {
-      console.error("Login failed:", error);
-      toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
 
   const quickActions = [
     {
@@ -59,12 +19,11 @@ export default function LandingPage() {
     },
     {
       title: "Member Login",
-      description: "Enter your credentials to access your dashboard.",
+      description: "Access your member dashboard and manage your account.",
       icon: LogIn,
       action: () => setLocation("/auth"),
       buttonText: "Sign In",
-      buttonVariant: "default" as const,
-      isLoginForm: true
+      buttonVariant: "default" as const
     },
     {
       title: "Report a Case",
@@ -98,11 +57,11 @@ export default function LandingPage() {
               </div>
               <div>
                 <h1 className="text-white font-bold text-[16px]">Estate Agents Council of Zimbabwe</h1>
-                <p className="text-blue-100 text-sm">of Zimbabwe</p>
+                <p className="text-blue-100 text-sm">Regulating Excellence in Real Estate</p>
               </div>
             </div>
-            <Button 
-              className="gradient-button text-white border-0"
+            <Button
+              className="bg-gradient-to-r from-egyptian-blue to-powder-blue hover:from-egyptian-blue/90 hover:to-powder-blue/90 text-white border-0 shadow-lg"
               onClick={() => setLocation("/auth")}
             >
               <LogIn className="w-4 h-4 mr-2" />
@@ -111,6 +70,7 @@ export default function LandingPage() {
           </div>
         </div>
       </nav>
+
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
@@ -123,27 +83,27 @@ export default function LandingPage() {
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Join a community of certified professionals dedicated to upholding the highest standards in the real estate industry of Zimbabwe.
           </p>
-          
+
           {/* Buttons Row */}
           <div className="flex flex-wrap justify-center gap-4 mb-16">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-egyptian-blue to-red-600 hover:from-egyptian-blue/90 hover:to-red-700 text-white border-0 font-semibold px-12 py-4 text-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="bg-gradient-to-r from-egyptian-blue to-powder-blue hover:from-egyptian-blue/90 hover:to-powder-blue/90 text-white border-0 font-semibold px-12 py-6 text-lg transition-all duration-200 shadow-xl hover:shadow-2xl"
               onClick={() => setLocation("/auth")}
               data-testid="button-login-main"
             >
-              <LogIn className="w-5 h-5 mr-2" />
-              Login
+              <LogIn className="w-6 h-6 mr-2" />
+              Login to Member Portal
             </Button>
             {applicationOptions.map((option, index) => (
               <Button
                 key={index}
                 size="lg"
-                className="gradient-button text-white border-0 font-semibold px-8 py-4 text-lg"
+                className="bg-white/10 hover:bg-white/20 backdrop-blur text-white border-2 border-white/30 hover:border-white/50 font-semibold px-8 py-6 text-lg shadow-xl transition-all duration-200"
                 onClick={option.action}
                 data-testid={`button-${option.title.toLowerCase().replace(/\s+/g, '-')}`}
               >
-                <option.icon className="w-5 h-5 mr-2" />
+                <option.icon className="w-6 h-6 mr-2" />
                 {option.title}
               </Button>
             ))}
@@ -159,65 +119,30 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {quickActions.map((action, index) => (
-              <Card key={index} className="bg-white/95 backdrop-blur hover:bg-white transition-all duration-200">
+              <Card key={index} className="bg-white/95 backdrop-blur hover:bg-white hover:shadow-2xl transition-all duration-300 border-2 border-white/50">
                 <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 gradient-button rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-r from-egyptian-blue to-powder-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                     <action.icon className="w-8 h-8 text-white" />
                   </div>
-                  <CardTitle className="text-xl">{action.title}</CardTitle>
-                  <CardDescription className="text-muted-foreground">
+                  <CardTitle className="text-xl text-gray-800">{action.title}</CardTitle>
+                  <CardDescription className="text-gray-600 text-base">
                     {action.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="text-center">
-                  {action.isLoginForm ? (
-                    <div className="space-y-4">
-                      <div className="space-y-2 text-left">
-                        <Label htmlFor="email">Username</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={loginData.email}
-                          onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                          data-testid="input-username"
-                        />
-                      </div>
-                      <div className="space-y-2 text-left">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          placeholder="Enter your password"
-                          value={loginData.password}
-                          onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                          data-testid="input-password"
-                        />
-                      </div>
-                      <Button 
-                        className="w-full gradient-button text-white border-0"
-                        onClick={handleLogin}
-                        disabled={isLoggingIn || !loginData.email || !loginData.password}
-                        data-testid="button-login"
-                      >
-                        {isLoggingIn ? "Logging In..." : "Login"}
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button 
-                      variant={action.buttonVariant}
-                      className={`w-full ${
-                        action.buttonVariant === "default" ? "gradient-button text-white border-0" :
-                        action.buttonVariant === "outline" ? "border-powder-blue-300 text-powder-blue-700 hover:gradient-button hover:text-white hover:border-transparent" :
-                        action.buttonVariant === "destructive" ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0" :
-                        ""
-                      }`}
-                      onClick={action.action}
-                      data-testid={`button-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
-                    >
-                      {action.buttonText}
-                    </Button>
-                  )}
+                <CardContent className="text-center pb-6">
+                  <Button
+                    variant={action.buttonVariant}
+                    className={`w-full h-12 font-semibold text-base shadow-md hover:shadow-lg transition-all ${
+                      action.buttonVariant === "default" ? "bg-gradient-to-r from-egyptian-blue to-powder-blue hover:from-egyptian-blue/90 hover:to-powder-blue/90 text-white border-0" :
+                      action.buttonVariant === "outline" ? "border-2 border-egyptian-blue text-egyptian-blue hover:bg-egyptian-blue hover:text-white" :
+                      action.buttonVariant === "destructive" ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0" :
+                      ""
+                    }`}
+                    onClick={action.action}
+                    data-testid={`button-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {action.buttonText}
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -226,20 +151,20 @@ export default function LandingPage() {
 
         {/* Additional Links */}
         <div className="text-center">
-          <div className="bg-white/10 backdrop-blur rounded-lg p-6 max-w-md mx-auto">
-            <h3 className="text-white font-semibold mb-4">Need Help?</h3>
+          <div className="bg-white/10 backdrop-blur rounded-lg p-6 max-w-md mx-auto border border-white/20">
+            <h3 className="text-white font-semibold mb-4 text-lg">Need Help?</h3>
             <div className="space-y-2 text-blue-100">
-              <Button 
-                variant="link" 
-                className="text-blue-100 hover:text-white p-0 h-auto"
+              <Button
+                variant="link"
+                className="text-blue-100 hover:text-white p-0 h-auto font-medium"
                 onClick={() => setLocation("/cases/track")}
               >
                 Already have a case number? Track it here.
               </Button>
               <br />
-              <Button 
-                variant="link" 
-                className="text-blue-100 hover:text-white p-0 h-auto"
+              <Button
+                variant="link"
+                className="text-blue-100 hover:text-white p-0 h-auto font-medium"
                 onClick={() => setLocation("/member-directory")}
               >
                 Search our member directory
@@ -248,8 +173,9 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
+
       {/* Footer */}
-      <footer className="bg-black/20 backdrop-blur border-t border-white/20 py-8">
+      <footer className="bg-black/20 backdrop-blur border-t border-white/20 py-8 mt-16">
         <div className="container mx-auto px-4">
           <div className="text-center text-blue-100">
             <p className="mb-4">
@@ -264,7 +190,6 @@ export default function LandingPage() {
                 <Mail className="w-4 h-4 mr-1" />
                 info@eac.co.zw
               </div>
-              
             </div>
           </div>
         </div>
