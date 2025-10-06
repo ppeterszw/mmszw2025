@@ -94,7 +94,7 @@ export class SessionService {
       ipAddress,
       userAgent,
       expiresAt,
-      lastActivityAt: now,
+      lastActivity: now,
       isActive: true,
     });
 
@@ -131,7 +131,7 @@ export class SessionService {
     }
 
     // Check idle timeout
-    const lastActivity = new Date(session.lastActivityAt);
+    const lastActivity = new Date(session.lastActivity || now);
     const idleMinutes = (now.getTime() - lastActivity.getTime()) / (1000 * 60);
 
     if (idleMinutes > SESSION_CONFIG.IDLE_TIMEOUT_MINUTES) {
@@ -146,7 +146,7 @@ export class SessionService {
     await db
       .update(userSessions)
       .set({
-        lastActivityAt: now,
+        lastActivity: now,
       })
       .where(eq(userSessions.sessionToken, sessionToken));
 
@@ -190,7 +190,7 @@ export class SessionService {
       .select({
         sessionToken: userSessions.sessionToken,
         createdAt: userSessions.createdAt,
-        lastActivityAt: userSessions.lastActivityAt,
+        lastActivity: userSessions.lastActivity,
         expiresAt: userSessions.expiresAt,
         ipAddress: userSessions.ipAddress,
         userAgent: userSessions.userAgent,
@@ -207,9 +207,9 @@ export class SessionService {
   /**
    * Get session timeout remaining (in minutes)
    */
-  static getTimeoutRemaining(lastActivityAt: Date): number {
+  static getTimeoutRemaining(lastActivity: Date): number {
     const now = new Date();
-    const elapsed = (now.getTime() - lastActivityAt.getTime()) / (1000 * 60);
+    const elapsed = (now.getTime() - lastActivity.getTime()) / (1000 * 60);
     const remaining = SESSION_CONFIG.IDLE_TIMEOUT_MINUTES - elapsed;
     return Math.max(0, Math.round(remaining));
   }
@@ -230,8 +230,8 @@ export function sessionTimeoutMiddleware(
   // Add session timeout info to response headers
   const session = req.session;
   if (session && session.cookie) {
-    const lastActivity = session.cookie._expires
-      ? new Date(session.cookie._expires)
+    const lastActivity = session.cookie.expires
+      ? new Date(session.cookie.expires)
       : new Date();
     const remaining = SessionService.getTimeoutRemaining(lastActivity);
 

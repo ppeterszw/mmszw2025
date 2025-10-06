@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(psql:*)",
+      "Bash(npx tsc:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_6RkPzLfj0Noi@ep-wispy-unit-ad5uuk40-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require\" npx drizzle-kit generate)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_6RkPzLfj0Noi@ep-wispy-unit-ad5uuk40-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require\" npx drizzle-kit push)",
+      "Bash(tee:*)",
+      "Bash(export DATABASE_URL=\"postgresql://neondb_owner:npg_6RkPzLfj0Noi@ep-wispy-unit-ad5uuk40-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require\")",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npm install)",
+      "Bash(awk:*)",
+      "Bash(npm run build:*)",
+      "Bash(vercel:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

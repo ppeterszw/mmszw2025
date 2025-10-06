@@ -5,8 +5,9 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingTextarea } from "@/components/ui/floating-textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { FormHeader } from "@/components/ui/form-header";
@@ -34,7 +35,7 @@ const personalDetailsSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   surname: z.string().min(2, "Surname must be at least 2 characters"),
   nationalId: z.string().min(10, "National ID must be at least 10 characters"),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  dateOfBirth: z.date({ required_error: "Date of birth is required" }),
   phoneNumber: z.string().min(10, "Phone number must be at least 10 characters"),
   email: z.string().email("Invalid email address"),
 });
@@ -103,7 +104,7 @@ export default function IndividualApplication() {
         firstName: "",
         surname: "",
         nationalId: "",
-        dateOfBirth: "",
+        dateOfBirth: undefined,
         phoneNumber: "",
         email: "",
       },
@@ -123,9 +124,8 @@ export default function IndividualApplication() {
               name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>First Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your first name" {...field} />
+                    <FloatingInput label="First Name *" data-testid="input-firstName" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -137,9 +137,8 @@ export default function IndividualApplication() {
               name="surname"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Surname *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your surname" {...field} />
+                    <FloatingInput label="Surname *" data-testid="input-surname" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -153,9 +152,8 @@ export default function IndividualApplication() {
               name="nationalId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>National ID *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your national ID" {...field} />
+                    <FloatingInput label="National ID *" data-testid="input-nationalId" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,9 +165,14 @@ export default function IndividualApplication() {
               name="dateOfBirth"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date of Birth *</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DatePicker
+                      label="Date of Birth *"
+                      value={field.value}
+                      onChange={field.onChange}
+                      minAge={18}
+                      maxAge={100}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -183,9 +186,8 @@ export default function IndividualApplication() {
               name="phoneNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number *</FormLabel>
                   <FormControl>
-                    <Input placeholder="+263..." {...field} />
+                    <FloatingInput label="Phone Number *" data-testid="input-phoneNumber" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -197,9 +199,8 @@ export default function IndividualApplication() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Address *</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="your.email@example.com" {...field} />
+                    <FloatingInput type="email" label="Email Address *" data-testid="input-email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -250,11 +251,10 @@ export default function IndividualApplication() {
             name="physicalAddress"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Physical Address *</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="Enter your physical address"
-                    className="min-h-[80px]"
+                  <FloatingTextarea
+                    label="Physical Address *"
+                    data-testid="input-physicalAddress"
                     {...field}
                   />
                 </FormControl>
@@ -268,11 +268,10 @@ export default function IndividualApplication() {
             name="postalAddress"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Postal Address *</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="Enter your postal address"
-                    className="min-h-[80px]"
+                  <FloatingTextarea
+                    label="Postal Address *"
+                    data-testid="input-postalAddress"
                     {...field}
                   />
                 </FormControl>
@@ -287,9 +286,8 @@ export default function IndividualApplication() {
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>City *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your city" {...field} />
+                    <FloatingInput label="City *" data-testid="input-city" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -424,9 +422,8 @@ export default function IndividualApplication() {
             name="currentEmployer"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Current Employer</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter your current employer (if applicable)" {...field} />
+                  <FloatingInput label="Current Employer (Optional)" data-testid="input-currentEmployer" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -438,11 +435,10 @@ export default function IndividualApplication() {
             name="workExperience"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Work Experience *</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="Describe your relevant work experience in real estate or related fields"
-                    className="min-h-[120px]"
+                  <FloatingTextarea
+                    label="Work Experience *"
+                    data-testid="input-workExperience"
                     {...field}
                   />
                 </FormControl>
@@ -456,11 +452,10 @@ export default function IndividualApplication() {
             name="professionalQualifications"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Professional Qualifications</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="List any professional qualifications, certifications, or training"
-                    className="min-h-[80px]"
+                  <FloatingTextarea
+                    label="Professional Qualifications (Optional)"
+                    data-testid="input-professionalQualifications"
                     {...field}
                   />
                 </FormControl>
@@ -492,21 +487,38 @@ export default function IndividualApplication() {
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <Upload className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Document Upload</h3>
-          <p className="text-muted-foreground">
+          <div className="w-20 h-20 bg-gradient-to-r from-egyptian-blue/10 to-powder-blue/10 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-egyptian-blue/20">
+            <Upload className="w-10 h-10 text-egyptian-blue" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Document Upload</h3>
+          <p className="text-gray-600">
             Document upload functionality will be implemented here
           </p>
         </div>
 
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h4 className="font-medium mb-2">Required Documents:</h4>
-          <ul className="text-sm space-y-1">
-            <li>• O-Level Certificate</li>
-            <li>• A-Level Certificate (if applicable)</li>
-            <li>• National ID or Passport</li>
-            <li>• Birth Certificate</li>
-            <li>• Professional Qualifications (if any)</li>
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-xl border-2 border-blue-100">
+          <h4 className="font-semibold text-gray-800 mb-3">Required Documents:</h4>
+          <ul className="text-sm text-gray-700 space-y-2">
+            <li className="flex items-start gap-2">
+              <span className="text-egyptian-blue font-bold">•</span>
+              <span>O-Level Certificate</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-egyptian-blue font-bold">•</span>
+              <span>A-Level Certificate (if applicable)</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-egyptian-blue font-bold">•</span>
+              <span>National ID or Passport</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-egyptian-blue font-bold">•</span>
+              <span>Birth Certificate</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-egyptian-blue font-bold">•</span>
+              <span>Professional Qualifications (if any)</span>
+            </li>
           </ul>
         </div>
 
@@ -538,18 +550,26 @@ export default function IndividualApplication() {
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <CreditCard className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Application Fee Payment</h3>
-          <p className="text-muted-foreground">
+          <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-green-200">
+            <CreditCard className="w-10 h-10 text-green-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Application Fee Payment</h3>
+          <p className="text-gray-600">
             Payment processing will be implemented here
           </p>
         </div>
 
-        <div className="bg-green-50 p-4 rounded-lg">
-          <h4 className="font-medium mb-2">Fee Information:</h4>
-          <div className="text-sm space-y-1">
-            <p><strong>Application Fee:</strong> $50 USD</p>
-            <p><strong>Payment Methods:</strong> PayNow, Bank Transfer, Stripe</p>
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-100">
+          <h4 className="font-semibold text-gray-800 mb-3">Fee Information:</h4>
+          <div className="text-sm text-gray-700 space-y-2">
+            <p className="flex items-start gap-2">
+              <span className="font-semibold text-green-600">Application Fee:</span>
+              <span>$50 USD</span>
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="font-semibold text-green-600">Payment Methods:</span>
+              <span>PayNow, Bank Transfer, Stripe</span>
+            </p>
           </div>
         </div>
 
@@ -606,30 +626,34 @@ export default function IndividualApplication() {
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Review & Confirm</h3>
-          <p className="text-muted-foreground">
+          <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <CheckCircle className="w-12 h-12 text-white" />
+          </div>
+          <h3 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mb-2">
+            Review & Confirm
+          </h3>
+          <p className="text-gray-600">
             Please review your application details before submitting
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {completedSteps.has('personal') && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium text-sm text-gray-600 mb-2">Personal Details</h4>
-              <p className="text-sm">{applicationData.personal?.firstName} {applicationData.personal?.surname}</p>
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-5 rounded-xl border-2 border-blue-100">
+              <h4 className="font-semibold text-sm text-gray-700 mb-2">Personal Details</h4>
+              <p className="text-sm text-gray-800">{applicationData.personal?.firstName} {applicationData.personal?.surname}</p>
             </div>
           )}
           {completedSteps.has('address') && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium text-sm text-gray-600 mb-2">Address</h4>
-              <p className="text-sm">{applicationData.address?.city}, {applicationData.address?.province}</p>
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-5 rounded-xl border-2 border-purple-100">
+              <h4 className="font-semibold text-sm text-gray-700 mb-2">Address</h4>
+              <p className="text-sm text-gray-800">{applicationData.address?.city}, {applicationData.address?.province}</p>
             </div>
           )}
           {completedSteps.has('professional') && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium text-sm text-gray-600 mb-2">Professional Details</h4>
-              <p className="text-sm">Education: {applicationData.professional?.educationLevel}</p>
+            <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-5 rounded-xl border-2 border-orange-100">
+              <h4 className="font-semibold text-sm text-gray-700 mb-2">Professional Details</h4>
+              <p className="text-sm text-gray-800">Education: {applicationData.professional?.educationLevel}</p>
             </div>
           )}
         </div>
@@ -675,7 +699,7 @@ export default function IndividualApplication() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <FormHeader
         title="Individual Membership Application"
         subtitle="Complete your application in 6 simple steps"
@@ -691,12 +715,12 @@ export default function IndividualApplication() {
           {/* Progress Bar */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium">Step {currentStepIndex + 1} of {totalSteps}</span>
-              <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
+              <span className="text-sm font-medium text-gray-700">Step {currentStepIndex + 1} of {totalSteps}</span>
+              <span className="text-sm text-gray-600">{Math.round(progress)}% Complete</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-egyptian-blue to-powder-blue h-2.5 rounded-full transition-all duration-300 shadow-md"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -736,14 +760,14 @@ export default function IndividualApplication() {
           </div>
 
           {/* Step Content */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <currentStepInfo.icon className="w-5 h-5" />
+          <Card className="border-2 border-gray-100 shadow-2xl bg-white">
+            <CardHeader className="bg-gradient-to-r from-egyptian-blue/5 to-powder-blue/5 border-b-2 border-gray-100">
+              <CardTitle className="flex items-center gap-2 text-2xl bg-gradient-to-r from-egyptian-blue to-powder-blue bg-clip-text text-transparent">
+                <currentStepInfo.icon className="w-6 h-6 text-egyptian-blue" />
                 {currentStepInfo.title}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-8">
               {renderStep()}
             </CardContent>
           </Card>

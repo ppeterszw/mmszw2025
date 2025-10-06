@@ -161,25 +161,24 @@ export function UnifiedPortalHeader({
   };
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white shadow-2xl border-b border-white/10">
+    <div className="bg-gradient-to-r from-egyptian-blue via-powder-blue to-egyptian-blue text-white shadow-2xl border-b border-white/10">
       {/* Main Header */}
       <div className="px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo and Title */}
           <div className="flex items-center space-x-4">
             <div className="relative group">
-              <div className="w-12 h-12 bg-gradient-to-br from-white to-blue-100 rounded-xl flex items-center justify-center p-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center p-2 shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
                 <img src={logoUrl} alt="EACZ Logo" className="w-full h-full object-contain" />
               </div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-white/50 to-white/20 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-                {title}
+              <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
+                Estate Agents Council
               </h1>
-              <p className="text-blue-200 text-sm flex items-center space-x-2">
-                <TrendingUp className="w-4 h-4" />
-                <span>{subtitle}</span>
+              <p className="text-white/90 text-sm md:text-base font-medium">
+                of Zimbabwe
               </p>
             </div>
           </div>
@@ -205,10 +204,10 @@ export function UnifiedPortalHeader({
 
         {/* Mobile Title - Shown when logo area is small */}
         <div className="sm:hidden mt-2">
-          <h1 className="text-lg font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-            {title}
+          <h1 className="text-lg font-bold text-white">
+            Estate Agents Council
           </h1>
-          <p className="text-blue-200 text-xs">{subtitle}</p>
+          <p className="text-white/90 text-xs">of Zimbabwe</p>
         </div>
       </div>
 

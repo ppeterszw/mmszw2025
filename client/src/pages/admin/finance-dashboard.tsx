@@ -38,6 +38,8 @@ interface FinanceStats {
 interface PaymentWithDetails extends Payment {
   member?: Member;
   organization?: Organization;
+  reference?: string; // Alias for referenceNumber
+  paidAt?: Date | null; // Alias for paymentDate
 }
 
 export default function FinanceDashboard() {
@@ -621,7 +623,7 @@ export default function FinanceDashboard() {
           open={paymentDetailsModalOpen}
           onOpenChange={setPaymentDetailsModalOpen}
           title="Payment Details"
-          description={`Payment ID: ${selectedPayment.id}`}
+          subtitle={`Payment ID: ${selectedPayment.id}`}
         >
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-6">
@@ -728,7 +730,7 @@ export default function FinanceDashboard() {
         open={recordPaymentModalOpen}
         onOpenChange={setRecordPaymentModalOpen}
         title="Record Manual Payment"
-        description="Record a payment that was made offline"
+        subtitle="Record a payment that was made offline"
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

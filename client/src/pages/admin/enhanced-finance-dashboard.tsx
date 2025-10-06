@@ -79,22 +79,22 @@ export default function EnhancedFinanceDashboard() {
     { method: "Card", count: 11, amount: 2000, percentage: 1.6 }
   ];
 
-  const { data: metrics = mockMetrics } = useQuery({
+  const { data: metrics = mockMetrics } = useQuery<FinancialMetrics>({
     queryKey: ["/api/finance/metrics", dateRange],
     enabled: !!user,
   });
 
-  const { data: revenueBreakdown = mockRevenueBreakdown } = useQuery({
+  const { data: revenueBreakdown = mockRevenueBreakdown } = useQuery<RevenueBreakdown>({
     queryKey: ["/api/finance/revenue-breakdown", dateRange],
     enabled: !!user,
   });
 
-  const { data: paymentMethodStats = mockPaymentMethods } = useQuery({
+  const { data: paymentMethodStats = mockPaymentMethods } = useQuery<PaymentMethodStats[]>({
     queryKey: ["/api/finance/payment-methods", dateRange],
     enabled: !!user,
   });
 
-  const { data: recentTransactions = [] } = useQuery({
+  const { data: recentTransactions = [] } = useQuery<any[]>({
     queryKey: ["/api/payments/recent", dateRange],
     enabled: !!user,
   });
@@ -116,7 +116,7 @@ export default function EnhancedFinanceDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AdminHeader />
+      <AdminHeader currentPage="finance" title="Finance Dashboard" subtitle="Comprehensive financial analytics and reporting" />
 
       <div className="p-6">
         <div className="mb-8 flex justify-between items-center">

@@ -199,7 +199,7 @@ export default function CaseManagement() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return 'default';
-      case 'in_progress': return 'secondary';
+      case 'under_investigation': return 'secondary';
       case 'resolved': return 'outline';
       case 'closed': return 'outline';
       default: return 'secondary';
@@ -566,7 +566,7 @@ export default function CaseManagement() {
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="under_investigation">Under Investigation</SelectItem>
                     <SelectItem value="resolved">Resolved</SelectItem>
                     <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
@@ -730,8 +730,8 @@ export default function CaseManagement() {
                             variant="outline"
                             className="h-8 w-8 p-0 text-orange-600 border-orange-200 hover:bg-orange-50"
                             onClick={() => updateCaseStatusMutation.mutate({ 
-                              caseId: caseItem.id, 
-                              updates: { status: caseItem.status === 'open' ? 'in_progress' : 'resolved' } 
+                              caseId: caseItem.id,
+                              updates: { status: caseItem.status === 'open' ? 'under_investigation' : 'resolved' }
                             })}
                             data-testid={`button-status-case-${caseItem.id}`}
                           >
@@ -868,8 +868,8 @@ export default function CaseManagement() {
                   className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => {
                     updateCaseStatusMutation.mutate({ 
-                      caseId: viewingCase.id, 
-                      updates: { status: viewingCase.status === 'open' ? 'in_progress' : 'resolved' } 
+                      caseId: viewingCase.id,
+                      updates: { status: viewingCase.status === 'open' ? 'under_investigation' : 'resolved' }
                     });
                     setViewingCase(null);
                   }}

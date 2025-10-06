@@ -72,7 +72,7 @@ export default function CertificatePage() {
               memberName={member ? `${member.firstName} ${member.lastName}`.toUpperCase() : ""}
               memberType={member?.memberType?.replace(/_/g, ' ').toUpperCase() || ""}
               registrationNumber={member?.membershipNumber || ""}
-              issueDate={member?.joiningDate ? new Date(member.joiningDate).toLocaleDateString() : ""}
+              issueDate={member?.joinedDate ? new Date(member.joinedDate).toLocaleDateString() : ""}
               expiryDate={member?.expiryDate ? new Date(member.expiryDate).toLocaleDateString() : ""}
               qrCodeData={`${window.location.origin}/verify?member=${member?.membershipNumber}`}
             />

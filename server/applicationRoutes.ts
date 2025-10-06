@@ -138,19 +138,24 @@ export function registerApplicationRoutes(app: Express) {
       // Calculate application fee
       const feeAmount = eligibility.mature ? 75 : 50; // USD
 
-      // Create application record
+      // Prepare education data - combine oLevel, aLevel, equivalentQualification
+      const educationData = {
+        oLevel: applicationData.oLevel,
+        aLevel: applicationData.aLevel || null,
+        equivalentQualification: applicationData.equivalentQualification || null,
+        mature: eligibility.mature
+      };
+
+      // Create application record - using JSONB for personal and education
       const [application] = await db.insert(individualApplications).values({
         applicationId,
+        applicantEmail: applicationData.personal.email,
+        personal: applicationData.personal, // Direct JSONB assignment
+        education: educationData, // Direct JSONB assignment
+        memberType: 'real_estate_agent', // TODO: Get from application data
         status: 'draft',
-        personal: JSON.stringify(applicationData.personal),
-        oLevel: JSON.stringify(applicationData.oLevel),
-        aLevel: applicationData.aLevel ? JSON.stringify(applicationData.aLevel) : null,
-        equivalentQualification: applicationData.equivalentQualification ? 
-          JSON.stringify(applicationData.equivalentQualification) : null,
-        matureEntry: eligibility.mature,
-        feeAmount,
-        feeCurrency: 'USD',
-        feeStatus: 'pending'
+        applicationFee: feeAmount.toString(),
+        paymentStatus: 'pending'
       }).returning();
 
       // Log status history
@@ -256,17 +261,26 @@ export function registerApplicationRoutes(app: Express) {
       // Calculate application fee
       const feeAmount = 150; // USD for organizations
 
-      // Create application record
+      // Prepare company data - combine all organization info
+      const companyData = {
+        orgProfile: applicationData.orgProfile,
+        trustAccount: applicationData.trustAccount,
+        preaMemberId: applicationData.preaMemberId,
+        directors: applicationData.directors
+      };
+
+      // Get applicant email from orgProfile
+      const applicantEmail = applicationData.orgProfile.emails[0];
+
+      // Create application record - using JSONB for company
       const [application] = await db.insert(organizationApplications).values({
         applicationId,
+        applicantEmail,
+        company: companyData, // Direct JSONB assignment
+        businessType: 'real_estate_agency', // TODO: Get from application data
         status: 'draft',
-        orgProfile: JSON.stringify(applicationData.orgProfile),
-        trustAccount: JSON.stringify(applicationData.trustAccount),
-        preaMemberId: applicationData.preaMemberId,
-        directors: JSON.stringify(applicationData.directors),
-        feeAmount,
-        feeCurrency: 'USD',
-        feeStatus: 'pending'
+        applicationFee: feeAmount.toString(),
+        paymentStatus: 'pending'
       }).returning();
 
       // Log status history
@@ -490,10 +504,12 @@ export function registerApplicationRoutes(app: Express) {
         const docValidation = validateDocumentRequirements(
           applicationType,
           docTypes,
-          { 
-            matureEntry: application.matureEntry,
-            directorCount: applicationType === 'organization' 
-              ? JSON.parse(application.directors || '[]').length 
+          {
+            matureEntry: applicationType === 'individual'
+              ? (application.education as any)?.mature
+              : undefined,
+            directorCount: applicationType === 'organization'
+              ? ((application.company as any)?.directors || []).length
               : undefined
           }
         );
@@ -515,7 +531,7 @@ export function registerApplicationRoutes(app: Express) {
             .update(individualApplications)
             .set({
               status: 'eligibility_review',
-              submittedAt: new Date()
+              updatedAt: new Date()
             })
             .where(eq(individualApplications.applicationId, applicationId));
         } else {
@@ -523,7 +539,7 @@ export function registerApplicationRoutes(app: Express) {
             .update(organizationApplications)
             .set({
               status: 'eligibility_review',
-              submittedAt: new Date()
+              updatedAt: new Date()
             })
             .where(eq(organizationApplications.applicationId, applicationId));
         }
@@ -783,12 +799,17 @@ export function registerApplicationRoutes(app: Express) {
         });
       }
 
+      // Get email from application data (now JSONB objects, no parsing needed)
+      const appEmail = application.personal
+        ? (application.personal as any).email
+        : (application.company as any).orgProfile?.emails?.[0];
+
       // Initialize payment
       const paynowService = createPaynowService();
       const paymentResult = await paynowService.initiatePayment({
         amount,
         currency: 'USD',
-        email: email || JSON.parse(application.personal || application.orgProfile).email,
+        email: email || appEmail,
         reference: `EACZ-FEE-${applicationId}`,
         returnUrl: `${process.env.FRONTEND_URL}/application/${applicationId}/payment-complete`,
         resultUrl: `${process.env.BACKEND_URL}/api/public/applications/${applicationId}/fee/callback`
@@ -804,8 +825,11 @@ export function registerApplicationRoutes(app: Express) {
         });
       }
 
-      // Update application with payment ID
-      const updateData = { feePaymentId: paymentResult.pollUrl };
+      // Update application with payment reference
+      const updateData = {
+        paymentReference: paymentResult.pollUrl,
+        paymentStatus: 'pending' as const
+      };
 
       if (applicationType === 'individual') {
         await db
@@ -851,8 +875,11 @@ export function registerApplicationRoutes(app: Express) {
       const callbackResult: any = await paynowService.verifyIPN(req.body);
 
       if (callbackResult && callbackResult.success && isPaymentSuccessful(callbackResult.status)) {
-        // Update application fee status
-        const updateData = { feeStatus: 'settled' as const };
+        // Update application payment status
+        const updateData = {
+          paymentStatus: 'completed' as const,
+          updatedAt: new Date()
+        };
 
         // Try individual applications first
         const [individualApp] = await db
@@ -968,10 +995,10 @@ export function registerApplicationRoutes(app: Express) {
         status: 'uploaded'
       }).returning();
 
-      // Update application with proof document ID
-      const updateData = { 
-        feeProofDocId: document.id,
-        feeStatus: 'proof_uploaded' as const
+      // Update application payment status to proof uploaded
+      const updateData = {
+        paymentStatus: 'pending' as const,
+        updatedAt: new Date()
       };
 
       if (applicationType === 'individual') {
@@ -1234,7 +1261,7 @@ export function registerApplicationRoutes(app: Express) {
         fileSize: actualSize,
         mimeType: mimeType,
         fileHash: calculatedHash,
-        uploadedAt: document.createdAt,
+        uploadedAt: document.uploadedAt,
         category: typeConfig.category,
         validationWarnings: validationResult.warnings,
         message: `${typeConfig.label} uploaded successfully after comprehensive security validation`
@@ -1265,7 +1292,7 @@ export function registerApplicationRoutes(app: Express) {
         .select()
         .from(uploadedDocuments)
         .where(eq(uploadedDocuments.applicationIdFk, applicationId))
-        .orderBy(desc(uploadedDocuments.createdAt));
+        .orderBy(desc(uploadedDocuments.uploadedAt));
 
       res.json(documents);
 
@@ -1618,14 +1645,21 @@ export function registerApplicationRoutes(app: Express) {
       }
 
       // Update document
+      const updateData: any = {
+        status: status as any,
+        verifierUserId: userId,
+        verifiedAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // If rejected, store notes as rejection reason
+      if (status === 'rejected' && notes) {
+        updateData.rejectionReason = notes;
+      }
+
       await db
         .update(uploadedDocuments)
-        .set({
-          status: status as any,
-          verifierUserId: userId,
-          notes,
-          updatedAt: new Date()
-        })
+        .set(updateData)
         .where(eq(uploadedDocuments.id, documentId));
 
       res.json({
@@ -1649,7 +1683,7 @@ export function registerApplicationRoutes(app: Express) {
       const documents = await db
         .select()
         .from(uploadedDocuments)
-        .orderBy(desc(uploadedDocuments.createdAt));
+        .orderBy(desc(uploadedDocuments.uploadedAt));
 
       res.json(documents);
     } catch (error: any) {

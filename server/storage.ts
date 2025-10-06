@@ -2159,10 +2159,8 @@ async function initializeDemoData() {
         dateOfBirth: new Date("1980-05-15"),
         nationalId: "08-123456-A-15",
         organizationId: createdOrgs[0].id,
-        joiningDate: new Date("2023-01-20"),
+        joinedDate: new Date("2023-01-20"),
         expiryDate: new Date("2024-01-20"),
-        cpdPoints: 45,
-        annualFee: "500.00",
       },
       {
         firstName: "Grace",
@@ -2175,10 +2173,8 @@ async function initializeDemoData() {
         dateOfBirth: new Date("1985-08-22"),
         nationalId: "08-234567-B-22",
         organizationId: createdOrgs[0].id,
-        joiningDate: new Date("2023-02-15"),
+        joinedDate: new Date("2023-02-15"),
         expiryDate: new Date("2024-02-15"),
-        cpdPoints: 32,
-        annualFee: "300.00",
       },
       {
         firstName: "Tendai",
@@ -2191,10 +2187,8 @@ async function initializeDemoData() {
         dateOfBirth: new Date("1982-03-10"),
         nationalId: "08-345678-C-10",
         organizationId: createdOrgs[1].id,
-        joiningDate: new Date("2023-03-25"),
+        joinedDate: new Date("2023-03-25"),
         expiryDate: new Date("2024-03-25"),
-        cpdPoints: 28,
-        annualFee: "350.00",
       },
       {
         firstName: "Chipo",
@@ -2203,14 +2197,12 @@ async function initializeDemoData() {
         phone: "+263 77 456 7890",
         membershipNumber: "REA-2023-004567",
         memberType: "real_estate_negotiator" as const,
-        membershipStatus: "standby" as const,
+        membershipStatus: "pending" as const,
         dateOfBirth: new Date("1990-11-05"),
         nationalId: "08-456789-D-05",
         organizationId: createdOrgs[2].id,
-        joiningDate: new Date("2023-04-10"),
+        joinedDate: new Date("2023-04-10"),
         expiryDate: new Date("2024-04-10"),
-        cpdPoints: 15,
-        annualFee: "250.00",
       }
     ];
 
@@ -2236,7 +2228,7 @@ async function initializeDemoData() {
         description: "Complaint regarding unauthorized sale of property by agent without proper documentation.",
         type: "complaint" as const,
         priority: "high" as const,
-        status: "in_progress" as const,
+        status: "under_investigation" as const,
         submittedBy: "Anonymous Client",
         submittedByEmail: "client@example.com",
         memberId: createdMembers[0].id,
@@ -2435,60 +2427,62 @@ async function initializeDemoData() {
     // Create demo applications
     const demoApplications = [
       {
-        applicationNumber: "APP-2023-001",
-        firstName: "Robert",
-        lastName: "Banda",
-        email: "robert.banda@gmail.com",
-        phone: "+263 77 567 8901",
-        dateOfBirth: new Date("1988-07-12"),
-        nationalId: "08-567890-E-12",
+        applicationId: "APP-2023-001",
+        applicantEmail: "robert.banda@gmail.com",
         memberType: "real_estate_agent" as const,
         status: "submitted" as const,
-        currentStage: "document_verification" as const,
         applicationFee: "100.00",
-        feePaymentStatus: "completed" as const,
-        educationLevel: "bachelors" as const,
-        workExperience: 3,
-        currentEmployer: "Independent Agent",
-        jobTitle: "Real Estate Agent",
-        documentsUploaded: true,
+        paymentStatus: "completed" as const,
+        personal: {
+          firstName: "Robert",
+          lastName: "Banda",
+          email: "robert.banda@gmail.com",
+          phone: "+263 77 567 8901",
+          dateOfBirth: new Date("1988-07-12").toISOString(),
+          nationalId: "08-567890-E-12",
+        },
+        education: {
+          educationLevel: "bachelors",
+          workExperience: 3,
+          currentEmployer: "Independent Agent",
+          jobTitle: "Real Estate Agent",
+        },
         reviewedBy: createdUsers[3].id, // Staff member
-        submittedAt: new Date("2023-11-15"),
-        priority: 2,
       },
       {
-        applicationNumber: "APP-2023-002",
-        firstName: "Patricia",
-        lastName: "Matemba",
-        email: "patricia.matemba@yahoo.com",
-        phone: "+263 77 678 9012",
-        dateOfBirth: new Date("1992-04-18"),
-        nationalId: "08-678901-F-18",
+        applicationId: "APP-2023-002",
+        applicantEmail: "patricia.matemba@yahoo.com",
         memberType: "property_manager" as const,
-        status: "pre_validation" as const,
-        currentStage: "initial_review" as const,
+        status: "draft" as const,
         applicationFee: "100.00",
-        feePaymentStatus: "pending" as const,
-        educationLevel: "hnd" as const,
-        workExperience: 2,
-        currentEmployer: "City Properties Ltd",
-        jobTitle: "Junior Property Manager",
-        documentsUploaded: false,
+        paymentStatus: "pending" as const,
+        personal: {
+          firstName: "Patricia",
+          lastName: "Matemba",
+          email: "patricia.matemba@yahoo.com",
+          phone: "+263 77 678 9012",
+          dateOfBirth: new Date("1992-04-18").toISOString(),
+          nationalId: "08-678901-F-18",
+        },
+        education: {
+          educationLevel: "hnd",
+          workExperience: 2,
+          currentEmployer: "City Properties Ltd",
+          jobTitle: "Junior Property Manager",
+        },
         reviewedBy: createdUsers[3].id, // Staff member
-        submittedAt: new Date("2023-12-01"),
-        priority: 3,
       }
     ];
 
     for (const appData of demoApplications) {
-      // Check if application already exists by application number
+      // Check if application already exists by application ID
       const existingApplications = await storage.getAllApplications();
-      const existingApp = existingApplications.find(app => app.applicationNumber === appData.applicationNumber);
+      const existingApp = existingApplications.find(app => app.applicationId === appData.applicationId);
       if (existingApp) {
-        console.log(`Application ${appData.applicationNumber} already exists, skipping creation`);
+        console.log(`Application ${appData.applicationId} already exists, skipping creation`);
         continue;
       }
-      
+
       await storage.createMemberApplication(appData);
     }
 

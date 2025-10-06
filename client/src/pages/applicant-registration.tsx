@@ -5,11 +5,11 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { FormHeader } from "@/components/ui/form-header";
 import { FormFooter } from "@/components/ui/form-footer";
-import { CheckCircle, Mail, User, ArrowLeft } from "lucide-react";
+import { CheckCircle, Mail, User, ArrowLeft, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -67,44 +67,54 @@ export default function ApplicantRegistration() {
 
   if (registrationComplete) {
     return (
-      <div className="min-h-screen bg-background">
-        <FormHeader 
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+        <FormHeader
           title="Registration Complete"
           subtitle="Please verify your email to continue with your application"
         />
         <div className="w-full px-4 py-8 flex-1">
           <PageBreadcrumb items={[{ label: "Individual Registration" }, { label: "Complete" }]} />
-          
+
           <div className="max-w-2xl mx-auto">
-            <Card>
+            <Card className="border-2 border-green-100 shadow-2xl bg-white">
               <CardContent className="p-8 text-center">
                 <div className="mb-6">
-                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-green-700 mb-2">Registration Successful!</h2>
+                  <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <CheckCircle className="w-12 h-12 text-white" />
+                  </div>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mb-2">
+                    Registration Successful!
+                  </h2>
+                  <p className="text-gray-600">Welcome to the EACZ community</p>
                 </div>
-                
-                <div className="bg-blue-50 p-6 rounded-lg mb-6">
-                  <h3 className="font-medium mb-2">Your Applicant ID</h3>
-                  <div className="text-2xl font-bold text-blue-600 mb-2">{applicantId}</div>
-                  <p className="text-sm text-muted-foreground">Please save this ID for your records</p>
+
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-xl mb-6 border-2 border-blue-100">
+                  <h3 className="font-semibold text-gray-700 mb-2 flex items-center justify-center gap-2">
+                    <Sparkles className="w-5 h-5 text-yellow-500" />
+                    Your Applicant ID
+                  </h3>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-egyptian-blue to-powder-blue bg-clip-text text-transparent mb-2">
+                    {applicantId}
+                  </div>
+                  <p className="text-sm text-gray-600">Please save this ID for your records</p>
                 </div>
 
                 <div className="space-y-4 text-left">
-                  <div className="flex items-start gap-3">
-                    <Mail className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" />
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                    <Mail className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="font-medium">Check Your Email</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-semibold text-gray-800">Check Your Email</p>
+                      <p className="text-sm text-gray-600">
                         We've sent you a welcome message and a verification email. Please check your inbox and spam folder.
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <User className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" />
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-cyan-50/50 border border-cyan-100">
+                    <User className="w-5 h-5 text-cyan-600 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="font-medium">Verify Your Email</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-semibold text-gray-800">Verify Your Email</p>
+                      <p className="text-sm text-gray-600">
                         Click the verification link in your email to confirm your email address and continue with your application.
                       </p>
                     </div>
@@ -114,16 +124,16 @@ export default function ApplicantRegistration() {
                 <div className="mt-8 space-y-3">
                   <Button
                     onClick={() => setLocation("/verify-email")}
-                    className="gradient-button text-white border-0 w-full"
+                    className="bg-gradient-to-r from-egyptian-blue to-powder-blue hover:from-egyptian-blue/90 hover:to-powder-blue/90 text-white border-0 w-full h-12 text-base font-semibold shadow-lg"
                     data-testid="button-verify-email"
                   >
                     I've Verified My Email - Continue
                   </Button>
-                  
+
                   <Button
                     variant="outline"
                     onClick={() => setLocation("/")}
-                    className="w-full"
+                    className="w-full h-12 border-2 border-gray-200 hover:bg-gray-50"
                     data-testid="button-back-home"
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
@@ -140,35 +150,36 @@ export default function ApplicantRegistration() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <FormHeader 
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <FormHeader
         title="Apply as Individual Member"
         subtitle="Register with the Estate Agents Council of Zimbabwe"
       />
       <div className="w-full px-4 py-8 flex-1">
         <PageBreadcrumb items={[{ label: "Individual Registration" }]} />
-        
+
         <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Registration</CardTitle>
-              <p className="text-muted-foreground">
+          <Card className="border-2 border-gray-100 shadow-2xl bg-white">
+            <CardHeader className="bg-gradient-to-r from-egyptian-blue/5 to-powder-blue/5 border-b-2 border-gray-100">
+              <CardTitle className="text-2xl bg-gradient-to-r from-egyptian-blue to-powder-blue bg-clip-text text-transparent">
+                Begin Your Registration
+              </CardTitle>
+              <p className="text-gray-600 mt-2">
                 Please provide your details to begin your individual membership application
               </p>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-8">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-6 md:grid-cols-2">
                     <FormField
                       control={form.control}
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>First Name *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Enter your first name"
+                            <FloatingInput
+                              label="First Name *"
                               data-testid="input-firstName"
                               {...field}
                             />
@@ -183,10 +194,9 @@ export default function ApplicantRegistration() {
                       name="surname"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Surname *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Enter your surname"
+                            <FloatingInput
+                              label="Surname *"
                               data-testid="input-surname"
                               {...field}
                             />
@@ -202,16 +212,15 @@ export default function ApplicantRegistration() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email Address *</FormLabel>
                         <FormControl>
-                          <Input
+                          <FloatingInput
                             type="email"
-                            placeholder="Enter your email address"
+                            label="Email Address *"
                             data-testid="input-email"
                             {...field}
                           />
                         </FormControl>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-gray-500 mt-2 ml-1">
                           We'll send your Applicant ID and verification instructions to this email
                         </p>
                         <FormMessage />
@@ -219,21 +228,37 @@ export default function ApplicantRegistration() {
                     )}
                   />
 
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">What happens next?</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• You'll receive your unique Applicant ID</li>
-                      <li>• A welcome email with your ID will be sent</li>
-                      <li>• You'll get a verification email to confirm your address</li>
-                      <li>• After verification, you can complete your application form</li>
+                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-xl border-2 border-blue-100">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-yellow-500" />
+                      What happens next?
+                    </h4>
+                    <ul className="text-sm text-gray-600 space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="text-egyptian-blue font-bold">•</span>
+                        <span>You'll receive your unique Applicant ID</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-egyptian-blue font-bold">•</span>
+                        <span>A welcome email with your ID will be sent</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-egyptian-blue font-bold">•</span>
+                        <span>You'll get a verification email to confirm your address</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-egyptian-blue font-bold">•</span>
+                        <span>After verification, you can complete your application form</span>
+                      </li>
                     </ul>
                   </div>
 
-                  <div className="flex justify-between">
+                  <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setLocation("/")}
+                      className="h-12 border-2 border-gray-200 hover:bg-gray-50"
                       data-testid="button-cancel"
                     >
                       <ArrowLeft className="w-4 h-4 mr-2" />
@@ -241,7 +266,7 @@ export default function ApplicantRegistration() {
                     </Button>
                     <Button
                       type="submit"
-                      className="gradient-button text-white border-0"
+                      className="h-12 bg-gradient-to-r from-egyptian-blue to-powder-blue hover:from-egyptian-blue/90 hover:to-powder-blue/90 text-white border-0 px-8 font-semibold shadow-lg"
                       disabled={registrationMutation.isPending}
                       data-testid="button-register"
                     >

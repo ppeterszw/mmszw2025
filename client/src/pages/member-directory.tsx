@@ -309,13 +309,7 @@ export default function MemberDirectory() {
                           </div>
                         )}
 
-                        {member.cpdPoints !== undefined && (
-                          <div className="pt-2 border-t">
-                            <span className="text-sm font-medium">
-                              CPD Points: {member.cpdPoints}
-                            </span>
-                          </div>
-                        )}
+                        {/* CPD Points tracking coming soon */}
                       </div>
                     </CardContent>
                   </Card>

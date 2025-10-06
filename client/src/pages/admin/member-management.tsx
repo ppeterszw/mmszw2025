@@ -588,7 +588,7 @@ export default function MemberManagement() {
                   <div className="p-3 bg-gradient-to-r from-emerald-100 to-teal-100 border border-emerald-300 rounded-lg font-bold text-emerald-800">
                     <div className="flex items-center">
                       <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" />
-                      {selectedMember.cpdPoints || 0} points
+                      0 points
                     </div>
                   </div>
                 </div>
@@ -701,9 +701,9 @@ export default function MemberManagement() {
       />
 
       {/* Other Quick Action Modals */}
-      <BulkImportModal open={bulkImportModalOpen} onOpenChange={setBulkImportModalOpen} />
+      <BulkImportModal open={bulkImportModalOpen} onOpenChange={setBulkImportModalOpen} type="members" />
       <ReviewApplicationsModal open={reviewAppsModalOpen} onOpenChange={setReviewAppsModalOpen} />
-      <ExportDataModal open={exportModalOpen} onOpenChange={setExportModalOpen} />
+      <ExportDataModal open={exportModalOpen} onOpenChange={setExportModalOpen} type="members" />
       <ManageRenewalsModal open={renewalsModalOpen} onOpenChange={setRenewalsModalOpen} />
       <SendNotificationsModal open={notificationsModalOpen} onOpenChange={setNotificationsModalOpen} />
     </div>

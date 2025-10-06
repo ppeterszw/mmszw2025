@@ -96,6 +96,10 @@ export function setupAuthRoutes(app: Express) {
           }
 
           // Verify password
+          if (!user.password) {
+            return done(null, false, { message: "Invalid email or password" });
+          }
+
           const isValid = await AuthService.comparePasswords(
             password,
             user.password
@@ -113,12 +117,12 @@ export function setupAuthRoutes(app: Express) {
           return done(null, {
             id: user.id,
             email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            status: user.status,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            role: user.role || 'applicant',
+            status: user.status || 'active',
             emailVerified: user.emailVerified || false,
-          });
+          } as any);
         } catch (error) {
           return done(error);
         }
@@ -547,7 +551,7 @@ export function setupAuthRoutes(app: Express) {
       res.json({
         sessions: sessions.map((s) => ({
           createdAt: s.createdAt,
-          lastActivity: s.lastActivityAt,
+          lastActivity: s.lastActivity,
           expiresAt: s.expiresAt,
           ipAddress: s.ipAddress,
           device: s.userAgent,

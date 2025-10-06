@@ -24,6 +24,18 @@ import type { MemberApplication, Document } from "@shared/schema";
 
 interface ApplicationWithDocuments extends MemberApplication {
   documents?: Document[];
+  // Transformed fields from JSONB
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  nationalId?: string;
+  dateOfBirth?: string | Date;
+  educationLevel?: string;
+  workExperience?: number;
+  currentEmployer?: string;
+  currentStage?: string;
+  organizationId?: string;
 }
 
 export default function ApplicationReview() {

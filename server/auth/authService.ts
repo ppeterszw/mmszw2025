@@ -7,7 +7,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { db } from "../db";
 import { users } from "@shared/schema";
-import { eq, and, lt, sql } from "drizzle-orm";
+import { eq, and, lt, gt, sql } from "drizzle-orm";
 
 const scryptAsync = promisify(scrypt);
 
@@ -247,7 +247,7 @@ export class AuthService {
       .where(
         and(
           eq(users.passwordResetToken, token),
-          lt(new Date(), users.passwordResetExpires!)
+          gt(users.passwordResetExpires, new Date())
         )
       )
       .limit(1);
@@ -343,6 +343,10 @@ export class AuthService {
     }
 
     // Verify current password
+    if (!user.password) {
+      return { success: false, error: "User has no password set" };
+    }
+
     const isValid = await this.comparePasswords(currentPassword, user.password);
     if (!isValid) {
       return { success: false, error: "Current password is incorrect" };

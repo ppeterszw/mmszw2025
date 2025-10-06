@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, decimal, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, decimal, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -7,29 +7,28 @@ import { z } from "zod";
 // Enums
 export const userRoleEnum = pgEnum("user_role", ["admin", "member_manager", "case_manager", "super_admin", "staff", "accountant", "reviewer"]);
 export const userStatusEnum = pgEnum("user_status", ["active", "inactive", "suspended", "locked", "pending_verification"]);
-export const memberTypeEnum = pgEnum("member_type", ["real_estate_agent", "property_manager", "principal_real_estate_agent", "real_estate_negotiator"]);
-export const organizationTypeEnum = pgEnum("organization_type", ["real_estate_firm", "property_management_firm", "brokerage_firm", "real_estate_development_firm"]);
-export const membershipStatusEnum = pgEnum("membership_status", ["active", "standby", "revoked", "pending", "expired"]);
-export const caseStatusEnum = pgEnum("case_status", ["open", "in_progress", "resolved", "closed"]);
+export const memberTypeEnum = pgEnum("member_type", ["real_estate_agent", "property_manager", "principal_real_estate_agent", "real_estate_negotiator", "property_developer"]);
+export const organizationTypeEnum = pgEnum("organization_type", ["real_estate_agency", "property_management_firm", "brokerage_firm", "real_estate_development_firm"]);
+export const membershipStatusEnum = pgEnum("membership_status", ["active", "suspended", "expired", "pending"]);
+export const caseStatusEnum = pgEnum("case_status", ["open", "under_investigation", "resolved", "closed"]);
 export const casePriorityEnum = pgEnum("case_priority", ["low", "medium", "high", "critical"]);
 export const caseTypeEnum = pgEnum("case_type", ["complaint", "inquiry", "dispute", "violation"]);
-export const eventTypeEnum = pgEnum("event_type", ["workshop", "seminar", "training", "conference"]);
+export const eventTypeEnum = pgEnum("event_type", ["workshop", "seminar", "training", "conference", "meeting"]);
 export const activityTypeEnum = pgEnum("activity_type", ["login", "logout", "profile_update", "document_upload", "payment", "case_submission", "event_registration", "status_change", "password_change", "role_change", "access_granted", "access_denied"]);
 export const renewalStatusEnum = pgEnum("renewal_status", ["pending", "reminded", "completed", "overdue", "lapsed"]);
-export const paymentStatusEnum = pgEnum("payment_status", ["pending", "processing", "completed", "failed", "refunded", "cancelled", "expired"]);
+export const paymentStatusEnum = pgEnum("payment_status", ["pending", "completed", "failed", "refunded"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["cash", "paynow_ecocash", "paynow_onemoney", "stripe_card", "bank_transfer", "cheque", "google_pay"]);
-export const applicationStatusEnum = pgEnum("application_status", ["draft", "submitted", "pre_validation", "eligibility_review", "document_review", "needs_applicant_action", "ready_for_registry", "accepted", "rejected", "withdrawn", "expired"]);
+export const applicationStatusEnum = pgEnum("application_status", ["draft", "submitted", "payment_pending", "payment_received", "under_review", "approved", "rejected", "pre_validation", "eligibility_review", "document_review", "needs_applicant_action", "ready_for_registry", "accepted", "withdrawn", "expired"]);
 export const applicationStageEnum = pgEnum("application_stage", ["initial_review", "document_verification", "background_check", "committee_review", "final_approval", "certificate_generation"]);
 export const applicationTypeEnum = pgEnum("application_type", ["individual", "organization"]);
 export const documentStatusEnum = pgEnum("document_status", ["uploaded", "verified", "rejected"]);
 export const documentTypeEnum = pgEnum("document_type", [
-  // Individual documents
-  "o_level_cert", "a_level_cert", "equivalent_cert", "id_or_passport", "birth_certificate",
-  // Organization documents
-  "bank_trust_letter", "certificate_incorporation", "partnership_agreement", "cr6", "cr11", 
-  "tax_clearance", "annual_return_1", "annual_return_2", "annual_return_3", "police_clearance_director",
-  // Payment documents
-  "application_fee_pop"
+  "id_document",
+  "academic_certificate",
+  "proof_of_payment",
+  "company_registration",
+  "tax_clearance",
+  "other"
 ]);
 export const decisionEnum = pgEnum("decision", ["accepted", "rejected"]);
 export const educationLevelEnum = pgEnum("education_level", ["o_level", "a_level", "bachelors", "hnd", "masters", "doctorate"]);
@@ -41,11 +40,11 @@ export const applicantStatusEnum = pgEnum("applicant_status", ["registered", "em
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),
   firstName: text("first_name"),
   lastName: text("last_name"),
   phone: text("phone"),
-  role: userRoleEnum("role").default("admin"),
+  role: userRoleEnum("role").default("staff"),
   status: userStatusEnum("status").default("active"),
   permissions: text("permissions"), // JSON array of specific permissions
   lastLoginAt: timestamp("last_login_at"),
@@ -81,6 +80,9 @@ export const applicants = pgTable("applicants", {
   emailVerificationExpires: timestamp("email_verification_expires"),
   applicationStartedAt: timestamp("application_started_at"),
   applicationCompletedAt: timestamp("application_completed_at"),
+  password: text("password"),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
@@ -159,10 +161,10 @@ export const directors = pgTable("directors", {
 export const individualApplications = pgTable("individual_applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   applicationId: text("application_id").notNull().unique(),
-  applicantEmail: text("applicant_email"),
-  personal: text("personal"), // JSONB stored as text
-  education: text("education"), // JSONB stored as text
-  memberType: memberTypeEnum("member_type"),
+  applicantEmail: text("applicant_email").notNull(),
+  personal: jsonb("personal").notNull(),
+  education: jsonb("education"),
+  memberType: memberTypeEnum("member_type").notNull(),
   status: applicationStatusEnum("status").default("draft"),
   applicationFee: decimal("application_fee", { precision: 10, scale: 2 }),
   paymentStatus: paymentStatusEnum("payment_status"),
@@ -183,9 +185,9 @@ export const memberApplications = individualApplications;
 export const organizationApplications = pgTable("organization_applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   applicationId: text("application_id").notNull().unique(),
-  applicantEmail: text("applicant_email"),
-  company: text("company"), // JSONB stored as text
-  businessType: organizationTypeEnum("business_type"),
+  applicantEmail: text("applicant_email").notNull(),
+  company: jsonb("company").notNull(),
+  businessType: organizationTypeEnum("business_type").notNull(),
   status: applicationStatusEnum("status").default("draft"),
   applicationFee: decimal("application_fee", { precision: 10, scale: 2 }),
   paymentStatus: paymentStatusEnum("payment_status"),
@@ -202,18 +204,19 @@ export const organizationApplications = pgTable("organization_applications", {
 // Uploaded Documents table for new application system
 export const uploadedDocuments = pgTable("uploaded_documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  applicationType: applicationTypeEnum("application_type").notNull(),
+  applicationType: varchar("application_type").notNull(), // Not enum in DB - stores 'individual' or 'organization'
   applicationIdFk: varchar("application_id_fk").notNull(), // References individual_applications.id or organization_applications.id
-  docType: documentTypeEnum("doc_type").notNull(),
+  docType: varchar("doc_type").notNull(), // Not enum in DB - stores various document type strings
   fileKey: text("file_key").notNull(),
   fileName: text("file_name").notNull(),
   mime: text("mime"),
   sizeBytes: integer("size_bytes"),
   sha256: text("sha256"),
-  status: documentStatusEnum("status").default("uploaded"),
+  status: varchar("status").default("uploaded"), // Not enum in DB
+  rejectionReason: text("rejection_reason"),
   verifierUserId: varchar("verifier_user_id").references(() => users.id),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
+  verifiedAt: timestamp("verified_at"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
@@ -1000,7 +1003,7 @@ export const insertOrganizationApplicationSchema = createInsertSchema(organizati
 
 export const insertUploadedDocumentSchema = createInsertSchema(uploadedDocuments).omit({
   id: true,
-  createdAt: true,
+  uploadedAt: true,
   updatedAt: true
 });
 

@@ -27,6 +27,17 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { MemberApplication, Case } from "@shared/schema";
 
+// Transformed application type with flattened JSONB fields
+interface TransformedApplication extends MemberApplication {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  nationalId?: string;
+  dateOfBirth?: string | Date;
+  currentStage?: string;
+}
+
 // Add Member Form Schema - matching AgentsHUB SimplifiedAddMemberForm
 const addMemberSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
@@ -130,7 +141,7 @@ export default function AdminDashboard() {
     queryKey: ["/api/dashboard/stats"],
   });
 
-  const { data: allApplications = [] } = useQuery<MemberApplication[]>({
+  const { data: allApplications = [] } = useQuery<TransformedApplication[]>({
     queryKey: ["/api/applications"],
   });
 
@@ -319,16 +330,16 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <AdminHeader currentPage="dashboard" />
-      
+
       {/* Main Content */}
       <div className="p-6">
         <PageBreadcrumb items={[{ label: "Admin Dashboard" }]} />
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Estate Agents Council of Zimbabwe - Management Overview</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-egyptian-blue to-powder-blue bg-clip-text text-transparent">Admin Dashboard</h1>
+          <p className="text-gray-600">Estate Agents Council of Zimbabwe - Management Overview</p>
         </div>
 
         {/* Stats Overview */}
@@ -379,24 +390,27 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+        <Card className="mb-8 border-2 border-gray-100 bg-gradient-to-br from-white to-cyan-50/30 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-egyptian-blue/5 to-powder-blue/5 border-b-2 border-gray-100">
+            <CardTitle className="text-xl bg-gradient-to-r from-egyptian-blue to-powder-blue bg-clip-text text-transparent">
+              Quick Actions
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">Frequently used operations and tasks</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="flex flex-wrap sm:flex-nowrap gap-4">
               {quickActions.map((action, index) => (
                 <Button
                   key={index}
                   variant="outline"
-                  className="h-auto flex-col items-center p-4 hover:bg-accent flex-1 min-w-0"
+                  className="h-auto flex-col items-center p-6 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 flex-1 min-w-0 border-2 border-gray-200 hover:border-egyptian-blue hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   onClick={action.action}
                   data-testid={`quick-action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >
-                  <div className={`w-12 h-12 ${action.bg} rounded-lg flex items-center justify-center mb-2`}>
-                    <action.icon className={`w-6 h-6 ${action.color}`} />
+                  <div className={`w-14 h-14 ${action.bg} rounded-xl flex items-center justify-center mb-3 shadow-md`}>
+                    <action.icon className={`w-7 h-7 ${action.color}`} />
                   </div>
-                  <span className="text-sm font-medium text-center">{action.label}</span>
+                  <span className="text-sm font-semibold text-center text-gray-700">{action.label}</span>
                 </Button>
               ))}
             </div>
@@ -406,53 +420,65 @@ export default function AdminDashboard() {
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Pending Applications */}
-          <Card>
-            <CardHeader>
+          <Card className="border-2 border-gray-100 bg-gradient-to-br from-white to-orange-50/20 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-orange-50/50 to-yellow-50/50 border-b-2 border-gray-100">
               <div className="flex items-center justify-between">
-                <CardTitle>Pending Applications</CardTitle>
-                <Button 
-                  variant="link" 
+                <div>
+                  <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent">
+                    Pending Applications
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {pendingApplications.length} application{pendingApplications.length !== 1 ? 's' : ''} awaiting review
+                  </p>
+                </div>
+                <Button
+                  variant="link"
                   size="sm"
                   onClick={() => setLocation("/admin-dashboard/applications")}
+                  className="text-orange-600 hover:text-orange-700 font-semibold"
                   data-testid="link-view-all-applications"
                 >
-                  View All
+                  View All →
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               {pendingApplications.length > 0 ? (
                 <div className="space-y-4">
                   {pendingApplications.slice(0, 3).map((application) => (
-                    <div key={application.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-sm font-medium text-primary">
-                            {application.firstName[0]}{application.lastName[0]}
+                    <div key={application.id} className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl bg-gradient-to-br from-white to-blue-50/30 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center flex-1">
+                        <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center mr-4 shadow-sm">
+                          <span className="text-base font-bold text-orange-600">
+                            {application.firstName?.[0] || 'U'}{application.lastName?.[0] || 'N'}
                           </span>
                         </div>
-                        <div>
-                          <p className="font-medium text-card-foreground" data-testid={`application-name-${application.id}`}>
-                            {application.firstName} {application.lastName}
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800" data-testid={`application-name-${application.id}`}>
+                            {application.firstName || 'Unknown'} {application.lastName || 'Name'}
                           </p>
-                          <p className="text-sm text-muted-foreground" data-testid={`application-type-${application.id}`}>
+                          <p className="text-sm text-gray-600 font-medium" data-testid={`application-type-${application.id}`}>
                             {application.memberType.replace(/_/g, ' ')}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Status: <span className="font-semibold text-orange-600">{application.status || 'Pending'}</span>
                           </p>
                         </div>
                       </div>
                       <div className="flex space-x-2">
-                        <Button 
-                          size="sm" 
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                        <Button
+                          size="sm"
+                          className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md"
                           onClick={() => handleApproveApplication(application.id)}
                           disabled={reviewApplicationMutation.isPending}
                           data-testid={`button-approve-${application.id}`}
                         >
                           {reviewApplicationMutation.isPending ? "Processing..." : "Approve"}
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="destructive"
+                          className="shadow-md"
                           onClick={() => handleRejectApplication(application.id)}
                           disabled={reviewApplicationMutation.isPending}
                           data-testid={`button-reject-${application.id}`}
@@ -464,67 +490,94 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-8">No pending applications</p>
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Clock className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-medium">No pending applications</p>
+                  <p className="text-sm text-gray-400 mt-1">All applications have been processed</p>
+                </div>
               )}
             </CardContent>
           </Card>
 
           {/* Recent Cases */}
-          <Card>
-            <CardHeader>
+          <Card className="border-2 border-gray-100 bg-gradient-to-br from-white to-red-50/20 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-red-50/50 to-orange-50/50 border-b-2 border-gray-100">
               <div className="flex items-center justify-between">
-                <CardTitle>Recent Cases</CardTitle>
-                <Button 
-                  variant="link" 
+                <div>
+                  <CardTitle className="text-xl bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+                    Recent Cases
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {recentCases.length} active case{recentCases.length !== 1 ? 's' : ''} requiring attention
+                  </p>
+                </div>
+                <Button
+                  variant="link"
                   size="sm"
                   onClick={() => setLocation("/case-management")}
+                  className="text-red-600 hover:text-red-700 font-semibold"
                   data-testid="link-view-all-cases"
                 >
-                  View All
+                  View All →
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               {recentCases.length > 0 ? (
                 <div className="space-y-4">
                   {recentCases.slice(0, 3).map((caseItem) => (
-                    <div key={caseItem.id} className="p-4 border border-border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge 
-                          variant={caseItem.priority === 'high' ? 'destructive' : 
+                    <div key={caseItem.id} className="p-4 border-2 border-gray-100 rounded-xl bg-gradient-to-br from-white to-blue-50/30 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center justify-between mb-3">
+                        <Badge
+                          variant={caseItem.priority === 'high' ? 'destructive' :
                                   caseItem.priority === 'medium' ? 'default' : 'secondary'}
+                          className="font-semibold"
                           data-testid={`case-priority-${caseItem.id}`}
                         >
-                          {caseItem.priority} Priority
+                          {caseItem.priority?.toUpperCase()} Priority
                         </Badge>
-                        <span className="text-xs text-muted-foreground" data-testid={`case-number-${caseItem.id}`}>
+                        <span className="text-xs font-semibold text-gray-500" data-testid={`case-number-${caseItem.id}`}>
                           {caseItem.caseNumber}
                         </span>
                       </div>
-                      <h4 className="font-medium text-card-foreground mb-1" data-testid={`case-title-${caseItem.id}`}>
+                      <h4 className="font-bold text-gray-800 mb-2" data-testid={`case-title-${caseItem.id}`}>
                         {caseItem.title}
                       </h4>
-                      <p className="text-sm text-muted-foreground mb-3" data-testid={`case-description-${caseItem.id}`}>
-                        {caseItem.description.substring(0, 100)}...
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2" data-testid={`case-description-${caseItem.id}`}>
+                        {caseItem.description}
                       </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          Submitted by: {caseItem.submittedBy || "Anonymous"}
-                        </span>
-                        <Button 
-                          size="sm" 
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-gray-500">
+                            Submitted by
+                          </span>
+                          <span className="text-sm font-bold text-gray-700">
+                            {caseItem.submittedBy || "Anonymous"}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
                           variant="link"
                           onClick={() => setLocation(`/case-management/${caseItem.id}`)}
+                          className="text-red-600 hover:text-red-700 font-semibold"
                           data-testid={`button-view-case-${caseItem.id}`}
                         >
-                          View Details
+                          View Details →
                         </Button>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-8">No recent cases</p>
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <AlertTriangle className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-medium">No recent cases</p>
+                  <p className="text-sm text-gray-400 mt-1">All cases have been resolved</p>
+                </div>
               )}
             </CardContent>
           </Card>

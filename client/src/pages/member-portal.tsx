@@ -128,12 +128,12 @@ export default function MemberPortal() {
                 <div>
                   <p className="text-blue-100 text-sm font-medium mb-1">CPD Progress</p>
                   <p className="text-2xl font-bold" data-testid="stat-cpd-points">
-                    {member?.cpdPoints || 35}/50
+                    0/50
                   </p>
                   <div className="w-full bg-blue-400/30 rounded-full h-2 mt-2">
-                    <div 
+                    <div
                       className="bg-white h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${((member?.cpdPoints || 35) / 50) * 100}%` }}
+                      style={{ width: `0%` }}
                     ></div>
                   </div>
                 </div>

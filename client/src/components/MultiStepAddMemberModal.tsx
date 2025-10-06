@@ -203,7 +203,6 @@ export function MultiStepAddMemberModal({ open, onOpenChange, trigger }: MultiSt
         icon={UserPlus}
         colorVariant="blue"
         maxWidth="3xl"
-        trigger={trigger}
       >
         <div className="space-y-6">
           {/* Progress Bar */}

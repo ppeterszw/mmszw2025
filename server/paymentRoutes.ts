@@ -533,7 +533,7 @@ async function handleSuccessfulPayment(payment: any) {
               .update(memberRenewals)
               .set({
                 status: 'completed',
-                paidAt: new Date(),
+                renewalDate: new Date(),
                 updatedAt: new Date(),
               })
               .where(eq(memberRenewals.id, renewals[0].id));
@@ -565,12 +565,11 @@ async function handleSuccessfulPayment(payment: any) {
 /**
  * Map PayNow status to internal payment status
  */
-function mapPayNowStatusToInternal(paynowStatus: string): string {
+function mapPayNowStatusToInternal(paynowStatus: string): 'pending' | 'completed' | 'failed' | 'refunded' {
   switch (paynowStatus) {
     case 'paid':
       return 'completed';
     case 'cancelled':
-      return 'cancelled';
     case 'failed':
       return 'failed';
     default:

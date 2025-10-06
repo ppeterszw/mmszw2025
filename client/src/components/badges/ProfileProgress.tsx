@@ -76,7 +76,7 @@ export function ProfileProgress({ member, documents = [], payments = [], cpdActi
     },
     {
       label: "CPD Activities",
-      completed: (member.cpdPoints || 0) >= 10, // At least 10 CPD points
+      completed: cpdActivities.length >= 3, // At least 3 CPD activities
       icon: Award,
       weight: 10,
       description: "Continuing Professional Development participation"
@@ -232,7 +232,7 @@ export function calculateProfileProgress(
     !!member.memberType, // 10%
     documents.length >= 3, // 20%
     payments.some(p => p.status === "completed"), // 15%
-    (member.cpdPoints || 0) >= 10 // 10%
+    cpdActivities.length >= 3 // 10%
   ];
   
   const weights = [15, 10, 5, 15, 10, 20, 15, 10];
