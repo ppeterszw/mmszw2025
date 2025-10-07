@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
-import { User, Building2, ArrowRight, FileText, DollarSign, Clock, CheckCircle } from "lucide-react";
+import { User, Building2, ArrowRight, FileText, Clock, CheckCircle } from "lucide-react";
 import logoUrl from "@assets/eaclogo_1756763778691.png";
 
 export default function ApplicationChoicePage() {
@@ -123,13 +123,8 @@ export default function ApplicationChoicePage() {
                 <Card key={type.id} className={`relative overflow-hidden hover:shadow-2xl transition-all duration-300 group border-2 border-egyptian-blue/20 shadow-lg bg-gradient-to-br ${cardGradient}`}>
                   <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${headerGradient}`} />
                   <CardHeader className="pb-4 pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${headerGradient} flex items-center justify-center mb-4 shadow-xl`}>
-                        <IconComponent className="w-8 h-8 text-white" />
-                      </div>
-                      <Badge className={`bg-gradient-to-r ${headerGradient} text-white border-0 font-semibold`}>
-                        {type.fee}
-                      </Badge>
+                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${headerGradient} flex items-center justify-center mb-4 shadow-xl`}>
+                      <IconComponent className="w-8 h-8 text-white" />
                     </div>
                     <CardTitle className="text-2xl font-bold bg-gradient-to-r from-egyptian-blue to-powder-blue bg-clip-text text-transparent mb-2">
                       {type.title}
@@ -170,18 +165,6 @@ export default function ApplicationChoicePage() {
                           </li>
                         ))}
                       </ul>
-                    </div>
-
-                    {/* Processing Info */}
-                    <div className={`flex items-center justify-between p-4 bg-gradient-to-r ${headerGradient} bg-opacity-10 rounded-xl border border-egyptian-blue/20`}>
-                      <div className="flex items-center text-egyptian-blue font-semibold">
-                        <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{type.fee}</span>
-                      </div>
-                      <div className="flex items-center text-egyptian-blue font-semibold">
-                        <Clock className="w-4 h-4 mr-2" />
-                        <span>{type.processingTime}</span>
-                      </div>
                     </div>
 
                     {/* Action Button */}
