@@ -80,9 +80,15 @@ export function ApplicantAuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (applicant: Applicant) => {
       setStoredApplicant(applicant);
       queryClient.setQueryData(["/applicant/current"], applicant);
+
+      // Generate welcome message based on applicant type
+      const welcomeName = applicant.firstName && applicant.surname
+        ? `${applicant.firstName} ${applicant.surname}`
+        : applicant.email;
+
       toast({
         title: "Login successful",
-        description: `Welcome back, ${applicant.firstName} ${applicant.surname}!`,
+        description: `Welcome back, ${welcomeName}!`,
       });
     },
     onError: (error: Error) => {

@@ -476,11 +476,8 @@ export function registerPublicRoutes(app: Express) {
 
         return res.json({
           success: true,
-          applicantId: individualApplicant.applicantId,
+          applicant: individualApplicant,
           applicantType: 'individual',
-          name: `${individualApplicant.firstName} ${individualApplicant.surname}`,
-          email: individualApplicant.email,
-          status: individualApplicant.status,
           message: "Login successful"
         });
       }
@@ -502,11 +499,8 @@ export function registerPublicRoutes(app: Express) {
 
         return res.json({
           success: true,
-          applicantId: orgApplicant.applicantId,
+          applicant: orgApplicant,
           applicantType: 'organization',
-          name: orgApplicant.companyName,
-          email: orgApplicant.email,
-          status: orgApplicant.status,
           message: "Login successful"
         });
       }
