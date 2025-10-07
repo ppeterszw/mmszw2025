@@ -156,6 +156,7 @@ interface EnhancedDocumentUploaderProps {
   disabled?: boolean;
   className?: string;
   applicationId?: string;
+  usePublicEndpoint?: boolean;
 }
 
 export function EnhancedDocumentUploader({
@@ -166,7 +167,8 @@ export function EnhancedDocumentUploader({
   onError,
   disabled = false,
   className,
-  applicationId
+  applicationId,
+  usePublicEndpoint = false
 }: EnhancedDocumentUploaderProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -352,7 +354,8 @@ export function EnhancedDocumentUploader({
       ));
 
       // Step 1: Get secure presigned URL from backend with validation
-      const presignResponse = await fetch('/api/uploads/presign', {
+      const presignEndpoint = usePublicEndpoint ? '/api/uploads/presign-public' : '/api/uploads/presign';
+      const presignResponse = await fetch(presignEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

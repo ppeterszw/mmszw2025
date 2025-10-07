@@ -1288,6 +1288,7 @@ export default function MemberRegistration() {
                             handleDocumentComplete({ successful: [{ uploadURL: fileKey }] });
                           }
                         }}
+                        usePublicEndpoint={true}
                         data-testid="uploader-identity-document"
                       />
                     </div>
@@ -1311,6 +1312,7 @@ export default function MemberRegistration() {
                             handleDocumentComplete({ successful: [{ uploadURL: fileKey }] });
                           }
                         }}
+                        usePublicEndpoint={true}
                         data-testid="uploader-birth-certificate"
                       />
                     </div>
@@ -1330,6 +1332,7 @@ export default function MemberRegistration() {
                             handleDocumentComplete({ successful: files.map(f => ({ uploadURL: f.fileKey })) });
                           }
                         }}
+                        usePublicEndpoint={true}
                         data-testid="uploader-educational-certificates"
                       />
                     </div>
@@ -1347,6 +1350,7 @@ export default function MemberRegistration() {
                             handleDocumentComplete({ successful: [{ uploadURL: fileKey }] });
                           }
                         }}
+                        usePublicEndpoint={true}
                         data-testid="uploader-proof-employment"
                       />
                     </div>

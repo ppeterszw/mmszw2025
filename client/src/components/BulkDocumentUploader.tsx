@@ -55,6 +55,7 @@ interface BulkDocumentUploaderProps {
   onError?: (error: string) => void;
   maxFiles?: number;
   disabled?: boolean;
+  usePublicEndpoint?: boolean;
 }
 
 export function BulkDocumentUploader({
@@ -62,7 +63,8 @@ export function BulkDocumentUploader({
   onComplete,
   onError,
   maxFiles = 10,
-  disabled = false
+  disabled = false,
+  usePublicEndpoint = false
 }: BulkDocumentUploaderProps) {
   const [files, setFiles] = useState<BulkFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -178,7 +180,8 @@ export function BulkDocumentUploader({
       ));
 
       // Step 1: Get secure presigned URL from backend with validation
-      const presignResponse = await fetch('/api/uploads/presign', {
+      const presignEndpoint = usePublicEndpoint ? '/api/uploads/presign-public' : '/api/uploads/presign';
+      const presignResponse = await fetch(presignEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
