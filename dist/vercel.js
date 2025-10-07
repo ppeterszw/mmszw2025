@@ -9886,11 +9886,11 @@ async function registerRoutes(app2) {
           details: "applicantId and email are required"
         });
       }
-      const applicantIdPattern = /^MBR-APP-\d{4}-\d{4}$/;
+      const applicantIdPattern = /^APP-(MBR|ORG)-\d{4}-\d{4}$/;
       if (!applicantIdPattern.test(applicantId)) {
         return res.status(400).json({
           error: "Invalid applicant ID format",
-          details: "Applicant ID must be in format MBR-APP-YYYY-XXXX"
+          details: "Applicant ID must be in format APP-MBR-YYYY-XXXX or APP-ORG-YYYY-XXXX"
         });
       }
       const applicant = await storage.getApplicantByApplicantId(applicantId);
@@ -10014,11 +10014,11 @@ async function registerRoutes(app2) {
           error: "Application data required"
         });
       }
-      const applicantIdPattern = /^MBR-APP-\d{4}-\d{4}$/;
+      const applicantIdPattern = /^APP-(MBR|ORG)-\d{4}-\d{4}$/;
       if (!applicantIdPattern.test(applicantId)) {
         return res.status(400).json({
           error: "Invalid applicant ID format",
-          details: "Applicant ID must be in format MBR-APP-YYYY-XXXX"
+          details: "Applicant ID must be in format APP-MBR-YYYY-XXXX or APP-ORG-YYYY-XXXX"
         });
       }
       if (!req.session.applicantId || req.session.applicantId !== applicantId) {
@@ -10057,11 +10057,11 @@ async function registerRoutes(app2) {
   app2.get("/api/applicants/:applicantId/load-draft", async (req, res) => {
     try {
       const { applicantId } = req.params;
-      const applicantIdPattern = /^MBR-APP-\d{4}-\d{4}$/;
+      const applicantIdPattern = /^APP-(MBR|ORG)-\d{4}-\d{4}$/;
       if (!applicantIdPattern.test(applicantId)) {
         return res.status(400).json({
           error: "Invalid applicant ID format",
-          details: "Applicant ID must be in format MBR-APP-YYYY-XXXX"
+          details: "Applicant ID must be in format APP-MBR-YYYY-XXXX or APP-ORG-YYYY-XXXX"
         });
       }
       if (!req.session.applicantId || req.session.applicantId !== applicantId) {

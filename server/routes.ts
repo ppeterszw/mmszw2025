@@ -425,12 +425,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Validate applicant ID format
-      const applicantIdPattern = /^MBR-APP-\d{4}-\d{4}$/;
+      // Validate applicant ID format (APP-MBR for individuals, APP-ORG for organizations)
+      const applicantIdPattern = /^APP-(MBR|ORG)-\d{4}-\d{4}$/;
       if (!applicantIdPattern.test(applicantId)) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Invalid applicant ID format",
-          details: "Applicant ID must be in format MBR-APP-YYYY-XXXX"
+          details: "Applicant ID must be in format APP-MBR-YYYY-XXXX or APP-ORG-YYYY-XXXX"
         });
       }
 
@@ -596,12 +596,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Validate applicant ID format
-      const applicantIdPattern = /^MBR-APP-\d{4}-\d{4}$/;
+      // Validate applicant ID format (APP-MBR for individuals, APP-ORG for organizations)
+      const applicantIdPattern = /^APP-(MBR|ORG)-\d{4}-\d{4}$/;
       if (!applicantIdPattern.test(applicantId)) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Invalid applicant ID format",
-          details: "Applicant ID must be in format MBR-APP-YYYY-XXXX"
+          details: "Applicant ID must be in format APP-MBR-YYYY-XXXX or APP-ORG-YYYY-XXXX"
         });
       }
 
@@ -655,12 +655,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { applicantId } = req.params;
 
-      // Validate applicant ID format
-      const applicantIdPattern = /^MBR-APP-\d{4}-\d{4}$/;
+      // Validate applicant ID format (APP-MBR for individuals, APP-ORG for organizations)
+      const applicantIdPattern = /^APP-(MBR|ORG)-\d{4}-\d{4}$/;
       if (!applicantIdPattern.test(applicantId)) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Invalid applicant ID format",
-          details: "Applicant ID must be in format MBR-APP-YYYY-XXXX"
+          details: "Applicant ID must be in format APP-MBR-YYYY-XXXX or APP-ORG-YYYY-XXXX"
         });
       }
 
