@@ -6,8 +6,13 @@ interface SessionTimeoutProviderProps {
 }
 
 export function SessionTimeoutProvider({ children }: SessionTimeoutProviderProps) {
-  // Initialize session timeout functionality
-  useSessionTimeout();
-  
-  return <>{children}</>;
+  // Initialize session timeout functionality and get the dialog component
+  const sessionDialog = useSessionTimeout();
+
+  return (
+    <>
+      {children}
+      {sessionDialog}
+    </>
+  );
 }
