@@ -198,21 +198,33 @@ export default function VerificationPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <div className="gradient-bg py-6">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center p-2">
-                <img src={logoUrl} alt="EACZ Logo" className="w-full h-full object-contain" />
-              </div>
-              <div className="text-white">
-                <h1 className="text-xl font-bold">Member Verification</h1>
-                <p className="text-blue-100 text-sm">Verify agent and firm registration status</p>
-              </div>
+      {/* Hero Section - 200px height */}
+      <div className="h-[200px] bg-gradient-to-r from-egyptian-blue via-powder-blue to-egyptian-blue relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.8),transparent_50%)]"></div>
+        </div>
+
+        <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="h-full flex flex-col justify-center items-center text-center">
+            {/* Logo */}
+            <div className="w-20 h-20 bg-white/95 rounded-2xl flex items-center justify-center p-3 shadow-2xl mb-4 backdrop-blur-sm">
+              <img src={logoUrl} alt="EACZ Logo" className="w-full h-full object-contain" />
             </div>
-            <Button 
-              className="bg-white/20 hover:bg-white/30 text-white border border-white/30"
+
+            {/* Title */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 drop-shadow-lg">
+              Member Verification Portal
+            </h1>
+
+            {/* Description */}
+            <p className="text-base sm:text-lg text-white/95 max-w-2xl font-medium drop-shadow">
+              Verify if a person or organization is registered with the Estate Agents Council of Zimbabwe
+            </p>
+
+            {/* Return Button */}
+            <Button
+              className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white border border-white/30 backdrop-blur-sm"
               onClick={() => setLocation("/")}
               data-testid="button-home"
             >
@@ -227,16 +239,6 @@ export default function VerificationPage() {
           <PageBreadcrumb items={[
             { label: "Member Verification" }
           ]} className="mb-6" />
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 p-2">
-              <img src={logoUrl} alt="Estate Agents Council Logo" className="w-full h-full object-contain" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Member Verification</h1>
-            <p className="text-gray-600">
-              Verify if a person or organization is registered with the Estate Agents Council of Zimbabwe
-            </p>
-          </div>
 
           {/* Verification Form */}
           <Card className="bg-white border shadow-lg mb-6">
