@@ -112,22 +112,81 @@ export default function ApplyLanding() {
                   </CardHeader>
 
                   <CardContent className="p-6 space-y-6">
-                    {/* Benefits */}
+                    {/* Requirements */}
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
                         <FileText className="w-5 h-5 text-egyptian-blue mr-2" />
-                        What You'll Get
+                        Requirements
                       </h4>
-                      <ul className="space-y-3">
-                        {option.benefits.map((benefit, index) => (
-                          <li key={index} className="flex items-start text-gray-700">
-                            <div className="w-5 h-5 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                              <CheckCircle className="w-3 h-3 text-green-600" />
-                            </div>
-                            <span className="leading-relaxed">{benefit}</span>
-                          </li>
-                        ))}
+                      <ul className="space-y-2 text-sm text-gray-700">
+                        <li className="flex items-center">
+                          <span className="text-egyptian-blue mr-2">•</span>
+                          National ID or Passport
+                        </li>
+                        <li className="flex items-center">
+                          <span className="text-egyptian-blue mr-2">•</span>
+                          Educational Certificates
+                        </li>
+                        <li className="flex items-center">
+                          <span className="text-egyptian-blue mr-2">•</span>
+                          Proof of Address
+                        </li>
+                        <li className="flex items-center">
+                          <span className="text-egyptian-blue mr-2">•</span>
+                          Professional References
+                        </li>
                       </ul>
+                    </div>
+
+                    {/* Types of Membership */}
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3">
+                        {option.id === "continue" || option.id === "register" ? "Types of Membership" : "Membership Categories"}
+                      </h4>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="font-medium text-gray-800 mb-2">Individual Members:</p>
+                          <ul className="space-y-1 text-sm text-gray-700 ml-4">
+                            <li className="flex items-center">
+                              <span className="text-egyptian-blue mr-2">→</span>
+                              Real Estate Agent
+                            </li>
+                            <li className="flex items-center">
+                              <span className="text-egyptian-blue mr-2">→</span>
+                              Property Manager
+                            </li>
+                            <li className="flex items-center">
+                              <span className="text-egyptian-blue mr-2">→</span>
+                              Principal Real Estate Agent
+                            </li>
+                            <li className="flex items-center">
+                              <span className="text-egyptian-blue mr-2">→</span>
+                              Real Estate Negotiator
+                            </li>
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800 mb-2">Organizational Members:</p>
+                          <ul className="space-y-1 text-sm text-gray-700 ml-4">
+                            <li className="flex items-center">
+                              <span className="text-egyptian-blue mr-2">→</span>
+                              Real Estate Firm
+                            </li>
+                            <li className="flex items-center">
+                              <span className="text-egyptian-blue mr-2">→</span>
+                              Property Management Firm
+                            </li>
+                            <li className="flex items-center">
+                              <span className="text-egyptian-blue mr-2">→</span>
+                              Brokerage Firm
+                            </li>
+                            <li className="flex items-center">
+                              <span className="text-egyptian-blue mr-2">→</span>
+                              Real Estate Development Firm
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Action Button */}

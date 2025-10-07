@@ -46,7 +46,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-egyptian-blue via-egyptian-blue/90 to-blue-900">
+    <div className="min-h-screen bg-gradient-to-br from-egyptian-blue via-powder-blue to-egyptian-blue">
       {/* Navigation */}
       <nav className="bg-white/10 backdrop-blur-sm border-b border-white/20">
         <div className="container mx-auto px-4 py-4">
@@ -99,7 +99,7 @@ export default function LandingPage() {
               <Button
                 key={index}
                 size="lg"
-                className="bg-white/10 hover:bg-white/20 backdrop-blur text-white border-2 border-white/30 hover:border-white/50 font-semibold px-8 py-6 text-lg shadow-xl transition-all duration-200"
+                className="bg-gradient-to-r from-egyptian-blue to-powder-blue hover:from-egyptian-blue/90 hover:to-powder-blue/90 text-white border-0 font-semibold px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-200"
                 onClick={option.action}
                 data-testid={`button-${option.title.toLowerCase().replace(/\s+/g, '-')}`}
               >
@@ -131,13 +131,7 @@ export default function LandingPage() {
                 </CardHeader>
                 <CardContent className="text-center pb-6">
                   <Button
-                    variant={action.buttonVariant}
-                    className={`w-full h-12 font-semibold text-base shadow-md hover:shadow-lg transition-all ${
-                      action.buttonVariant === "default" ? "bg-gradient-to-r from-egyptian-blue to-powder-blue hover:from-egyptian-blue/90 hover:to-powder-blue/90 text-white border-0" :
-                      action.buttonVariant === "outline" ? "border-2 border-egyptian-blue text-egyptian-blue hover:bg-egyptian-blue hover:text-white" :
-                      action.buttonVariant === "destructive" ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0" :
-                      ""
-                    }`}
+                    className="w-full h-12 font-semibold text-base shadow-md hover:shadow-lg transition-all bg-gradient-to-r from-egyptian-blue to-powder-blue hover:from-egyptian-blue/90 hover:to-powder-blue/90 text-white border-0"
                     onClick={action.action}
                     data-testid={`button-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
                   >
