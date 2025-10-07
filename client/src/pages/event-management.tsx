@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { AdminHeader } from "@/components/AdminHeader";
 import { FormFooter } from "@/components/ui/form-footer";
+import { QuickActions } from "@/components/QuickActions";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import type { Event } from "@shared/schema";
@@ -155,93 +156,60 @@ export default function EventManagement() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Quick Actions</h2>
-              <p className="text-sm text-muted-foreground mt-1">Streamline your event management</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="group relative h-32 rounded-3xl bg-gradient-to-br from-blue-400 via-blue-300 to-sky-300 hover:from-blue-500 hover:via-blue-400 hover:to-sky-400 border-0 shadow-lg hover:shadow-xl hover:shadow-blue-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
-              data-testid="button-quick-create-event"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-blue-600/10 to-transparent" />
-              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <Calendar className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-              </div>
-              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Create Event</span>
-              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-            </Button>
-
-            <Button
-              onClick={() => setLocation("/admin-dashboard/agents-applications")}
-              className="group relative h-32 rounded-3xl bg-gradient-to-br from-emerald-400 via-emerald-300 to-teal-300 hover:from-emerald-500 hover:via-emerald-400 hover:to-teal-400 border-0 shadow-lg hover:shadow-xl hover:shadow-emerald-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
-              data-testid="button-quick-register-member"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-emerald-600/10 to-transparent" />
-              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <User className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-              </div>
-              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Register Member</span>
-              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-            </Button>
-
-            <Button
-              onClick={() => toast({ title: "Feature Coming Soon", description: "Event analytics feature will be available soon." })}
-              className="group relative h-32 rounded-3xl bg-gradient-to-br from-purple-400 via-purple-300 to-pink-300 hover:from-purple-500 hover:via-purple-400 hover:to-pink-400 border-0 shadow-lg hover:shadow-xl hover:shadow-purple-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
-              data-testid="button-event-analytics"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-purple-600/10 to-transparent" />
-              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <FileText className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-              </div>
-              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Event Analytics</span>
-              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-            </Button>
-
-            <Button
-              onClick={() => toast({ title: "Feature Coming Soon", description: "Bulk email to attendees feature will be available soon." })}
-              className="group relative h-32 rounded-3xl bg-gradient-to-br from-amber-400 via-orange-300 to-yellow-300 hover:from-amber-500 hover:via-orange-400 hover:to-yellow-400 border-0 shadow-lg hover:shadow-xl hover:shadow-amber-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
-              data-testid="button-email-attendees"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-amber-600/10 to-transparent" />
-              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <Mail className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-              </div>
-              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Email Attendees</span>
-              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-            </Button>
-
-            <Button
-              onClick={() => toast({ title: "Feature Coming Soon", description: "Schedule recurring events feature will be available soon." })}
-              className="group relative h-32 rounded-3xl bg-gradient-to-br from-violet-400 via-violet-300 to-fuchsia-300 hover:from-violet-500 hover:via-violet-400 hover:to-fuchsia-400 border-0 shadow-lg hover:shadow-xl hover:shadow-violet-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
-              data-testid="button-schedule-recurring"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-violet-600/10 to-transparent" />
-              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <Clock className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-              </div>
-              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Schedule Recurring</span>
-              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-            </Button>
-
-            <Button
-              onClick={() => toast({ title: "Feature Coming Soon", description: "Event reports feature will be available soon." })}
-              className="group relative h-32 rounded-3xl bg-gradient-to-br from-rose-400 via-red-300 to-pink-300 hover:from-rose-500 hover:via-red-400 hover:to-pink-400 border-0 shadow-lg hover:shadow-xl hover:shadow-rose-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
-              data-testid="button-event-reports"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-rose-600/10 to-transparent" />
-              <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <Presentation className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-              </div>
-              <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Event Reports</span>
-              <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-            </Button>
-          </div>
-        </div>
+        <QuickActions
+          title="Quick Actions"
+          description="Streamline your event management"
+          actions={[
+            {
+              icon: Calendar,
+              label: "Create Event",
+              action: () => setIsCreateDialogOpen(true),
+              color: "text-blue-600",
+              bg: "bg-blue-100",
+              testId: "button-quick-create-event"
+            },
+            {
+              icon: User,
+              label: "Register Member",
+              action: () => setLocation("/admin-dashboard/agents-applications"),
+              color: "text-emerald-600",
+              bg: "bg-emerald-100",
+              testId: "button-quick-register-member"
+            },
+            {
+              icon: FileText,
+              label: "Event Analytics",
+              action: () => toast({ title: "Feature Coming Soon", description: "Event analytics feature will be available soon." }),
+              color: "text-purple-600",
+              bg: "bg-purple-100",
+              testId: "button-event-analytics"
+            },
+            {
+              icon: Mail,
+              label: "Email Attendees",
+              action: () => toast({ title: "Feature Coming Soon", description: "Bulk email to attendees feature will be available soon." }),
+              color: "text-orange-600",
+              bg: "bg-orange-100",
+              testId: "button-email-attendees"
+            },
+            {
+              icon: Clock,
+              label: "Schedule Recurring",
+              action: () => toast({ title: "Feature Coming Soon", description: "Schedule recurring events feature will be available soon." }),
+              color: "text-violet-600",
+              bg: "bg-violet-100",
+              testId: "button-schedule-recurring"
+            },
+            {
+              icon: Presentation,
+              label: "Event Reports",
+              action: () => toast({ title: "Feature Coming Soon", description: "Event reports feature will be available soon." }),
+              color: "text-rose-600",
+              bg: "bg-rose-100",
+              testId: "button-event-reports"
+            }
+          ]}
+        />
 
         <ModernModal
           open={isCreateDialogOpen}
