@@ -53,10 +53,20 @@ export default function ApplicantLogin() {
 
   return (
     <div className="min-h-screen bg-background">
-      <FormHeader 
-        title="Continue Your Application"
-        subtitle="Log in with your Applicant ID and email address"
-      />
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-r from-egyptian-blue to-powder-blue py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Continue Your Application
+            </h1>
+            <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
+              Log in with your Applicant ID and email address to complete your membership application
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="w-full px-4 py-8 flex-1">
         <PageBreadcrumb items={[
           { label: "Individual Application" }, 

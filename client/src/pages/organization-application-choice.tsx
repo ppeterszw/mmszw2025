@@ -11,10 +11,36 @@ export default function OrganizationApplicationChoice() {
 
   return (
     <div className="min-h-screen bg-background">
-      <FormHeader 
-        title="Organization Registration"
-        subtitle="Estate Agents Council of Zimbabwe"
-      />
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-r from-egyptian-blue to-powder-blue py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Register Your Organization
+            </h1>
+            <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
+              Join the Estate Agents Council of Zimbabwe as a registered real estate firm or organization
+            </p>
+            <div className="flex justify-center gap-4 flex-wrap">
+              <Button
+                className="bg-white text-egyptian-blue hover:bg-white/90 border-0 font-semibold"
+                onClick={() => setLocation("/organization-applicant-registration")}
+              >
+                <Building2 className="w-4 h-4 mr-2" />
+                Start Registration
+              </Button>
+              <Button
+                variant="outline"
+                className="bg-white/10 hover:bg-white/20 text-white border-white/30"
+                onClick={() => setLocation("/organization-applicant-login")}
+              >
+                Continue Existing Application
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="w-full px-4 py-8 flex-1">
         <PageBreadcrumb items={[{ label: "Register Your Firm" }]} />
         

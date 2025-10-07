@@ -205,25 +205,32 @@ export default function CaseReporting() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <div className="gradient-bg py-6">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center p-2">
-                <img src={logoUrl} alt="EACZ Logo" className="w-full h-full object-contain" />
-              </div>
-              <div className="text-white">
-                <h1 className="text-xl font-bold">Report a Case</h1>
-                <p className="text-blue-100 text-sm">File a complaint against an estate agent or firm</p>
-              </div>
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-r from-egyptian-blue to-powder-blue py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Lodge a Complaint
+            </h1>
+            <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
+              Report professional misconduct, violations, or file a complaint against a registered estate agent or firm
+            </p>
+            <div className="flex justify-center gap-4">
+              <Button
+                className="bg-white text-egyptian-blue hover:bg-white/90 border-0 font-semibold"
+                onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                File a Complaint
+              </Button>
+              <Button
+                variant="outline"
+                className="bg-white/10 hover:bg-white/20 text-white border-white/30"
+                onClick={() => setLocation("/")}
+              >
+                Return to Home
+              </Button>
             </div>
-            <Button 
-              className="bg-white/20 hover:bg-white/30 text-white border border-white/30"
-              onClick={() => setLocation("/")}
-            >
-              Return to Home
-            </Button>
           </div>
         </div>
       </div>
