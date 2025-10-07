@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { AdminHeader } from "@/components/AdminHeader";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { QuickActions } from "@/components/QuickActions";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -251,130 +252,96 @@ export default function UserManagement() {
               <p className="text-muted-foreground">Manage users, roles, and permissions</p>
             </div>
 
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gradient-button text-white border-0" data-testid="create-user-button">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-            </Dialog>
+            <Button
+              className="gradient-button text-white border-0"
+              onClick={() => setIsCreateDialogOpen(true)}
+              data-testid="create-user-button"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add User
+            </Button>
           </div>
 
           {/* Quick Actions */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">Quick Actions</h2>
-                <p className="text-sm text-muted-foreground mt-1">Commonly used user management actions</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              <Button
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="group relative h-32 rounded-3xl bg-gradient-to-br from-blue-400 via-blue-300 to-sky-300 hover:from-blue-500 hover:via-blue-400 hover:to-sky-400 border-0 shadow-lg hover:shadow-xl hover:shadow-blue-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
-                data-testid="quick-add-user"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-600/10 to-transparent" />
-                <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                  <UserPlus className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Add User</span>
-                <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-              </Button>
+          <QuickActions
+            title="Quick Actions"
+            description="Commonly used user management actions"
+            actions={[
+              {
+                icon: UserPlus,
+                label: "Add User",
+                action: () => setIsCreateDialogOpen(true),
+                color: "text-blue-600",
+                bg: "bg-blue-100",
+                testId: "quick-add-user"
+              },
+              {
+                icon: Mail,
+                label: "Send Welcome",
+                action: () => sendWelcomeEmailMutation.mutate(selectedUsers),
+                color: "text-emerald-600",
+                bg: "bg-emerald-100",
+                testId: "quick-send-welcome"
+              },
+              {
+                icon: RotateCcw,
+                label: "Reset Password",
+                action: () => sendPasswordResetEmailMutation.mutate(selectedUsers),
+                color: "text-orange-600",
+                bg: "bg-orange-100",
+                testId: "quick-password-reset"
+              },
+              {
+                icon: Key,
+                label: "View Admins",
+                action: () => setRoleFilter("admin"),
+                color: "text-purple-600",
+                bg: "bg-purple-100",
+                testId: "quick-filter-admins"
+              },
+              {
+                icon: Users,
+                label: "View All Users",
+                action: () => setRoleFilter("all"),
+                color: "text-violet-600",
+                bg: "bg-violet-100",
+                testId: "quick-view-all"
+              },
+              {
+                icon: CheckCircle,
+                label: "Active Users",
+                action: () => toast({ title: "User Activity", description: "Viewing active users logged in the last 24 hours." }),
+                color: "text-cyan-600",
+                bg: "bg-cyan-100",
+                testId: "quick-active-users"
+              }
+            ]}
+          />
 
-              <Button
-                onClick={() => sendWelcomeEmailMutation.mutate(selectedUsers)}
-                disabled={selectedUsers.length === 0}
-                className="group relative h-32 rounded-3xl bg-gradient-to-br from-emerald-400 via-emerald-300 to-teal-300 hover:from-emerald-500 hover:via-emerald-400 hover:to-teal-400 border-0 shadow-lg hover:shadow-xl hover:shadow-emerald-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
-                data-testid="quick-send-welcome"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-600/10 to-transparent" />
-                <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                  <Mail className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Send Welcome</span>
-                <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-              </Button>
-
-              <Button
-                onClick={() => sendPasswordResetEmailMutation.mutate(selectedUsers)}
-                disabled={selectedUsers.length === 0}
-                className="group relative h-32 rounded-3xl bg-gradient-to-br from-amber-400 via-orange-300 to-yellow-300 hover:from-amber-500 hover:via-orange-400 hover:to-yellow-400 border-0 shadow-lg hover:shadow-xl hover:shadow-amber-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
-                data-testid="quick-password-reset"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-amber-600/10 to-transparent" />
-                <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                  <RotateCcw className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Reset Password</span>
-                <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-              </Button>
-
-              <Button
-                onClick={() => setRoleFilter("admin")}
-                className="group relative h-32 rounded-3xl bg-gradient-to-br from-purple-400 via-purple-300 to-pink-300 hover:from-purple-500 hover:via-purple-400 hover:to-pink-400 border-0 shadow-lg hover:shadow-xl hover:shadow-purple-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
-                data-testid="quick-filter-admins"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-purple-600/10 to-transparent" />
-                <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                  <Key className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">View Admins</span>
-                <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-              </Button>
-
-              <Button
-                onClick={() => setRoleFilter("all")}
-                className="group relative h-32 rounded-3xl bg-gradient-to-br from-violet-400 via-violet-300 to-fuchsia-300 hover:from-violet-500 hover:via-violet-400 hover:to-fuchsia-400 border-0 shadow-lg hover:shadow-xl hover:shadow-violet-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
-                data-testid="quick-view-all"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-violet-600/10 to-transparent" />
-                <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                  <Users className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">View All Users</span>
-                <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-              </Button>
-
-              <Button
-                onClick={() => toast({ title: "User Activity", description: "Viewing active users logged in the last 24 hours." })}
-                className="group relative h-32 rounded-3xl bg-gradient-to-br from-cyan-400 via-sky-300 to-blue-300 hover:from-cyan-500 hover:via-sky-400 hover:to-blue-400 border-0 shadow-lg hover:shadow-xl hover:shadow-cyan-300/40 transition-all duration-300 ease-out hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-white overflow-hidden"
-                data-testid="quick-active-users"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-cyan-600/10 to-transparent" />
-                <div className="relative z-10 w-12 h-12 rounded-2xl bg-white/30 backdrop-blur-sm group-hover:bg-white/40 flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                  <CheckCircle className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <span className="relative z-10 text-sm font-semibold text-center leading-tight tracking-wide drop-shadow-sm">Active Users</span>
-                <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/20 rounded-full blur-2xl" />
-              </Button>
-            </div>
-
-            <ModernModal
-              open={isCreateDialogOpen}
-              onOpenChange={setIsCreateDialogOpen}
-              title="Create New User"
-              subtitle="Add a new user to the system with appropriate permissions"
-              icon={UserPlus}
-              colorVariant="indigo"
-              maxWidth="2xl"
-              footer={{
-                secondary: {
-                  label: "Cancel",
-                  onClick: () => setIsCreateDialogOpen(false),
-                  variant: "outline",
-                  testId: "button-cancel-user"
-                },
-                primary: {
-                  label: createUserMutation.isPending ? "Creating..." : "Create User",
-                  onClick: createUserForm.handleSubmit((data) => createUserMutation.mutate(data)),
-                  disabled: createUserMutation.isPending,
-                  loading: createUserMutation.isPending,
-                  testId: "button-submit-user"
-                }
-              }}
-            >
+          <ModernModal
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            title="Create New User"
+            subtitle="Add a new user to the system with appropriate permissions"
+            icon={UserPlus}
+            colorVariant="indigo"
+            maxWidth="2xl"
+            footer={{
+              secondary: {
+                label: "Cancel",
+                onClick: () => setIsCreateDialogOpen(false),
+                variant: "outline",
+                testId: "button-cancel-user"
+              },
+              primary: {
+                label: createUserMutation.isPending ? "Creating..." : "Create User",
+                onClick: createUserForm.handleSubmit((data) => createUserMutation.mutate(data)),
+                disabled: createUserMutation.isPending,
+                loading: createUserMutation.isPending,
+                testId: "button-submit-user"
+              }
+            }}
+          >
               <div className="space-y-6">
                 {/* Account Details Section */}
                 <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-200">
@@ -473,7 +440,6 @@ export default function UserManagement() {
                 </div>
               </div>
             </ModernModal>
-          </div>
 
           <Tabs defaultValue="users" className="space-y-6">
             <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 h-auto">
