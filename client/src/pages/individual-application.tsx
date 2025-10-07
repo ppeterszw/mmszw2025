@@ -712,23 +712,33 @@ export default function IndividualApplication() {
         ]} />
 
         <div className="max-w-4xl mx-auto">
-          {/* Progress Bar */}
-          <div className="mb-8">
+          {/* Enhanced Progress Bar */}
+          <div className="mb-8 bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-gray-700">Step {currentStepIndex + 1} of {totalSteps}</span>
-              <span className="text-sm text-gray-600">{Math.round(progress)}% Complete</span>
+              <div>
+                <h3 className="text-lg font-bold bg-gradient-to-r from-egyptian-blue to-powder-blue bg-clip-text text-transparent">
+                  Step {currentStepIndex + 1} of {totalSteps}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">{currentStepInfo.title}</p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-egyptian-blue">{Math.round(progress)}%</div>
+                <p className="text-xs text-gray-500">Complete</p>
+              </div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div className="relative w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
               <div
-                className="bg-gradient-to-r from-egyptian-blue to-powder-blue h-2.5 rounded-full transition-all duration-300 shadow-md"
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-egyptian-blue via-blue-500 to-powder-blue rounded-full transition-all duration-500 ease-out shadow-lg"
                 style={{ width: `${progress}%` }}
-              />
+              >
+                <div className="absolute inset-0 bg-white/20 animate-pulse" />
+              </div>
             </div>
           </div>
 
-          {/* Step Navigation */}
-          <div className="flex justify-center mb-8">
-            <div className="flex items-center space-x-4">
+          {/* Enhanced Step Navigation */}
+          <div className="mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {APPLICATION_STEPS.map((step, index) => {
                 const Icon = step.icon;
                 const isCompleted = completedSteps.has(step.id);
@@ -736,24 +746,70 @@ export default function IndividualApplication() {
                 const isClickable = index <= currentStepIndex;
 
                 return (
-                  <div key={step.id} className="flex items-center">
-                    <button
-                      onClick={() => isClickable && goToStep(step.id)}
-                      disabled={!isClickable}
-                      className={`
-                        w-10 h-10 rounded-full flex items-center justify-center transition-colors
-                        ${isCompleted ? 'bg-green-500 text-white' :
-                          isCurrent ? 'bg-blue-500 text-white' :
-                          isClickable ? 'bg-gray-200 text-gray-600 hover:bg-gray-300' :
-                          'bg-gray-100 text-gray-400'}
-                      `}
-                    >
-                      {isCompleted ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                    </button>
-                    {index < APPLICATION_STEPS.length - 1 && (
-                      <div className={`w-8 h-0.5 ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`} />
-                    )}
-                  </div>
+                  <button
+                    key={step.id}
+                    onClick={() => isClickable && goToStep(step.id)}
+                    disabled={!isClickable}
+                    className={`
+                      relative group transition-all duration-300 transform hover:scale-105
+                      ${!isClickable && 'cursor-not-allowed opacity-50'}
+                    `}
+                  >
+                    <div className={`
+                      bg-white rounded-xl p-4 shadow-md border-2 transition-all duration-300
+                      ${isCompleted ? 'border-green-500 bg-green-50' :
+                        isCurrent ? 'border-egyptian-blue bg-gradient-to-br from-egyptian-blue/5 to-powder-blue/5 shadow-xl' :
+                        isClickable ? 'border-gray-200 hover:border-egyptian-blue/50' :
+                        'border-gray-100 bg-gray-50'}
+                    `}>
+                      {/* Icon */}
+                      <div className={`
+                        w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-2 transition-all duration-300
+                        ${isCompleted ? 'bg-gradient-to-br from-green-400 to-green-600 shadow-lg' :
+                          isCurrent ? 'bg-gradient-to-br from-egyptian-blue to-powder-blue shadow-lg' :
+                          isClickable ? 'bg-gray-200' :
+                          'bg-gray-100'}
+                      `}>
+                        {isCompleted ? (
+                          <CheckCircle className="w-6 h-6 text-white" />
+                        ) : (
+                          <Icon className={`w-6 h-6 ${isCurrent ? 'text-white' : isClickable ? 'text-gray-600' : 'text-gray-400'}`} />
+                        )}
+                      </div>
+
+                      {/* Step Number & Title */}
+                      <div className="text-center">
+                        <div className={`
+                          text-xs font-semibold mb-1
+                          ${isCompleted ? 'text-green-600' :
+                            isCurrent ? 'text-egyptian-blue' :
+                            'text-gray-500'}
+                        `}>
+                          Step {index + 1}
+                        </div>
+                        <div className={`
+                          text-xs font-medium leading-tight
+                          ${isCompleted ? 'text-green-700' :
+                            isCurrent ? 'text-egyptian-blue font-bold' :
+                            'text-gray-600'}
+                        `}>
+                          {step.title}
+                        </div>
+                      </div>
+
+                      {/* Status Badge */}
+                      {isCompleted && (
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                          <CheckCircle className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+
+                      {/* Active Indicator */}
+                      {isCurrent && (
+                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-egyptian-blue rounded-full shadow-lg animate-pulse" />
+                      )}
+                    </div>
+                  </button>
                 );
               })}
             </div>
