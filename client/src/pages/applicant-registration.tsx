@@ -9,7 +9,7 @@ import { FloatingInput } from "@/components/ui/floating-input";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { FormHeader } from "@/components/ui/form-header";
 import { FormFooter } from "@/components/ui/form-footer";
-import { CheckCircle, Mail, User, ArrowLeft, Sparkles } from "lucide-react";
+import { CheckCircle, Mail, User, ArrowLeft, Sparkles, Edit, FileText, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +26,8 @@ type RegistrationData = z.infer<typeof registrationSchema>;
 export default function ApplicantRegistration() {
   const [, setLocation] = useLocation();
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [formData, setFormData] = useState<RegistrationData | null>(null);
   const [applicantId, setApplicantId] = useState<string>("");
   const { toast } = useToast();
 
@@ -62,8 +64,170 @@ export default function ApplicantRegistration() {
   });
 
   const handleSubmit = (data: RegistrationData) => {
-    registrationMutation.mutate(data);
+    // Show confirmation screen instead of immediately submitting
+    setFormData(data);
+    setShowConfirmation(true);
   };
+
+  const handleConfirmAndSubmit = () => {
+    if (formData) {
+      registrationMutation.mutate(formData);
+    }
+  };
+
+  const handleEdit = () => {
+    setShowConfirmation(false);
+    // Form data is preserved, so user can edit
+  };
+
+  // Confirmation screen - show entered details for review
+  if (showConfirmation && formData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+        <FormHeader
+          title="Confirm Your Details"
+          subtitle="Please review your information before submitting"
+        />
+        <div className="w-full px-4 py-8 flex-1">
+          <PageBreadcrumb items={[
+            { label: "Individual Registration", href: "/applicant-registration" },
+            { label: "Confirm Details" }
+          ]} />
+
+          <div className="max-w-3xl mx-auto space-y-6">
+            {/* Review Your Information Card */}
+            <Card className="border-2 border-blue-100 shadow-2xl bg-white">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b-2 border-blue-100">
+                <CardTitle className="text-2xl bg-gradient-to-r from-egyptian-blue to-powder-blue bg-clip-text text-transparent flex items-center gap-2">
+                  <CheckCircle className="w-7 h-7 text-egyptian-blue" />
+                  Review Your Information
+                </CardTitle>
+                <p className="text-gray-600 mt-2">
+                  Please confirm that all details are correct before proceeding
+                </p>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                {/* Personal Details */}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
+                    <p className="text-sm text-gray-500 mb-1">First Name</p>
+                    <p className="text-lg font-semibold text-gray-900">{formData.firstName}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
+                    <p className="text-sm text-gray-500 mb-1">Surname</p>
+                    <p className="text-lg font-semibold text-gray-900">{formData.surname}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
+                  <p className="text-sm text-gray-500 mb-1">Email Address</p>
+                  <p className="text-lg font-semibold text-gray-900">{formData.email}</p>
+                </div>
+
+                {/* Edit Button */}
+                <div className="flex justify-center pt-4">
+                  <Button
+                    onClick={handleEdit}
+                    variant="outline"
+                    size="lg"
+                    className="border-2 border-egyptian-blue text-egyptian-blue hover:bg-egyptian-blue hover:text-white transition-colors"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Details
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Required Documents Checklist */}
+            <Card className="border-2 border-orange-100 shadow-lg bg-white">
+              <CardHeader className="bg-gradient-to-r from-orange-50 to-yellow-50 border-b-2 border-orange-100">
+                <CardTitle className="text-xl text-orange-900 flex items-center gap-2">
+                  <FileText className="w-6 h-6 text-orange-600" />
+                  Required Documents Checklist
+                </CardTitle>
+                <p className="text-orange-700 text-sm mt-1">
+                  You will need these documents to complete your application
+                </p>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-50/50">
+                    <div className="w-5 h-5 rounded-full border-2 border-orange-400 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">National ID or Passport</p>
+                      <p className="text-sm text-gray-600">Clear copy of your identification document</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-50/50">
+                    <div className="w-5 h-5 rounded-full border-2 border-orange-400 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Educational Certificates</p>
+                      <p className="text-sm text-gray-600">5 O-Level subjects including English & Math, 2 A-Level subjects or proof of mature entry</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-50/50">
+                    <div className="w-5 h-5 rounded-full border-2 border-orange-400 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Proof of Address</p>
+                      <p className="text-sm text-gray-600">Recent utility bill or bank statement (not older than 3 months)</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-50/50">
+                    <div className="w-5 h-5 rounded-full border-2 border-orange-400 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Professional References</p>
+                      <p className="text-sm text-gray-600">Contact details of 2 professional references</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-50/50">
+                    <div className="w-5 h-5 rounded-full border-2 border-orange-400 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Passport Photo</p>
+                      <p className="text-sm text-gray-600">Recent passport-sized photograph</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-blue-800">
+                      <strong>Important:</strong> These documents will be required in the next steps of your application.
+                      Please have them ready in digital format (PDF or image files).
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                onClick={handleEdit}
+                variant="outline"
+                size="lg"
+                className="flex-1 h-14 border-2 border-gray-200 hover:bg-gray-50"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Go Back to Edit
+              </Button>
+              <Button
+                onClick={handleConfirmAndSubmit}
+                size="lg"
+                className="flex-1 h-14 bg-gradient-to-r from-egyptian-blue to-powder-blue hover:from-egyptian-blue/90 hover:to-powder-blue/90 text-white border-0 font-semibold shadow-lg"
+                disabled={registrationMutation.isPending}
+              >
+                {registrationMutation.isPending ? "Submitting..." : "Confirm & Submit Registration"}
+                <CheckCircle className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
+          </div>
+        </div>
+        <FormFooter />
+      </div>
+    );
+  }
 
   if (registrationComplete) {
     return (

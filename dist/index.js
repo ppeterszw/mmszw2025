@@ -3059,7 +3059,7 @@ async function sendEmail(params) {
   }
 }
 function generateWelcomeEmail(fullName, applicantId) {
-  const subject = "Welcome to EACZ - Your Application ID";
+  const subject = "Welcome to EACZ - Your Application ID & Required Documents";
   const html = `
     <!DOCTYPE html>
     <html>
@@ -3072,6 +3072,9 @@ function generateWelcomeEmail(fullName, applicantId) {
         .header { background: #1e40af; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { padding: 20px; background: #f9f9f9; }
         .applicant-id { background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; }
+        .documents-section { background: #fff8dc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b; }
+        .document-item { background: white; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #e5e7eb; }
+        .important-note { background: #dbeafe; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid #3b82f6; }
         .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #ddd; }
       </style>
     </head>
@@ -3086,17 +3089,51 @@ function generateWelcomeEmail(fullName, applicantId) {
         <div class="content">
           <h2>Welcome, ${fullName}!</h2>
           <p>Thank you for starting your individual membership application with the Estate Agents Council of Zimbabwe.</p>
-          
+
           <div class="applicant-id">
             <h3>Your Applicant ID</h3>
             <strong style="font-size: 18px; color: #1e40af;">${applicantId}</strong>
-            <p style="margin-top: 10px; font-size: 14px;">Please save this ID for your records</p>
+            <p style="margin-top: 10px; font-size: 14px;">Please save this ID for your records and use it as your password to log in</p>
           </div>
-          
+
           <p>To continue with your application, please verify your email address by clicking the link in the verification email we're sending you.</p>
-          
+
+          <div class="documents-section">
+            <h3 style="color: #d97706; margin-top: 0;">\u{1F4CB} Required Documents Checklist</h3>
+            <p>Please have the following documents ready in digital format (PDF or image files) for upload during your application:</p>
+
+            <div class="document-item">
+              <strong>1. National ID or Passport</strong>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Clear copy of your identification document</p>
+            </div>
+
+            <div class="document-item">
+              <strong>2. Educational Certificates</strong>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">\u2022 5 O-Level subjects (including English & Math)<br>\u2022 2 A-Level subjects OR proof of mature entry (27+ years)</p>
+            </div>
+
+            <div class="document-item">
+              <strong>3. Proof of Address</strong>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Recent utility bill or bank statement (not older than 3 months)</p>
+            </div>
+
+            <div class="document-item">
+              <strong>4. Professional References</strong>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Contact details of 2 professional references</p>
+            </div>
+
+            <div class="document-item">
+              <strong>5. Passport Photo</strong>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Recent passport-sized photograph</p>
+            </div>
+          </div>
+
+          <div class="important-note">
+            <strong>\u{1F4A1} Important:</strong> All documents must be clear, legible, and in digital format (PDF, JPG, or PNG). Maximum file size: 5MB per document.
+          </div>
+
           <p>Once verified, you'll be able to complete your application form and upload the required documents.</p>
-          
+
           <p>If you have any questions, please contact us at info@eacz.co.zw</p>
         </div>
         <div class="footer">
@@ -3108,18 +3145,44 @@ function generateWelcomeEmail(fullName, applicantId) {
   `;
   const text2 = `
     Welcome to EACZ, ${fullName}!
-    
+
     Thank you for starting your individual membership application with the Estate Agents Council of Zimbabwe.
-    
+
     Your Applicant ID: ${applicantId}
-    Please save this ID for your records.
-    
+    Please save this ID for your records and use it as your password to log in.
+
     To continue with your application, please verify your email address by clicking the link in the verification email we're sending you.
-    
+
+    ============================================
+    REQUIRED DOCUMENTS CHECKLIST
+    ============================================
+
+    Please have the following documents ready in digital format (PDF or image files) for upload during your application:
+
+    1. NATIONAL ID OR PASSPORT
+       - Clear copy of your identification document
+
+    2. EDUCATIONAL CERTIFICATES
+       - 5 O-Level subjects (including English & Math)
+       - 2 A-Level subjects OR proof of mature entry (27+ years)
+
+    3. PROOF OF ADDRESS
+       - Recent utility bill or bank statement (not older than 3 months)
+
+    4. PROFESSIONAL REFERENCES
+       - Contact details of 2 professional references
+
+    5. PASSPORT PHOTO
+       - Recent passport-sized photograph
+
+    IMPORTANT: All documents must be clear, legible, and in digital format (PDF, JPG, or PNG). Maximum file size: 5MB per document.
+
+    ============================================
+
     Once verified, you'll be able to complete your application form and upload the required documents.
-    
+
     If you have any questions, please contact us at info@eacz.co.zw
-    
+
     \xA9 2024 Estate Agents Council of Zimbabwe. All rights reserved.
   `;
   return { subject, html, text: text2 };

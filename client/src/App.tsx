@@ -21,6 +21,9 @@ import MemberRegistration from "@/pages/member-registration";
 import OrganizationRegistration from "@/pages/organization-registration";
 import ApplicantRegistration from "@/pages/applicant-registration";
 import ApplicationChoicePage from "@/pages/application-choice";
+import ApplyLanding from "@/pages/apply-landing";
+import ApplicationLoginChoice from "@/pages/application-login-choice";
+import ApplicationTypeChoice from "@/pages/application-type-choice";
 import IndividualApplicationChoice from "@/pages/individual-application-choice";
 import ApplicantLogin from "@/pages/applicant-login";
 import OrganizationApplicantRegistration from "@/pages/organization-applicant-registration";
@@ -92,6 +95,9 @@ function Router() {
       <Route path="/verify" component={VerificationPage} />
       <Route path="/certificates/verify" component={VerificationPage} />
       <Route path="/apply" component={ApplicationChoicePage} />
+      <Route path="/apply-landing" component={ApplyLanding} />
+      <Route path="/application-login-choice" component={ApplicationLoginChoice} />
+      <Route path="/application-type-choice" component={ApplicationTypeChoice} />
       <Route path="/applicant-registration" component={ApplicantRegistration} />
       <Route path="/applicant-login" component={ApplicantLogin} />
       <Route path="/organization-applicant-registration" component={OrganizationApplicantRegistration} />

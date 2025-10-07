@@ -26,6 +26,7 @@ import { useApplicantAuth } from "@/hooks/use-applicant-auth";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import type { Organization } from "@shared/schema";
 
+// Step 1: Personal Details
 const personalInfoSchema = z.object({
   surname: z.string().min(2, "Surname must be at least 2 characters"),
   firstNames: z.string().min(2, "First names must be at least 2 characters"),
@@ -35,6 +36,22 @@ const personalInfoSchema = z.object({
   email: z.string().email("Invalid email address"),
   phoneCountryCode: z.string().min(1, "Country code is required"),
   phone: z.string().min(6, "Phone number must be at least 6 digits"),
+});
+
+// Step 2: Address Details
+const addressSchema = z.object({
+  residentialAddress: z.string().min(5, "Residential address is required"),
+  residentialCity: z.string().min(2, "City is required"),
+  residentialProvince: z.string().min(1, "Province is required"),
+  residentialPostalCode: z.string().optional(),
+  postalAddress: z.string().optional(),
+  postalCity: z.string().optional(),
+  postalCode: z.string().optional(),
+  sameAsResidential: z.boolean().default(false),
+});
+
+// Step 3: Professional Details
+const professionalDetailsSchema = z.object({
   employmentStatus: z.enum(["employed", "self_employed"]),
   currentEmployer: z.string().optional(),
   employmentCapacity: z.string().optional(),
@@ -69,14 +86,18 @@ const declarationsSchema = z.object({
 });
 
 type PersonalInfoData = z.infer<typeof personalInfoSchema>;
+type AddressData = z.infer<typeof addressSchema>;
+type ProfessionalDetailsData = z.infer<typeof professionalDetailsSchema>;
 type DocumentsData = z.infer<typeof documentsSchema>;
 type DeclarationsData = z.infer<typeof declarationsSchema>;
 
 const sections = [
   { id: 1, title: "Personal Details", status: "current" },
-  { id: 2, title: "Documents", status: "upcoming" },
-  { id: 3, title: "Declarations", status: "upcoming" },
-  { id: 4, title: "Payment", status: "upcoming" },
+  { id: 2, title: "Address", status: "upcoming" },
+  { id: 3, title: "Professional Details", status: "upcoming" },
+  { id: 4, title: "Documents", status: "upcoming" },
+  { id: 5, title: "Declarations", status: "upcoming" },
+  { id: 6, title: "Payment", status: "upcoming" },
 ];
 
 // Country codes data with search functionality
@@ -127,7 +148,7 @@ const countryCodes = [
 
 export default function MemberRegistration() {
   const [currentSection, setCurrentSection] = useState(1);
-  const [applicationData, setApplicationData] = useState<Partial<PersonalInfoData & DocumentsData & DeclarationsData>>({});
+  const [applicationData, setApplicationData] = useState<Partial<PersonalInfoData & AddressData & ProfessionalDetailsData & DocumentsData & DeclarationsData>>({});
   const [, setLocation] = useLocation();
   const { applicant, saveDraftMutation, loadDraftQuery } = useApplicantAuth();
   
@@ -150,6 +171,26 @@ export default function MemberRegistration() {
       email: applicant?.email || "", // Prefill with logged-in applicant's email
       phoneCountryCode: "+263",
       phone: "",
+    },
+  });
+
+  const addressForm = useForm<AddressData>({
+    resolver: zodResolver(addressSchema),
+    defaultValues: {
+      residentialAddress: "",
+      residentialCity: "",
+      residentialProvince: "",
+      residentialPostalCode: "",
+      postalAddress: "",
+      postalCity: "",
+      postalCode: "",
+      sameAsResidential: false,
+    },
+  });
+
+  const professionalForm = useForm<ProfessionalDetailsData>({
+    resolver: zodResolver(professionalDetailsSchema),
+    defaultValues: {
       employmentStatus: "employed",
       currentEmployer: "",
       employmentCapacity: "",
@@ -191,11 +232,19 @@ export default function MemberRegistration() {
       const draftData = draftQuery.data.applicationData;
       console.log("Loading draft data:", draftData);
       setApplicationData(draftData);
-      
+
       // Hydrate the forms with loaded draft data
       if (draftData.personalInfo) {
         console.log("Hydrating personal form with:", draftData.personalInfo);
         personalForm.reset(draftData.personalInfo);
+      }
+      if (draftData.address) {
+        console.log("Hydrating address form with:", draftData.address);
+        addressForm.reset(draftData.address);
+      }
+      if (draftData.professionalDetails) {
+        console.log("Hydrating professional form with:", draftData.professionalDetails);
+        professionalForm.reset(draftData.professionalDetails);
       }
       if (draftData.documents) {
         console.log("Hydrating documents form with:", draftData.documents);
@@ -206,7 +255,7 @@ export default function MemberRegistration() {
         declarationsForm.reset(draftData.declarations);
       }
     }
-  }, [draftQuery.data, personalForm, documentsForm, declarationsForm]);
+  }, [draftQuery.data, personalForm, addressForm, professionalForm, documentsForm, declarationsForm]);
 
   // Handle saving draft
   const handleSaveDraft = () => {
@@ -218,24 +267,30 @@ export default function MemberRegistration() {
       });
       return;
     }
-    
-    // Capture current form values based on current section  
+
+    // Capture current form values based on current section
     let currentFormData = {};
     switch (currentSection) {
       case 1:
         currentFormData = { personalInfo: personalForm.getValues() };
         break;
       case 2:
-        currentFormData = { documents: documentsForm.getValues() };
+        currentFormData = { address: addressForm.getValues() };
         break;
       case 3:
+        currentFormData = { professionalDetails: professionalForm.getValues() };
+        break;
+      case 4:
+        currentFormData = { documents: documentsForm.getValues() };
+        break;
+      case 5:
         currentFormData = { declarations: declarationsForm.getValues() };
         break;
     }
-    
+
     // Merge current form data with existing application data
     const updatedApplicationData = { ...applicationData, ...currentFormData };
-    
+
     saveDraftMutation.mutate({
       applicantId: applicant.applicantId,
       applicationData: updatedApplicationData
@@ -243,12 +298,12 @@ export default function MemberRegistration() {
       onSuccess: () => {
         // Update local state with saved data
         setApplicationData(updatedApplicationData);
-        
+
         // Invalidate and refetch the draft query to keep cache in sync
         queryClient.invalidateQueries({
           queryKey: ["/api/applicants", applicant.applicantId, "load-draft"]
         });
-        
+
         console.log("Draft saved successfully:", updatedApplicationData);
       }
     });
@@ -288,11 +343,11 @@ export default function MemberRegistration() {
   );
 
   const selectedPhoneCountryCode = personalForm.watch("phoneCountryCode");
-  const employmentStatus = personalForm.watch("employmentStatus");
+  const employmentStatus = professionalForm.watch("employmentStatus");
 
   // Set up useFieldArray for dynamic business experience
   const { fields, append, remove } = useFieldArray({
-    control: personalForm.control,
+    control: professionalForm.control,
     name: "businessExperience",
   });
 
@@ -321,7 +376,7 @@ export default function MemberRegistration() {
     console.log('handleSectionSubmit called with:', data);
     console.log('Current section:', currentSection);
     setApplicationData(prev => ({ ...prev, ...data }));
-    if (currentSection < 4) {
+    if (currentSection < 6) {
       setCurrentSection(prev => prev + 1);
     }
   };
@@ -581,12 +636,305 @@ export default function MemberRegistration() {
                         </div>
                       </div>
                     </div>
-                    
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setLocation("/")}
+                      data-testid="button-cancel"
+                    >
+                      Cancel
+                    </Button>
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSaveDraft}
+                        disabled={saveDraftMutation.isPending}
+                        data-testid="button-save-draft"
+                        className="flex items-center gap-2"
+                      >
+                        <Save className="h-4 w-4" />
+                        {saveDraftMutation.isPending ? "Saving..." : "Save Draft"}
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="gradient-button text-white border-0"
+                        data-testid="button-continue-to-address"
+                      >
+                        Continue to Address
+                      </Button>
+                    </div>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        );
+
+      case 2:
+        return (
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-green-50/50">
+            <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Address Information</CardTitle>
+                  <p className="text-green-100 mt-1">Please provide your residential and postal address details</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <Form {...addressForm}>
+                <form onSubmit={addressForm.handleSubmit(handleSectionSubmit)} className="space-y-6">
+                  <div className="space-y-6">
+                    <div className="border-l-4 border-green-500 pl-4 py-2 bg-green-50/50">
+                      <h3 className="font-semibold text-green-900 mb-1">Residential Address</h3>
+                      <p className="text-sm text-green-700">Your current place of residence</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="md:col-span-2">
+                        <FormField
+                          control={addressForm.control}
+                          name="residentialAddress"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Residential Address *</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Enter your full residential address (street, house number, etc.)"
+                                  rows={3}
+                                  data-testid="input-residential-address"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={addressForm.control}
+                        name="residentialCity"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City/Town *</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Enter city or town"
+                                data-testid="input-residential-city"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={addressForm.control}
+                        name="residentialProvince"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Province *</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-residential-province">
+                                  <SelectValue placeholder="Select province..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="harare">Harare</SelectItem>
+                                <SelectItem value="bulawayo">Bulawayo</SelectItem>
+                                <SelectItem value="manicaland">Manicaland</SelectItem>
+                                <SelectItem value="mashonaland_central">Mashonaland Central</SelectItem>
+                                <SelectItem value="mashonaland_east">Mashonaland East</SelectItem>
+                                <SelectItem value="mashonaland_west">Mashonaland West</SelectItem>
+                                <SelectItem value="masvingo">Masvingo</SelectItem>
+                                <SelectItem value="matabeleland_north">Matabeleland North</SelectItem>
+                                <SelectItem value="matabeleland_south">Matabeleland South</SelectItem>
+                                <SelectItem value="midlands">Midlands</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={addressForm.control}
+                        name="residentialPostalCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Postal Code (Optional)</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Enter postal code"
+                                data-testid="input-residential-postal-code"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <Separator className="my-6" />
+
+                    <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50/50">
+                      <h3 className="font-semibold text-blue-900 mb-1">Postal Address</h3>
+                      <p className="text-sm text-blue-700">Where you receive mail correspondence</p>
+                    </div>
+
                     <FormField
-                      control={personalForm.control}
+                      control={addressForm.control}
+                      name="sameAsResidential"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-lg bg-blue-50/30">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="checkbox-same-as-residential"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="font-medium">
+                              My postal address is the same as my residential address
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    {!addressForm.watch("sameAsResidential") && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="md:col-span-2">
+                          <FormField
+                            control={addressForm.control}
+                            name="postalAddress"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Postal Address</FormLabel>
+                                <FormControl>
+                                  <Textarea
+                                    placeholder="Enter your postal address (P.O. Box, Private Bag, etc.)"
+                                    rows={3}
+                                    data-testid="input-postal-address"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={addressForm.control}
+                          name="postalCity"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>City/Town</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter city or town"
+                                  data-testid="input-postal-city"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={addressForm.control}
+                          name="postalCode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Postal Code</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter postal code"
+                                  data-testid="input-postal-code"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCurrentSection(1)}
+                      data-testid="button-back-to-personal"
+                    >
+                      Back to Personal Details
+                    </Button>
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSaveDraft}
+                        disabled={saveDraftMutation.isPending}
+                        data-testid="button-save-draft"
+                        className="flex items-center gap-2"
+                      >
+                        <Save className="h-4 w-4" />
+                        {saveDraftMutation.isPending ? "Saving..." : "Save Draft"}
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="gradient-button text-white border-0"
+                        data-testid="button-continue-to-professional"
+                      >
+                        Continue to Professional Details
+                      </Button>
+                    </div>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        );
+
+      case 3:
+        return (
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-orange-50/50">
+            <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-t-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Professional Details</CardTitle>
+                  <p className="text-orange-100 mt-1">Your employment status and real estate business experience</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <Form {...professionalForm}>
+                <form onSubmit={professionalForm.handleSubmit(handleSectionSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <FormField
+                      control={professionalForm.control}
                       name="employmentStatus"
                       render={({ field }) => (
-                        <FormItem className="space-y-3">
+                        <FormItem className="space-y-3 md:col-span-2 lg:col-span-3">
                           <FormLabel>Employment Status *</FormLabel>
                           <FormControl>
                             <RadioGroup
@@ -617,13 +965,13 @@ export default function MemberRegistration() {
                     {employmentStatus === "employed" && (
                       <>
                         <FormField
-                          control={personalForm.control}
+                          control={professionalForm.control}
                           name="currentEmployer"
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="md:col-span-2">
                               <FormLabel>Current Employer *</FormLabel>
                               <FormControl>
-                                <Input 
+                                <Input
                                   placeholder="Enter your current employer's name"
                                   data-testid="input-employer"
                                   {...field}
@@ -642,7 +990,7 @@ export default function MemberRegistration() {
                                   <div className="text-sm text-yellow-700">
                                     <p className="font-medium">Organization not found in our registry</p>
                                     <p className="mt-1">
-                                      Please ensure your organization is registered with EACZ. You can proceed with your application, 
+                                      Please ensure your organization is registered with EACZ. You can proceed with your application,
                                       but your employer verification may take longer during the review process.
                                     </p>
                                   </div>
@@ -661,9 +1009,9 @@ export default function MemberRegistration() {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
-                          control={personalForm.control}
+                          control={professionalForm.control}
                           name="employmentCapacity"
                           render={({ field }) => (
                             <FormItem>
@@ -690,16 +1038,16 @@ export default function MemberRegistration() {
 
                     {employmentStatus === "self_employed" && (
                       <FormField
-                        control={personalForm.control}
+                        control={professionalForm.control}
                         name="natureOfEstablishment"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="md:col-span-2 lg:col-span-3">
                             <FormLabel>Nature of Establishment *</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Describe the nature of your establishment" 
+                              <Input
+                                placeholder="Describe the nature of your establishment"
                                 data-testid="input-nature-establishment"
-                                {...field} 
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage />
@@ -708,10 +1056,15 @@ export default function MemberRegistration() {
                       />
                     )}
                   </div>
-                  
+
+                  <Separator className="my-6" />
+
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <FormLabel className="text-base font-semibold">Business Experience Details *</FormLabel>
+                      <div>
+                        <FormLabel className="text-base font-semibold">Business Experience Details *</FormLabel>
+                        <p className="text-sm text-muted-foreground mt-1">Provide details of your relevant real estate experience</p>
+                      </div>
                       <Button
                         type="button"
                         variant="secondary"
@@ -755,7 +1108,7 @@ export default function MemberRegistration() {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField
-                              control={personalForm.control}
+                              control={professionalForm.control}
                               name={`businessExperience.${index}.employer`}
                               render={({ field }) => (
                                 <FormItem>
@@ -773,7 +1126,7 @@ export default function MemberRegistration() {
                             />
 
                             <FormField
-                              control={personalForm.control}
+                              control={professionalForm.control}
                               name={`businessExperience.${index}.typeOfBusiness`}
                               render={({ field }) => (
                                 <FormItem>
@@ -785,87 +1138,10 @@ export default function MemberRegistration() {
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent className="max-h-[200px]">
-                                      {/* Real Estate Jobs */}
                                       <SelectItem value="Real Estate Agent">Real Estate Agent</SelectItem>
-                                      <SelectItem value="Estate Agent">Estate Agent</SelectItem>
                                       <SelectItem value="Property Manager">Property Manager</SelectItem>
                                       <SelectItem value="Real Estate Broker">Real Estate Broker</SelectItem>
                                       <SelectItem value="Property Developer">Property Developer</SelectItem>
-                                      <SelectItem value="Real Estate Consultant">Real Estate Consultant</SelectItem>
-                                      <SelectItem value="Property Valuer">Property Valuer</SelectItem>
-                                      <SelectItem value="Real Estate Appraiser">Real Estate Appraiser</SelectItem>
-                                      <SelectItem value="Property Investment Advisor">Property Investment Advisor</SelectItem>
-                                      <SelectItem value="Commercial Property Agent">Commercial Property Agent</SelectItem>
-                                      <SelectItem value="Residential Property Agent">Residential Property Agent</SelectItem>
-                                      <SelectItem value="Property Auctioneer">Property Auctioneer</SelectItem>
-                                      <SelectItem value="Property Portfolio Manager">Property Portfolio Manager</SelectItem>
-                                      <SelectItem value="Real Estate Marketing Manager">Real Estate Marketing Manager</SelectItem>
-                                      <SelectItem value="Property Leasing Agent">Property Leasing Agent</SelectItem>
-                                      <SelectItem value="Property Sales Manager">Property Sales Manager</SelectItem>
-                                      <SelectItem value="Real Estate Investment Manager">Real Estate Investment Manager</SelectItem>
-                                      <SelectItem value="Property Asset Manager">Property Asset Manager</SelectItem>
-                                      <SelectItem value="Real Estate Finance Specialist">Real Estate Finance Specialist</SelectItem>
-                                      <SelectItem value="Property Maintenance Manager">Property Maintenance Manager</SelectItem>
-                                      <SelectItem value="Facilities Manager">Facilities Manager</SelectItem>
-                                      <SelectItem value="Property Inspector">Property Inspector</SelectItem>
-                                      <SelectItem value="Real Estate Analyst">Real Estate Analyst</SelectItem>
-                                      
-                                      {/* Construction & Development */}
-                                      <SelectItem value="Construction Manager">Construction Manager</SelectItem>
-                                      <SelectItem value="Project Manager">Project Manager</SelectItem>
-                                      <SelectItem value="Architect">Architect</SelectItem>
-                                      <SelectItem value="Civil Engineer">Civil Engineer</SelectItem>
-                                      <SelectItem value="Structural Engineer">Structural Engineer</SelectItem>
-                                      <SelectItem value="Quantity Surveyor">Quantity Surveyor</SelectItem>
-                                      <SelectItem value="Land Surveyor">Land Surveyor</SelectItem>
-                                      <SelectItem value="Urban Planner">Urban Planner</SelectItem>
-                                      <SelectItem value="Building Inspector">Building Inspector</SelectItem>
-                                      <SelectItem value="Construction Supervisor">Construction Supervisor</SelectItem>
-                                      
-                                      {/* Legal & Financial */}
-                                      <SelectItem value="Property Lawyer">Property Lawyer</SelectItem>
-                                      <SelectItem value="Conveyancer">Conveyancer</SelectItem>
-                                      <SelectItem value="Legal Advisor">Legal Advisor</SelectItem>
-                                      <SelectItem value="Financial Advisor">Financial Advisor</SelectItem>
-                                      <SelectItem value="Mortgage Broker">Mortgage Broker</SelectItem>
-                                      <SelectItem value="Property Finance Broker">Property Finance Broker</SelectItem>
-                                      <SelectItem value="Banking Professional">Banking Professional</SelectItem>
-                                      <SelectItem value="Insurance Broker">Insurance Broker</SelectItem>
-                                      <SelectItem value="Property Insurance Specialist">Property Insurance Specialist</SelectItem>
-                                      <SelectItem value="Accountant">Accountant</SelectItem>
-                                      <SelectItem value="Tax Advisor">Tax Advisor</SelectItem>
-                                      
-                                      {/* Government & Regulatory */}
-                                      <SelectItem value="Government Official">Government Official</SelectItem>
-                                      <SelectItem value="Municipal Officer">Municipal Officer</SelectItem>
-                                      <SelectItem value="Planning Officer">Planning Officer</SelectItem>
-                                      <SelectItem value="Building Control Officer">Building Control Officer</SelectItem>
-                                      <SelectItem value="Housing Officer">Housing Officer</SelectItem>
-                                      <SelectItem value="Land Registry Officer">Land Registry Officer</SelectItem>
-                                      
-                                      {/* Business & Management */}
-                                      <SelectItem value="Business Owner">Business Owner</SelectItem>
-                                      <SelectItem value="Managing Director">Managing Director</SelectItem>
-                                      <SelectItem value="Operations Manager">Operations Manager</SelectItem>
-                                      <SelectItem value="Sales Manager">Sales Manager</SelectItem>
-                                      <SelectItem value="Marketing Manager">Marketing Manager</SelectItem>
-                                      <SelectItem value="Administrative Manager">Administrative Manager</SelectItem>
-                                      <SelectItem value="Executive Assistant">Executive Assistant</SelectItem>
-                                      
-                                      {/* Academia & Education */}
-                                      <SelectItem value="Academic">Academic</SelectItem>
-                                      <SelectItem value="Professor">Professor</SelectItem>
-                                      <SelectItem value="Lecturer">Lecturer</SelectItem>
-                                      <SelectItem value="Teacher">Teacher</SelectItem>
-                                      <SelectItem value="Researcher">Researcher</SelectItem>
-                                      <SelectItem value="Training Manager">Training Manager</SelectItem>
-                                      
-                                      {/* Other Professional Services */}
-                                      <SelectItem value="Consultant">Consultant</SelectItem>
-                                      <SelectItem value="Freelancer">Freelancer</SelectItem>
-                                      <SelectItem value="Self-Employed">Self-Employed</SelectItem>
-                                      <SelectItem value="Entrepreneur">Entrepreneur</SelectItem>
-                                      <SelectItem value="Retired">Retired</SelectItem>
                                       <SelectItem value="Other">Other</SelectItem>
                                     </SelectContent>
                                   </Select>
@@ -875,7 +1151,7 @@ export default function MemberRegistration() {
                             />
 
                             <FormField
-                              control={personalForm.control}
+                              control={professionalForm.control}
                               name={`businessExperience.${index}.jobTitle`}
                               render={({ field }) => (
                                 <FormItem>
@@ -895,7 +1171,7 @@ export default function MemberRegistration() {
                             <div className="md:col-span-1"></div>
 
                             <FormField
-                              control={personalForm.control}
+                              control={professionalForm.control}
                               name={`businessExperience.${index}.dateFrom`}
                               render={({ field }) => (
                                 <FormItem>
@@ -913,7 +1189,7 @@ export default function MemberRegistration() {
                             />
 
                             <FormField
-                              control={personalForm.control}
+                              control={professionalForm.control}
                               name={`businessExperience.${index}.dateTo`}
                               render={({ field }) => (
                                 <FormItem>
@@ -943,10 +1219,10 @@ export default function MemberRegistration() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setLocation("/")}
-                      data-testid="button-cancel"
+                      onClick={() => setCurrentSection(2)}
+                      data-testid="button-back-to-address"
                     >
-                      Cancel
+                      Back to Address
                     </Button>
                     <div className="flex gap-3">
                       <Button
@@ -975,7 +1251,7 @@ export default function MemberRegistration() {
           </Card>
         );
 
-      case 2:
+      case 4:
         return (
           <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-purple-50/50">
             <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-t-lg">
@@ -991,16 +1267,9 @@ export default function MemberRegistration() {
             </CardHeader>
             <CardContent className="p-6">
               <Form {...documentsForm}>
-                <form onSubmit={documentsForm.handleSubmit(handleSectionSubmit, (errors) => {
-                  console.log('Form validation errors:', errors);
-                  toast({
-                    title: "Form Validation Error",
-                    description: "Please check the form fields and try again.",
-                    variant: "destructive",
-                  });
-                })} className="space-y-6">
+                <form onSubmit={documentsForm.handleSubmit(handleSectionSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    <div className="p-6 border-2 border-gradient-to-r from-indigo-200 to-indigo-300 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 h-full shadow-sm hover:shadow-md transition-all">
+                    <div className="p-6 border-2 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 shadow-sm">
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center">
                           <User className="w-4 h-4 text-white" />
@@ -1015,9 +1284,7 @@ export default function MemberRegistration() {
                         onComplete={(files) => {
                           if (files.length > 0) {
                             const fileKey = files[0].fileKey;
-                            console.log('Setting identityDocument to:', fileKey);
                             documentsForm.setValue('identityDocument', fileKey);
-                            console.log('Form values after setting identity:', documentsForm.getValues());
                             handleDocumentComplete({ successful: [{ uploadURL: fileKey }] });
                           }
                         }}
@@ -1025,7 +1292,7 @@ export default function MemberRegistration() {
                       />
                     </div>
 
-                    <div className="p-6 border-2 border-gradient-to-r from-pink-200 to-pink-300 rounded-xl bg-gradient-to-br from-pink-50 to-pink-100/50 h-full shadow-sm hover:shadow-md transition-all">
+                    <div className="p-6 border-2 rounded-xl bg-gradient-to-br from-pink-50 to-pink-100/50 shadow-sm">
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-pink-600 rounded-full flex items-center justify-center">
                           <FileText className="w-4 h-4 text-white" />
@@ -1040,9 +1307,7 @@ export default function MemberRegistration() {
                         onComplete={(files) => {
                           if (files.length > 0) {
                             const fileKey = files[0].fileKey;
-                            console.log('Setting birthCertificate to:', fileKey);
                             documentsForm.setValue('birthCertificate', fileKey);
-                            console.log('Form values after setting birth cert:', documentsForm.getValues());
                             handleDocumentComplete({ successful: [{ uploadURL: fileKey }] });
                           }
                         }}
@@ -1052,7 +1317,7 @@ export default function MemberRegistration() {
 
                     <div className="p-6 border rounded-lg h-full md:col-span-2">
                       <h4 className="font-medium mb-2">Educational Certificates *</h4>
-                      <p className="text-sm text-muted-foreground mb-4">Upload your educational qualifications (O-Level, A-Level, Degree, etc.)</p>
+                      <p className="text-sm text-muted-foreground mb-4">Upload O-Level, A-Level certificates</p>
                       <EnhancedDocumentUploader
                         documentType="o_level_cert"
                         allowMultiple={true}
@@ -1060,10 +1325,8 @@ export default function MemberRegistration() {
                         onComplete={(files) => {
                           if (files.length > 0) {
                             const fileKeys = files.map(f => f.fileKey);
-                            console.log('Setting educationalCertificates to include:', fileKeys);
                             const currentCerts = documentsForm.getValues('educationalCertificates') || [];
                             documentsForm.setValue('educationalCertificates', [...currentCerts, ...fileKeys]);
-                            console.log('Form values after setting educational certs:', documentsForm.getValues());
                             handleDocumentComplete({ successful: files.map(f => ({ uploadURL: f.fileKey })) });
                           }
                         }}
@@ -1072,8 +1335,8 @@ export default function MemberRegistration() {
                     </div>
 
                     <div className="p-6 border rounded-lg h-full md:col-span-2">
-                      <h4 className="font-medium mb-2">Proof of Employment</h4>
-                      <p className="text-sm text-muted-foreground mb-4">Employment letter or contract (optional)</p>
+                      <h4 className="font-medium mb-2">Proof of Employment (Optional)</h4>
+                      <p className="text-sm text-muted-foreground mb-4">Employment letter or contract</p>
                       <EnhancedDocumentUploader
                         allowMultiple={false}
                         maxFiles={1}
@@ -1093,10 +1356,10 @@ export default function MemberRegistration() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setCurrentSection(1)}
-                      data-testid="button-back-to-personal"
+                      onClick={() => setCurrentSection(3)}
+                      data-testid="button-back-to-professional"
                     >
-                      Back
+                      Back to Professional Details
                     </Button>
                     <div className="flex gap-3">
                       <Button
@@ -1114,7 +1377,6 @@ export default function MemberRegistration() {
                         type="submit"
                         className="gradient-button text-white border-0"
                         data-testid="button-continue-to-declarations"
-                        onClick={() => console.log('Continue to Declarations button clicked')}
                       >
                         Continue to Declarations
                       </Button>
@@ -1126,7 +1388,7 @@ export default function MemberRegistration() {
           </Card>
         );
 
-      case 3:
+      case 5:
         return (
           <Card>
             <CardHeader>
@@ -1220,10 +1482,10 @@ export default function MemberRegistration() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setCurrentSection(2)}
+                      onClick={() => setCurrentSection(4)}
                       data-testid="button-back-to-documents"
                     >
-                      Back
+                      Back to Documents
                     </Button>
                     <div className="flex gap-3">
                       <Button
@@ -1252,7 +1514,7 @@ export default function MemberRegistration() {
           </Card>
         );
 
-      case 4:
+      case 6:
         return (
           <Card>
             <CardHeader>
@@ -1284,10 +1546,10 @@ export default function MemberRegistration() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setCurrentSection(3)}
+                    onClick={() => setCurrentSection(5)}
                     data-testid="button-back-to-declarations"
                   >
-                    Back
+                    Back to Declarations
                   </Button>
                   <Button
                     className="gradient-button text-white border-0"
