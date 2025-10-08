@@ -1911,12 +1911,12 @@ export default function MemberRegistration() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <FormHeader 
+    <div className="min-h-screen bg-background relative">
+      <FormHeader
         title="Individual Member Application"
         subtitle="Complete your individual application with the Estate Agents Council of Zimbabwe"
       />
-      <div className="w-full px-4 py-8 flex-1">
+      <div className="w-full px-4 py-8 flex-1 relative z-10">
         <PageBreadcrumb items={[{ label: "Individual Member Application" }]} />
         
 
@@ -1969,7 +1969,22 @@ export default function MemberRegistration() {
         {/* Section Content */}
         {renderSection()}
       </div>
-      <FormFooter />
+
+      {/* Cityscape Background Image - positioned at footer with 30% opacity */}
+      <div className="relative">
+        <div
+          className="absolute bottom-0 left-0 right-0 bg-no-repeat bg-center bg-contain pointer-events-none"
+          style={{
+            backgroundImage: "url('/assets/images/cityscape-bg.svg')",
+            opacity: 0.3,
+            backgroundPosition: "center bottom",
+            backgroundSize: "40% auto",
+            height: "300px",
+            zIndex: 0
+          }}
+        />
+        <FormFooter />
+      </div>
     </div>
   );
 }
