@@ -12,16 +12,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { StatsCard } from "@/components/ui/stats-card";
-import { AdminHeader } from "@/components/AdminHeader";
 import { ModernModal } from "@/components/ui/modern-modal";
-import { 
-  Users, Building2, Clock, AlertTriangle, Plus, 
+import { AdminPageLayout } from "@/components/AdminPageLayout";
+import {
+  Users, Building2, Clock, AlertTriangle, Plus,
   Eye, CheckCircle, XCircle, TrendingUp,
   FileText, Calendar, UserPlus, BarChart3
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
-import { FormFooter } from "@/components/ui/form-footer";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -330,9 +329,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <AdminHeader currentPage="dashboard" />
-
+    <AdminPageLayout currentPage="dashboard">
       {/* Main Content */}
       <div className="p-6">
         <PageBreadcrumb items={[{ label: "Admin Dashboard" }]} />
@@ -1090,8 +1087,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </ModernModal>
-      
-      <FormFooter />
-    </div>
+    </AdminPageLayout>
   );
 }

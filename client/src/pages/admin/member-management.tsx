@@ -9,8 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ModernModal } from "@/components/ui/modern-modal";
 import { FormHeader } from "@/components/ui/form-header";
-import { FormFooter } from "@/components/ui/form-footer";
-import { AdminHeader } from "@/components/AdminHeader";
+import { AdminPageLayout } from "@/components/AdminPageLayout";
 import { SimplifiedAddMemberForm } from "@/components/SimplifiedAddMemberForm";
 import { MultiStepAddMemberModal } from "@/components/MultiStepAddMemberModal";
 import { BulkImportModal } from "@/components/BulkImportModal";
@@ -169,9 +168,7 @@ export default function MemberManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminHeader currentPage="members" />
-      
+    <AdminPageLayout currentPage="members">
       <div className="p-6">
         <PageBreadcrumb items={[
           { label: "Admin Dashboard", href: "/admin-dashboard" },
@@ -461,8 +458,6 @@ export default function MemberManagement() {
           </CardContent>
         </Card>
       </div>
-      
-      <FormFooter />
 
       {/* Quick Actions Modals */}
       <BulkImportModal
@@ -675,6 +670,6 @@ export default function MemberManagement() {
       <ExportDataModal open={exportModalOpen} onOpenChange={setExportModalOpen} type="members" />
       <ManageRenewalsModal open={renewalsModalOpen} onOpenChange={setRenewalsModalOpen} />
       <SendNotificationsModal open={notificationsModalOpen} onOpenChange={setNotificationsModalOpen} />
-    </div>
+    </AdminPageLayout>
   );
 }

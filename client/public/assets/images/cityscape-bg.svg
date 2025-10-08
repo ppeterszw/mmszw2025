@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 600" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- Gradients for building colors -->
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4169E1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E3A8A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#DC2626;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#991B1B;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C2410C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="yellowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FBBF24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D97706;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grayGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#9CA3AF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6B7280;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0E7490;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Left section - Blue/Gray buildings -->
+  <g id="left-buildings">
+    <!-- Tall blue building 1 -->
+    <rect x="30" y="80" width="60" height="450" fill="url(#blueGrad)" opacity="0.8">
+      <animate attributeName="y" values="80;75;80" dur="4s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="35" y="85" width="5" height="5" fill="#fff" opacity="0.3"><animate attributeName="opacity" values="0.3;0.6;0.3" dur="2s" repeatCount="indefinite"/></rect>
+    <rect x="45" y="85" width="5" height="5" fill="#fff" opacity="0.3"><animate attributeName="opacity" values="0.3;0.6;0.3" dur="2.5s" repeatCount="indefinite"/></rect>
+    <rect x="55" y="85" width="5" height="5" fill="#fff" opacity="0.3"><animate attributeName="opacity" values="0.3;0.6;0.3" dur="3s" repeatCount="indefinite"/></rect>
+
+    <!-- Medium gray building -->
+    <rect x="100" y="180" width="55" height="350" fill="url(#grayGrad)" opacity="0.7">
+      <animate attributeName="y" values="180;175;180" dur="5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Tall gradient building (red-orange) -->
+    <rect x="165" y="50" width="70" height="480" fill="url(#redGrad)" opacity="0.75">
+      <animate attributeName="y" values="50;45;50" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Medium orange building -->
+    <rect x="245" y="150" width="50" height="380" fill="url(#orangeGrad)" opacity="0.7">
+      <animate attributeName="y" values="150;145;150" dur="4.5s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+
+  <!-- Center section - Yellow/Orange buildings -->
+  <g id="center-buildings">
+    <!-- Medium yellow building 1 -->
+    <rect x="305" y="200" width="55" height="330" fill="url(#yellowGrad)" opacity="0.7">
+      <animate attributeName="y" values="200;195;200" dur="5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Short wide yellow building -->
+    <rect x="370" y="320" width="80" height="210" fill="url(#yellowGrad)" opacity="0.65">
+      <animate attributeName="y" values="320;315;320" dur="4s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Tall orange/red building -->
+    <rect x="460" y="120" width="45" height="410" fill="url(#orangeGrad)" opacity="0.75">
+      <animate attributeName="y" values="120;115;120" dur="5.5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Medium red building -->
+    <rect x="515" y="180" width="50" height="350" fill="url(#redGrad)" opacity="0.7">
+      <animate attributeName="y" values="180;175;180" dur="4.8s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+
+  <!-- Center-right section - Red/Gray buildings -->
+  <g id="center-right-buildings">
+    <!-- Tall red building -->
+    <rect x="575" y="90" width="60" height="440" fill="url(#redGrad)" opacity="0.75">
+      <animate attributeName="y" values="90;85;90" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Very tall gray building -->
+    <rect x="645" y="40" width="55" height="490" fill="url(#grayGrad)" opacity="0.7">
+      <animate attributeName="y" values="40;35;40" dur="7s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Medium red building -->
+    <rect x="710" y="160" width="65" height="370" fill="url(#redGrad)" opacity="0.7">
+      <animate attributeName="y" values="160;155;160" dur="5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Tall gray building -->
+    <rect x="785" y="100" width="50" height="430" fill="url(#grayGrad)" opacity="0.75">
+      <animate attributeName="y" values="100;95;100" dur="5.5s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+
+  <!-- Right section - Blue/Cyan buildings -->
+  <g id="right-buildings">
+    <!-- Tall blue building -->
+    <rect x="845" y="70" width="65" height="460" fill="url(#blueGrad)" opacity="0.75">
+      <animate attributeName="y" values="70;65;70" dur="6s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Medium cyan building -->
+    <rect x="920" y="140" width="60" height="390" fill="url(#cyanGrad)" opacity="0.7">
+      <animate attributeName="y" values="140;135;140" dur="5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Tall blue building 2 -->
+    <rect x="990" y="60" width="70" height="470" fill="url(#blueGrad)" opacity="0.8">
+      <animate attributeName="y" values="60;55;60" dur="6.5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Very tall blue building -->
+    <rect x="1070" y="30" width="60" height="500" fill="url(#blueGrad)" opacity="0.85">
+      <animate attributeName="y" values="30;25;30" dur="7s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Medium cyan building -->
+    <rect x="1140" y="180" width="55" height="350" fill="url(#cyanGrad)" opacity="0.7">
+      <animate attributeName="y" values="180;175;180" dur="5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Tall cyan building -->
+    <rect x="1205" y="100" width="65" height="430" fill="url(#cyanGrad)" opacity="0.75">
+      <animate attributeName="y" values="100;95;100" dur="5.5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Far right blue building -->
+    <rect x="1280" y="150" width="55" height="380" fill="url(#blueGrad)" opacity="0.7">
+      <animate attributeName="y" values="150;145;150" dur="5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Last cyan building -->
+    <rect x="1345" y="280" width="50" height="250" fill="url(#cyanGrad)" opacity="0.65">
+      <animate attributeName="y" values="280;275;280" dur="4.5s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+
+  <!-- Add windows to buildings -->
+  <g id="windows" opacity="0.4">
+    <!-- Windows for various buildings - creating a grid pattern -->
+    <g id="window-pattern">
+      <!-- Left buildings windows -->
+      <rect x="40" y="100" width="4" height="6" fill="#fff" rx="1"/>
+      <rect x="50" y="100" width="4" height="6" fill="#fff" rx="1"/>
+      <rect x="60" y="100" width="4" height="6" fill="#fff" rx="1"/>
+      <rect x="70" y="100" width="4" height="6" fill="#fff" rx="1"/>
+
+      <!-- Repeat pattern vertically -->
+      <use href="#window-pattern" y="20"/>
+      <use href="#window-pattern" y="40"/>
+      <use href="#window-pattern" y="60"/>
+    </g>
+  </g>
+
+  <!-- Floating particles/dots for depth -->
+  <g id="particles" opacity="0.3">
+    <circle cx="200" cy="500" r="2" fill="#4169E1"><animate attributeName="cy" values="500;480;500" dur="3s" repeatCount="indefinite"/></circle>
+    <circle cx="450" cy="520" r="2" fill="#F97316"><animate attributeName="cy" values="520;500;520" dur="4s" repeatCount="indefinite"/></circle>
+    <circle cx="700" cy="510" r="2" fill="#DC2626"><animate attributeName="cy" values="510;490;510" dur="3.5s" repeatCount="indefinite"/></circle>
+    <circle cx="950" cy="530" r="2" fill="#06B6D4"><animate attributeName="cy" values="530;510;530" dur="4.5s" repeatCount="indefinite"/></circle>
+    <circle cx="1200" cy="515" r="2" fill="#4169E1"><animate attributeName="cy" values="515;495;515" dur="4s" repeatCount="indefinite"/></circle>
+  </g>
+</svg>
