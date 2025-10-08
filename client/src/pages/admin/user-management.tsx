@@ -548,7 +548,7 @@ export default function UserManagement() {
                                 <TableCell className="font-medium">{user.email}</TableCell>
                                 <TableCell>
                                   <Badge className={getRoleBadgeColor(user.role)}>
-                                    {user.role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    {user.role ? user.role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'No Role'}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
