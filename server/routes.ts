@@ -462,21 +462,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store applicant session for authorization
       req.session.applicantId = applicant.applicantId;
       req.session.applicantDbId = applicant.id;
-      
-      // Login successful - return applicant info
-      res.status(200).json({
-        success: true,
-        message: "Login successful",
-        applicant: {
-          id: applicant.id,
-          applicantId: applicant.applicantId,
-          firstName: applicant.firstName,
-          surname: applicant.surname,
-          fullName: `${applicant.firstName} ${applicant.surname}`,
-          email: applicant.email,
-          status: applicant.status,
-          emailVerified: applicant.emailVerified
+
+      console.log('Login - Saving session:', {
+        sessionId: req.sessionID,
+        applicantId: applicant.applicantId,
+        applicantDbId: applicant.id
+      });
+
+      // Explicitly save session before responding
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({
+            error: "Session error",
+            details: "Failed to save session"
+          });
         }
+
+        console.log('Login - Session saved successfully:', {
+          sessionId: req.sessionID,
+          applicantId: req.session.applicantId
+        });
+
+        // Login successful - return applicant info
+        res.status(200).json({
+          success: true,
+          message: "Login successful",
+          applicant: {
+            id: applicant.id,
+            applicantId: applicant.applicantId,
+            firstName: applicant.firstName,
+            surname: applicant.surname,
+            fullName: `${applicant.firstName} ${applicant.surname}`,
+            email: applicant.email,
+            status: applicant.status,
+            emailVerified: applicant.emailVerified
+          }
+        });
       });
 
     } catch (error) {
@@ -606,8 +628,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // SECURITY: Verify session authorization
+      console.log('Save draft - Session check:', {
+        sessionId: req.sessionID,
+        sessionApplicantId: req.session.applicantId,
+        requestApplicantId: applicantId,
+        sessionData: req.session
+      });
+
       if (!req.session.applicantId || req.session.applicantId !== applicantId) {
-        return res.status(401).json({ 
+        console.error('Session authorization failed:', {
+          hasSession: !!req.session,
+          sessionApplicantId: req.session.applicantId,
+          requestApplicantId: applicantId
+        });
+        return res.status(401).json({
           error: "Unauthorized",
           details: "You can only save drafts for your own application"
         });
@@ -4202,6 +4236,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 500,
         detail: 'Failed to validate uploaded file',
         code: 'FILE_VALIDATION_ERROR'
+      });
+    }
+  });
+
+  /**
+   * POST /api/uploads/simple
+   * Simple document upload endpoint that stores files directly in database
+   * Fallback when object storage is not configured
+   */
+  app.post("/api/uploads/simple", async (req, res) => {
+    try {
+      const {
+        applicationId,
+        applicationType,
+        documentType,
+        fileName,
+        fileData, // base64 encoded
+        mimeType
+      } = req.body;
+
+      if (!applicationId || !applicationType || !documentType || !fileName || !fileData || !mimeType) {
+        return res.status(400).json({
+          error: "Missing required fields",
+          details: "applicationId, applicationType, documentType, fileName, fileData, and mimeType are required"
+        });
+      }
+
+      // Decode base64 to get file size
+      const base64Data = fileData.split(',')[1] || fileData;
+      const sizeBytes = Math.ceil((base64Data.length * 3) / 4);
+
+      // Import validation utility
+      const { DOCUMENT_TYPE_CONFIG } = await import('./utils/fileValidation');
+
+      // Validate document type if config exists
+      if (DOCUMENT_TYPE_CONFIG[documentType as keyof typeof DOCUMENT_TYPE_CONFIG]) {
+        const typeConfig = DOCUMENT_TYPE_CONFIG[documentType as keyof typeof DOCUMENT_TYPE_CONFIG];
+
+        // Validate file size (5MB max for database storage)
+        const maxDbSize = Math.min(typeConfig.maxSize, 5 * 1024 * 1024);
+        if (sizeBytes > maxDbSize) {
+          return res.status(400).json({
+            error: "File too large",
+            details: `File size exceeds maximum of ${(maxDbSize / 1024 / 1024).toFixed(1)}MB for database storage`
+          });
+        }
+
+        // Validate MIME type
+        if (!typeConfig.allowedMimeTypes.includes(mimeType)) {
+          return res.status(400).json({
+            error: "Invalid file type",
+            details: `File type '${mimeType}' not allowed. Allowed types: ${typeConfig.allowedMimeTypes.join(', ')}`
+          });
+        }
+      }
+
+      // Create document record in database
+      const document = await storage.createUploadedDocument({
+        applicationIdFk: applicationId,
+        applicationType: applicationType,
+        docType: documentType,
+        fileName: fileName,
+        fileData: base64Data,
+        mime: mimeType,
+        sizeBytes: sizeBytes,
+        status: "uploaded"
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Document uploaded successfully",
+        documentId: document.id,
+        fileName: fileName,
+        sizeBytes: sizeBytes
+      });
+
+    } catch (error: any) {
+      console.error('Simple upload error:', error);
+      res.status(500).json({
+        error: "Upload failed",
+        details: error.message || "Failed to upload document"
       });
     }
   });

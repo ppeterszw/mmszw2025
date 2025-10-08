@@ -207,8 +207,9 @@ export const uploadedDocuments = pgTable("uploaded_documents", {
   applicationType: varchar("application_type").notNull(), // Not enum in DB - stores 'individual' or 'organization'
   applicationIdFk: varchar("application_id_fk").notNull(), // References individual_applications.id or organization_applications.id
   docType: varchar("doc_type").notNull(), // Not enum in DB - stores various document type strings
-  fileKey: text("file_key").notNull(),
+  fileKey: text("file_key"),
   fileName: text("file_name").notNull(),
+  fileData: text("file_data"), // Base64 encoded file content for database storage (fallback when object storage not available)
   mime: text("mime"),
   sizeBytes: integer("size_bytes"),
   sha256: text("sha256"),

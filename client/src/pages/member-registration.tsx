@@ -30,45 +30,75 @@ import type { Organization } from "@shared/schema";
 const personalInfoSchema = z.object({
   surname: z.string().min(2, "Surname must be at least 2 characters"),
   firstNames: z.string().min(2, "First names must be at least 2 characters"),
+  gender: z.enum(["male", "female", "other"], { required_error: "Gender is required" }),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
   countryOfBirth: z.string().min(1, "Country of birth is required"),
   nationality: z.string().min(1, "Nationality is required"),
+  identityType: z.enum(["national_id", "passport"], { required_error: "Identity type is required" }),
+  identityNumber: z.string().min(1, "Identity number is required"),
   email: z.string().email("Invalid email address"),
   phoneCountryCode: z.string().min(1, "Country code is required"),
   phone: z.string().min(6, "Phone number must be at least 6 digits"),
+}).refine((data) => {
+  // Validate Zimbabwean National ID format: XX-XXXXXXX-X-XX
+  if (data.identityType === "national_id") {
+    const nationalIdPattern = /^\d{2}-\d{6,7}[A-Z]-\d{2}$/;
+    return nationalIdPattern.test(data.identityNumber);
+  }
+  // Validate Zimbabwean Passport format: XX XXXXXX (2 letters + 6 digits)
+  if (data.identityType === "passport") {
+    const passportPattern = /^[A-Z]{2}\s?\d{6}$/;
+    return passportPattern.test(data.identityNumber);
+  }
+  return true;
+}, {
+  message: "Invalid format. National ID: XX-XXXXXXX-X-XX, Passport: XX XXXXXX",
+  path: ["identityNumber"],
 });
 
 // Step 2: Address Details
 const addressSchema = z.object({
-  residentialAddress: z.string().min(5, "Residential address is required"),
-  residentialCity: z.string().min(2, "City is required"),
-  residentialProvince: z.string().min(1, "Province is required"),
-  residentialPostalCode: z.string().optional(),
+  addressType: z.enum(["residential", "company"], { required_error: "Address type is required" }),
+  country: z.string().min(1, "Country is required"),
+  province: z.string().min(1, "Province/State is required"),
+  city: z.string().min(1, "City is required"),
+  streetAddress: z.string().min(5, "Street address is required"),
+  postalCode: z.string().optional(),
   postalAddress: z.string().optional(),
   postalCity: z.string().optional(),
-  postalCode: z.string().optional(),
-  sameAsResidential: z.boolean().default(false),
+  postalCountry: z.string().optional(),
+  sameAsPhysical: z.boolean().default(false),
 });
 
 // Step 3: Professional Details
 const professionalDetailsSchema = z.object({
-  employmentStatus: z.enum(["employed", "self_employed"]),
-  currentEmployer: z.string().optional(),
+  isEmployed: z.enum(["yes", "no"], { required_error: "Please specify if you are employed" }),
+  isFirmRegistered: z.enum(["yes", "no"]).optional(),
+  registeredFirmId: z.string().optional(),
+  registeredFirmName: z.string().optional(),
+  isPrincipalAgent: z.enum(["yes", "no"]).optional(),
+  registerFirmLater: z.boolean().default(false),
   employmentCapacity: z.string().optional(),
-  natureOfEstablishment: z.string().optional(),
   businessExperience: businessExperienceSchema,
 }).refine((data) => {
-  // Conditional validation for employment status
-  if (data.employmentStatus === "employed") {
-    return data.currentEmployer && data.currentEmployer.length > 0 &&
-           data.employmentCapacity && data.employmentCapacity.length > 0;
-  } else if (data.employmentStatus === "self_employed") {
-    return data.natureOfEstablishment && data.natureOfEstablishment.length > 0;
+  // If employed, firm registration status is required
+  if (data.isEmployed === "yes") {
+    if (!data.isFirmRegistered) return false;
+
+    // If firm is registered, must select a firm
+    if (data.isFirmRegistered === "yes") {
+      return !!data.registeredFirmId && !!data.employmentCapacity;
+    }
+
+    // If firm not registered, check if principal agent
+    if (data.isFirmRegistered === "no") {
+      return !!data.isPrincipalAgent;
+    }
   }
   return true;
 }, {
-  message: "Please provide required employment details",
-  path: ["employmentStatus"],
+  message: "Please provide complete employment details",
+  path: ["isEmployed"],
 });
 
 const documentsSchema = z.object({
@@ -146,11 +176,117 @@ const countryCodes = [
   { code: "+62", country: "Indonesia", flag: "🇮🇩" },
 ];
 
+// Southern Africa Location Data
+const locationData = {
+  Zimbabwe: {
+    provinces: {
+      "Harare": ["Harare", "Chitungwiza", "Epworth", "Norton", "Ruwa"],
+      "Bulawayo": ["Bulawayo"],
+      "Manicaland": ["Mutare", "Rusape", "Chipinge", "Chimanimani", "Nyanga", "Buhera"],
+      "Mashonaland Central": ["Bindura", "Mount Darwin", "Shamva", "Guruve", "Mazowe", "Mvurwi"],
+      "Mashonaland East": ["Marondera", "Murehwa", "Mutoko", "Goromonzi", "Wedza", "Mudzi"],
+      "Mashonaland West": ["Chinhoyi", "Kariba", "Karoi", "Mhangura", "Chegutu", "Kadoma"],
+      "Matabeleland North": ["Hwange", "Victoria Falls", "Binga", "Lupane", "Tsholotsho"],
+      "Matabeleland South": ["Gwanda", "Beitbridge", "Plumtree", "Gwanda", "Filabusi"],
+      "Midlands": ["Gweru", "Kwekwe", "Redcliff", "Zvishavane", "Shurugwi", "Gokwe"],
+      "Masvingo": ["Masvingo", "Chiredzi", "Triangle", "Bikita", "Zaka", "Gutu"]
+    }
+  },
+  "South Africa": {
+    provinces: {
+      "Gauteng": ["Johannesburg", "Pretoria", "Soweto", "Sandton", "Randburg", "Roodepoort", "Benoni", "Boksburg"],
+      "Western Cape": ["Cape Town", "Stellenbosch", "Paarl", "George", "Mossel Bay", "Worcester"],
+      "KwaZulu-Natal": ["Durban", "Pietermaritzburg", "Richards Bay", "Newcastle", "Ladysmith"],
+      "Eastern Cape": ["Port Elizabeth", "East London", "Mthatha", "Grahamstown", "Queenstown"],
+      "Free State": ["Bloemfontein", "Welkom", "Kroonstad", "Bethlehem", "Sasolburg"],
+      "Limpopo": ["Polokwane", "Tzaneen", "Musina", "Thohoyandou", "Lebowakgomo"],
+      "Mpumalanga": ["Nelspruit", "Witbank", "Middelburg", "Secunda", "Standerton"],
+      "North West": ["Mahikeng", "Rustenburg", "Klerksdorp", "Potchefstroom", "Brits"],
+      "Northern Cape": ["Kimberley", "Upington", "Springbok", "De Aar", "Kuruman"]
+    }
+  },
+  Botswana: {
+    provinces: {
+      "South-East": ["Gaborone", "Ramotswa", "Mochudi", "Lobatse"],
+      "Kweneng": ["Molepolole", "Mogoditshane", "Thamaga", "Gabane"],
+      "North-East": ["Francistown", "Selebi-Phikwe", "Masunga", "Tonota"],
+      "Central": ["Serowe", "Palapye", "Mahalapye", "Bobonong"],
+      "North-West": ["Maun", "Ghanzi", "Shakawe", "Gumare"],
+      "Southern": ["Kanye", "Jwaneng", "Mmathethe", "Good Hope"],
+      "Kgatleng": ["Mochudi", "Oodi", "Rasesa"],
+      "Kgalagadi": ["Tsabong", "Hukuntsi", "Werda"],
+      "Ghanzi": ["Ghanzi", "Kuke", "Chao"],
+      "Chobe": ["Kasane", "Pandamatenga", "Kazungula"]
+    }
+  },
+  Zambia: {
+    provinces: {
+      "Lusaka": ["Lusaka", "Kafue", "Chongwe", "Chilanga"],
+      "Copperbelt": ["Kitwe", "Ndola", "Mufulira", "Chingola", "Luanshya", "Chililabombwe"],
+      "Central": ["Kabwe", "Kapiri Mposhi", "Mkushi", "Serenje"],
+      "Eastern": ["Chipata", "Katete", "Lundazi", "Petauke"],
+      "Luapula": ["Mansa", "Nchelenge", "Samfya", "Kawambwa"],
+      "Northern": ["Kasama", "Mbala", "Mpika", "Luwingu"],
+      "North-Western": ["Solwezi", "Kasempa", "Zambezi", "Mwinilunga"],
+      "Southern": ["Livingstone", "Choma", "Mazabuka", "Monze"],
+      "Western": ["Mongu", "Senanga", "Sesheke", "Kaoma"],
+      "Muchinga": ["Chinsali", "Isoka", "Nakonde", "Shiwang'andu"]
+    }
+  },
+  Mozambique: {
+    provinces: {
+      "Maputo City": ["Maputo"],
+      "Maputo": ["Matola", "Boane", "Moamba", "Manhiça"],
+      "Gaza": ["Xai-Xai", "Chókwè", "Chibuto", "Manjacaze"],
+      "Inhambane": ["Inhambane", "Maxixe", "Vilankulo", "Massinga"],
+      "Sofala": ["Beira", "Dondo", "Nhamatanda", "Gorongosa"],
+      "Manica": ["Chimoio", "Manica", "Gondola", "Sussundenga"],
+      "Tete": ["Tete", "Moatize", "Angónia", "Cahora Bassa"],
+      "Zambézia": ["Quelimane", "Mocuba", "Gurúè", "Milange"],
+      "Nampula": ["Nampula", "Nacala", "Angoche", "Ilha de Moçambique"],
+      "Niassa": ["Lichinga", "Cuamba", "Mandimba", "Marrupa"],
+      "Cabo Delgado": ["Pemba", "Montepuez", "Mocímboa da Praia", "Palma"]
+    }
+  },
+  Malawi: {
+    provinces: {
+      "Southern": ["Blantyre", "Zomba", "Mulanje", "Mangochi", "Thyolo", "Nsanje"],
+      "Central": ["Lilongwe", "Dedza", "Salima", "Kasungu", "Nkhotakota"],
+      "Northern": ["Mzuzu", "Karonga", "Rumphi", "Nkhata Bay", "Likoma"]
+    }
+  },
+  Namibia: {
+    provinces: {
+      "Khomas": ["Windhoek"],
+      "Erongo": ["Swakopmund", "Walvis Bay", "Henties Bay", "Arandis"],
+      "Otjozondjupa": ["Otjiwarongo", "Grootfontein", "Okahandja", "Okakarara"],
+      "Hardap": ["Mariental", "Rehoboth", "Aranos", "Maltahöhe"],
+      "Karas": ["Keetmanshoop", "Lüderitz", "Karasburg", "Oranjemund"],
+      "Kavango East": ["Rundu", "Nkurenkuru"],
+      "Kavango West": ["Nkurenkuru", "Mpungu"],
+      "Kunene": ["Opuwo", "Outjo", "Khorixas", "Kamanjab"],
+      "Ohangwena": ["Eenhana", "Okongo", "Endola"],
+      "Omaheke": ["Gobabis", "Witvlei", "Aranos"],
+      "Omusati": ["Outapi", "Okahao", "Oshikuku"],
+      "Oshana": ["Oshakati", "Ondangwa"],
+      "Oshikoto": ["Tsumeb", "Omuthiya", "Oniipa"],
+      "Zambezi": ["Katima Mulilo", "Ngoma", "Linyanti"]
+    }
+  }
+};
+
+// Get countries from Southern Africa
+const southernAfricanCountries = Object.keys(locationData);
+
 export default function MemberRegistration() {
   const [currentSection, setCurrentSection] = useState(1);
   const [applicationData, setApplicationData] = useState<Partial<PersonalInfoData & AddressData & ProfessionalDetailsData & DocumentsData & DeclarationsData>>({});
   const [, setLocation] = useLocation();
   const { applicant, saveDraftMutation, loadDraftQuery } = useApplicantAuth();
+
+  // State for cascading location dropdowns
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [selectedProvince, setSelectedProvince] = useState<string>("");
   
   // Load existing draft on component mount
   const draftQuery = loadDraftQuery(applicant?.applicantId || "");
@@ -345,6 +481,11 @@ export default function MemberRegistration() {
   const selectedPhoneCountryCode = personalForm.watch("phoneCountryCode");
   const employmentStatus = professionalForm.watch("employmentStatus");
 
+  // Watch employment flow fields
+  const isEmployed = professionalForm.watch("isEmployed");
+  const isFirmRegistered = professionalForm.watch("isFirmRegistered");
+  const isPrincipalAgent = professionalForm.watch("isPrincipalAgent");
+
   // Set up useFieldArray for dynamic business experience
   const { fields, append, remove } = useFieldArray({
     control: professionalForm.control,
@@ -444,7 +585,7 @@ export default function MemberRegistration() {
             <CardContent className="p-6">
               <Form {...personalForm}>
                 <form onSubmit={personalForm.handleSubmit(handleSectionSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={personalForm.control}
                       name="surname"
@@ -470,17 +611,40 @@ export default function MemberRegistration() {
                         <FormItem>
                           <FormLabel>First Names *</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="Enter first names" 
+                            <Input
+                              placeholder="Enter first names"
                               data-testid="input-first-names"
-                              {...field} 
+                              {...field}
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
+                    <FormField
+                      control={personalForm.control}
+                      name="gender"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Gender *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-gender">
+                                <SelectValue placeholder="Select gender..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="male">Male</SelectItem>
+                              <SelectItem value="female">Female</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     <FormField
                       control={personalForm.control}
                       name="dateOfBirth"
@@ -549,7 +713,56 @@ export default function MemberRegistration() {
                         </FormItem>
                       )}
                     />
-                    
+
+                    <FormField
+                      control={personalForm.control}
+                      name="identityType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Identity Type *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-identity-type">
+                                <SelectValue placeholder="Select identity type..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="national_id">National ID</SelectItem>
+                              <SelectItem value="passport">Passport</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={personalForm.control}
+                      name="identityNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Identity Number *</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder={
+                                personalForm.watch("identityType") === "passport"
+                                  ? "e.g., FN 123456"
+                                  : "e.g., 63-123456A-21"
+                              }
+                              data-testid="input-identity-number"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {personalForm.watch("identityType") === "passport"
+                              ? "Format: XX XXXXXX (2 letters + 6 digits)"
+                              : "Format: XX-XXXXXXX-X-XX"}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     <FormField
                       control={personalForm.control}
                       name="email"
@@ -571,7 +784,7 @@ export default function MemberRegistration() {
                     
                     <div className="space-y-2">
                       <FormLabel>Phone Number *</FormLabel>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 gap-2">
                         <FormField
                           control={personalForm.control}
                           name="phoneCountryCode"
@@ -615,7 +828,7 @@ export default function MemberRegistration() {
                             </FormItem>
                           )}
                         />
-                        <div className="md:col-span-2">
+                        <div>
                           <FormField
                             control={personalForm.control}
                             name="phone"
@@ -692,74 +905,27 @@ export default function MemberRegistration() {
               <Form {...addressForm}>
                 <form onSubmit={addressForm.handleSubmit(handleSectionSubmit)} className="space-y-6">
                   <div className="space-y-6">
-                    <div className="border-l-4 border-green-500 pl-4 py-2 bg-green-50/50">
-                      <h3 className="font-semibold text-green-900 mb-1">Residential Address</h3>
-                      <p className="text-sm text-green-700">Your current place of residence</p>
+                    <div className="border-l-4 border-green-500 pl-4 py-2 bg-green-50/50 md:col-span-2">
+                      <h3 className="font-semibold text-green-900 mb-1">Physical Address</h3>
+                      <p className="text-sm text-green-700">Your current address details</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="md:col-span-2">
-                        <FormField
-                          control={addressForm.control}
-                          name="residentialAddress"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Residential Address *</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Enter your full residential address (street, house number, etc.)"
-                                  rows={3}
-                                  data-testid="input-residential-address"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
                       <FormField
                         control={addressForm.control}
-                        name="residentialCity"
+                        name="addressType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>City/Town *</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter city or town"
-                                data-testid="input-residential-city"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={addressForm.control}
-                        name="residentialProvince"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Province *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <FormLabel>Address Type *</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger data-testid="select-residential-province">
-                                  <SelectValue placeholder="Select province..." />
+                                <SelectTrigger data-testid="select-address-type">
+                                  <SelectValue placeholder="Select address type..." />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="harare">Harare</SelectItem>
-                                <SelectItem value="bulawayo">Bulawayo</SelectItem>
-                                <SelectItem value="manicaland">Manicaland</SelectItem>
-                                <SelectItem value="mashonaland_central">Mashonaland Central</SelectItem>
-                                <SelectItem value="mashonaland_east">Mashonaland East</SelectItem>
-                                <SelectItem value="mashonaland_west">Mashonaland West</SelectItem>
-                                <SelectItem value="masvingo">Masvingo</SelectItem>
-                                <SelectItem value="matabeleland_north">Matabeleland North</SelectItem>
-                                <SelectItem value="matabeleland_south">Matabeleland South</SelectItem>
-                                <SelectItem value="midlands">Midlands</SelectItem>
+                                <SelectItem value="residential">Residential Address</SelectItem>
+                                <SelectItem value="company">Company Address</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -769,14 +935,128 @@ export default function MemberRegistration() {
 
                       <FormField
                         control={addressForm.control}
-                        name="residentialPostalCode"
+                        name="country"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Country *</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                setSelectedCountry(value);
+                                setSelectedProvince("");
+                                addressForm.setValue("province", "");
+                                addressForm.setValue("city", "");
+                              }}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger data-testid="select-country">
+                                  <SelectValue placeholder="Select country..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {southernAfricanCountries.map((country) => (
+                                  <SelectItem key={country} value={country}>
+                                    {country}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {selectedCountry && (
+                        <FormField
+                          control={addressForm.control}
+                          name="province"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Province/State *</FormLabel>
+                              <Select
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  setSelectedProvince(value);
+                                  addressForm.setValue("city", "");
+                                }}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-province">
+                                    <SelectValue placeholder="Select province..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {Object.keys(locationData[selectedCountry as keyof typeof locationData]?.provinces || {}).map((province) => (
+                                    <SelectItem key={province} value={province}>
+                                      {province}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+
+                      {selectedCountry && selectedProvince && (
+                        <FormField
+                          control={addressForm.control}
+                          name="city"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>City *</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-city">
+                                    <SelectValue placeholder="Select city..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {(locationData[selectedCountry as keyof typeof locationData]?.provinces[selectedProvince as keyof typeof locationData[keyof typeof locationData]['provinces']] || []).map((city) => (
+                                    <SelectItem key={city} value={city}>
+                                      {city}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+
+                      <FormField
+                        control={addressForm.control}
+                        name="streetAddress"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Street Address *</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Enter your full street address (house number, street name, etc.)"
+                                rows={3}
+                                data-testid="input-street-address"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={addressForm.control}
+                        name="postalCode"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Postal Code (Optional)</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="Enter postal code"
-                                data-testid="input-residential-postal-code"
+                                data-testid="input-postal-code"
                                 {...field}
                               />
                             </FormControl>
@@ -786,56 +1066,54 @@ export default function MemberRegistration() {
                       />
                     </div>
 
-                    <Separator className="my-6" />
+                    <Separator className="my-6 md:col-span-2" />
 
-                    <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50/50">
+                    <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50/50 md:col-span-2">
                       <h3 className="font-semibold text-blue-900 mb-1">Postal Address</h3>
                       <p className="text-sm text-blue-700">Where you receive mail correspondence</p>
                     </div>
 
                     <FormField
                       control={addressForm.control}
-                      name="sameAsResidential"
+                      name="sameAsPhysical"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-lg bg-blue-50/30">
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-lg bg-blue-50/30 md:col-span-2">
                           <FormControl>
                             <Checkbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
-                              data-testid="checkbox-same-as-residential"
+                              data-testid="checkbox-same-as-physical"
                             />
                           </FormControl>
                           <div className="space-y-1 leading-none">
                             <FormLabel className="font-medium">
-                              My postal address is the same as my residential address
+                              My postal address is the same as my physical address
                             </FormLabel>
                           </div>
                         </FormItem>
                       )}
                     />
 
-                    {!addressForm.watch("sameAsResidential") && (
+                    {!addressForm.watch("sameAsPhysical") && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="md:col-span-2">
-                          <FormField
-                            control={addressForm.control}
-                            name="postalAddress"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Postal Address</FormLabel>
-                                <FormControl>
-                                  <Textarea
-                                    placeholder="Enter your postal address (P.O. Box, Private Bag, etc.)"
-                                    rows={3}
-                                    data-testid="input-postal-address"
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
+                        <FormField
+                          control={addressForm.control}
+                          name="postalAddress"
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>Postal Address</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Enter your postal address (P.O. Box, Private Bag, etc.)"
+                                  rows={3}
+                                  data-testid="input-postal-address"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
                         <FormField
                           control={addressForm.control}
@@ -857,14 +1135,14 @@ export default function MemberRegistration() {
 
                         <FormField
                           control={addressForm.control}
-                          name="postalCode"
+                          name="postalCountry"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Postal Code</FormLabel>
+                              <FormLabel>Country</FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder="Enter postal code"
-                                  data-testid="input-postal-code"
+                                  placeholder="Enter country"
+                                  data-testid="input-postal-country"
                                   {...field}
                                 />
                               </FormControl>
@@ -929,82 +1207,111 @@ export default function MemberRegistration() {
             <CardContent className="p-6">
               <Form {...professionalForm}>
                 <form onSubmit={professionalForm.handleSubmit(handleSectionSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="border-l-4 border-orange-500 pl-4 py-2 bg-orange-50/50 md:col-span-2">
+                      <h3 className="font-semibold text-orange-900 mb-1">Employment Status</h3>
+                      <p className="text-sm text-orange-700">Please provide your current employment details</p>
+                    </div>
+
                     <FormField
                       control={professionalForm.control}
-                      name="employmentStatus"
+                      name="isEmployed"
                       render={({ field }) => (
-                        <FormItem className="space-y-3 md:col-span-2 lg:col-span-3">
-                          <FormLabel>Employment Status *</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="flex flex-col space-y-1"
-                              data-testid="radio-employment-status"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="employed" id="employed" data-testid="radio-employed" />
-                                <FormLabel htmlFor="employed" className="font-normal">
-                                  Employed
-                                </FormLabel>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="self_employed" id="self_employed" data-testid="radio-self-employed" />
-                                <FormLabel htmlFor="self_employed" className="font-normal">
-                                  Self-Employed
-                                </FormLabel>
-                              </div>
-                            </RadioGroup>
-                          </FormControl>
+                        <FormItem>
+                          <FormLabel>Are you currently employed? *</FormLabel>
+                          <Select
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              // Reset dependent fields when employment status changes
+                              professionalForm.setValue("isFirmRegistered", undefined);
+                              professionalForm.setValue("registeredFirmId", "");
+                              professionalForm.setValue("registeredFirmName", "");
+                              professionalForm.setValue("isPrincipalAgent", undefined);
+                              professionalForm.setValue("registerFirmLater", false);
+                            }}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-is-employed">
+                                <SelectValue placeholder="Select..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="yes">Yes</SelectItem>
+                              <SelectItem value="no">No</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    {employmentStatus === "employed" && (
+                    {isEmployed === "yes" && (
+                      <FormField
+                        control={professionalForm.control}
+                        name="isFirmRegistered"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Is your firm registered with EACZ? *</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Reset dependent fields
+                                professionalForm.setValue("registeredFirmId", "");
+                                professionalForm.setValue("registeredFirmName", "");
+                                professionalForm.setValue("isPrincipalAgent", undefined);
+                                professionalForm.setValue("registerFirmLater", false);
+                              }}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger data-testid="select-is-firm-registered">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="yes">Yes</SelectItem>
+                                <SelectItem value="no">No</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {isEmployed === "yes" && isFirmRegistered === "yes" && (
                       <>
                         <FormField
                           control={professionalForm.control}
-                          name="currentEmployer"
+                          name="registeredFirmId"
                           render={({ field }) => (
-                            <FormItem className="md:col-span-2">
-                              <FormLabel>Current Employer *</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="Enter your current employer's name"
-                                  data-testid="input-employer"
-                                  {...field}
-                                  onChange={(e) => {
-                                    field.onChange(e);
-                                    checkEmployerExists(e.target.value);
-                                  }}
-                                />
-                              </FormControl>
-                              {employerCheckLoading && (
-                                <p className="text-sm text-muted-foreground">Checking if organization is registered...</p>
-                              )}
-                              {employerExists === false && field.value && field.value.trim() && (
-                                <div className="flex items-start space-x-2 mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                                  <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                                  <div className="text-sm text-yellow-700">
-                                    <p className="font-medium">Organization not found in our registry</p>
-                                    <p className="mt-1">
-                                      Please ensure your organization is registered with EACZ. You can proceed with your application,
-                                      but your employer verification may take longer during the review process.
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
-                              {employerExists === true && field.value && field.value.trim() && (
-                                <div className="flex items-start space-x-2 mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
-                                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                  <div className="text-sm text-green-700">
-                                    <p className="font-medium">Organization found in our registry</p>
-                                    <p className="mt-1">Your employer is registered with EACZ.</p>
-                                  </div>
-                                </div>
-                              )}
+                            <FormItem>
+                              <FormLabel>Select Registered Firm *</FormLabel>
+                              <Select
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  // Auto-fill firm name
+                                  const selectedOrg = organizations.find(org => org.id === value);
+                                  if (selectedOrg) {
+                                    professionalForm.setValue("registeredFirmName", selectedOrg.organizationName || selectedOrg.name);
+                                  }
+                                }}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-registered-firm">
+                                    <SelectValue placeholder="Search and select your firm..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {organizations.map((org) => (
+                                    <SelectItem key={org.id} value={org.id}>
+                                      {org.organizationName || org.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1018,7 +1325,7 @@ export default function MemberRegistration() {
                               <FormLabel>Capacity in which employed *</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
-                                  <SelectTrigger data-testid="select-capacity">
+                                  <SelectTrigger data-testid="select-employment-capacity">
                                     <SelectValue placeholder="Select capacity..." />
                                   </SelectTrigger>
                                 </FormControl>
@@ -1036,30 +1343,62 @@ export default function MemberRegistration() {
                       </>
                     )}
 
-                    {employmentStatus === "self_employed" && (
-                      <FormField
-                        control={professionalForm.control}
-                        name="natureOfEstablishment"
-                        render={({ field }) => (
-                          <FormItem className="md:col-span-2 lg:col-span-3">
-                            <FormLabel>Nature of Establishment *</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Describe the nature of your establishment"
-                                data-testid="input-nature-establishment"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
+                    {isEmployed === "yes" && isFirmRegistered === "no" && (
+                      <>
+                        <FormField
+                          control={professionalForm.control}
+                          name="isPrincipalAgent"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Are you a Principal Real Estate Agent? *</FormLabel>
+                              <Select
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  // Auto-check "register firm later" if not principal agent
+                                  if (value === "no") {
+                                    professionalForm.setValue("registerFirmLater", true);
+                                  } else {
+                                    professionalForm.setValue("registerFirmLater", false);
+                                  }
+                                }}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-is-principal-agent">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="yes">Yes</SelectItem>
+                                  <SelectItem value="no">No</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {isPrincipalAgent === "no" && (
+                          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg md:col-span-2">
+                            <div className="flex items-start space-x-3">
+                              <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                              <div>
+                                <p className="font-medium text-blue-900">Register Firm Later</p>
+                                <p className="text-sm text-blue-700 mt-1">
+                                  Since you are not a Principal Agent and your firm is not registered, you can proceed with your application.
+                                  Your employer will need to register separately with EACZ.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         )}
-                      />
+                      </>
                     )}
                   </div>
 
-                  <Separator className="my-6" />
+                  <Separator className="my-6 md:col-span-2" />
 
-                  <div className="space-y-4">
+                  <div className="space-y-4 md:col-span-2">
                     <div className="flex items-center justify-between">
                       <div>
                         <FormLabel className="text-base font-semibold">Business Experience Details *</FormLabel>
@@ -1168,8 +1507,6 @@ export default function MemberRegistration() {
                               )}
                             />
 
-                            <div className="md:col-span-1"></div>
-
                             <FormField
                               control={professionalForm.control}
                               name={`businessExperience.${index}.dateFrom`}
@@ -1268,7 +1605,7 @@ export default function MemberRegistration() {
             <CardContent className="p-6">
               <Form {...documentsForm}>
                 <form onSubmit={documentsForm.handleSubmit(handleSectionSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-6 border-2 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 shadow-sm">
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center">
@@ -1317,7 +1654,7 @@ export default function MemberRegistration() {
                       />
                     </div>
 
-                    <div className="p-6 border rounded-lg h-full md:col-span-2">
+                    <div className="p-6 border rounded-lg h-full">
                       <h4 className="font-medium mb-2">Educational Certificates *</h4>
                       <p className="text-sm text-muted-foreground mb-4">Upload O-Level, A-Level certificates</p>
                       <EnhancedDocumentUploader
@@ -1337,7 +1674,7 @@ export default function MemberRegistration() {
                       />
                     </div>
 
-                    <div className="p-6 border rounded-lg h-full md:col-span-2">
+                    <div className="p-6 border rounded-lg h-full">
                       <h4 className="font-medium mb-2">Proof of Employment (Optional)</h4>
                       <p className="text-sm text-muted-foreground mb-4">Employment letter or contract</p>
                       <EnhancedDocumentUploader
@@ -1583,38 +1920,47 @@ export default function MemberRegistration() {
         <PageBreadcrumb items={[{ label: "Individual Member Application" }]} />
         
 
-        {/* Modern Section Navigation */}
-        <div className="mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Professional Progress Bar */}
+        <div className="mb-8 bg-white border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Application Progress</h3>
+              <p className="text-sm text-gray-600">Step {currentSection} of {sections.length}</p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600">
+                {Math.round((currentSection / sections.length) * 100)}%
+              </div>
+              <p className="text-xs text-gray-500">Complete</p>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="relative h-3 bg-gray-100 overflow-hidden">
+            <div
+              className="absolute h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ease-out"
+              style={{ width: `${(currentSection / sections.length) * 100}%` }}
+            />
+          </div>
+
+          {/* Section Steps - Horizontal Single Row */}
+          <div className="flex items-center justify-between mt-6 gap-2">
             {sections.map((section, index) => (
-              <div key={section.id} className="relative">
-                <div className={`flex flex-col items-center p-6 rounded-xl border transition-all duration-300 hover:shadow-lg ${
-                  getSectionStatus(section.id) === 'current' ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-xl border-blue-300' :
-                  getSectionStatus(section.id) === 'completed' ? 'bg-gradient-to-br from-green-50 to-emerald-50 text-green-800 border-green-200 shadow-sm' :
-                  'bg-gradient-to-br from-gray-50 to-slate-50 text-gray-600 border-gray-200 hover:border-gray-300'
+              <div key={section.id} className="flex flex-col items-center flex-1">
+                <div className={`w-10 h-10 flex items-center justify-center text-sm font-bold mb-2 transition-all duration-300 ${
+                  getSectionStatus(section.id) === 'current' ? 'bg-blue-600 text-white shadow-lg' :
+                  getSectionStatus(section.id) === 'completed' ? 'bg-green-500 text-white shadow-md' :
+                  'bg-gray-200 text-gray-500'
                 }`}>
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold mb-3 transition-all duration-300 ${
-                    getSectionStatus(section.id) === 'current' ? 'bg-white text-blue-600 shadow-lg' :
-                    getSectionStatus(section.id) === 'completed' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md' :
-                    'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-600'
-                  }`}>
-                    {getSectionStatus(section.id) === 'completed' ? <CheckCircle className="w-6 h-6" /> : index + 1}
-                  </div>
-                  <span className="font-semibold text-center text-sm mb-2">{section.title}</span>
-                  <Badge 
-                    className={`text-xs font-medium px-3 py-1 rounded-full ${
-                      getSectionStatus(section.id) === 'current' ? 'bg-white/20 text-white border-white/30' :
-                      getSectionStatus(section.id) === 'completed' ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-200' :
-                      'bg-gray-100 text-gray-600 border-gray-300'
-                    }`}
-                  >
-                    {getSectionStatus(section.id) === 'current' ? 'Active' :
-                     getSectionStatus(section.id) === 'completed' ? 'Completed' : 'Pending'}
-                  </Badge>
+                  {getSectionStatus(section.id) === 'completed' ? <CheckCircle className="w-5 h-5" /> : index + 1}
                 </div>
-                {index < sections.length - 1 && (
-                  <div className="hidden lg:block absolute top-1/2 -right-2 w-4 h-px bg-gray-300 transform -translate-y-1/2" />
-                )}
+                <span className={`text-xs font-medium text-center ${
+                  getSectionStatus(section.id) === 'current' ? 'text-blue-600' :
+                  getSectionStatus(section.id) === 'completed' ? 'text-green-600' :
+                  'text-gray-500'
+                }`}>
+                  {section.title}
+                </span>
               </div>
             ))}
           </div>

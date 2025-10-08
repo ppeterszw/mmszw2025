@@ -128,7 +128,7 @@ __export(schema_exports, {
   statusHistory: () => statusHistory,
   statusHistoryRelations: () => statusHistoryRelations,
   systemSettings: () => systemSettings,
-  uploadedDocuments: () => uploadedDocuments,
+  uploadedDocuments: () => uploadedDocuments2,
   uploadedDocumentsRelations: () => uploadedDocumentsRelations,
   userPermissions: () => userPermissions,
   userPermissionsRelations: () => userPermissionsRelations,
@@ -144,7 +144,7 @@ import { pgTable, text, varchar, timestamp, integer, boolean, decimal, pgEnum, j
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var userRoleEnum, userStatusEnum, memberTypeEnum, organizationTypeEnum, membershipStatusEnum, caseStatusEnum, casePriorityEnum, caseTypeEnum, eventTypeEnum, activityTypeEnum, renewalStatusEnum, paymentStatusEnum, paymentMethodEnum, applicationStatusEnum, applicationStageEnum, applicationTypeEnum, documentStatusEnum, documentTypeEnum, decisionEnum, educationLevelEnum, notificationTypeEnum, notificationStatusEnum, applicantStatusEnum, users, applicants, organizationApplicants, organizations, members, directors, individualApplications, memberApplications, organizationApplications, uploadedDocuments, statusHistory, registryDecisions, namingSeriesCounters, appLoginTokens, cases, events, eventRegistrations, payments, cpdActivities, memberRenewals, memberActivities, documents, userSessions, applicationWorkflows, paymentInstallments, notifications, userPermissions, auditLogs, badgeTypeEnum, badgeDifficultyEnum, achievementBadges, memberAchievementBadges, systemSettings, usersRelations, organizationsRelations, membersRelations, directorsRelations, casesRelations, eventsRelations, eventRegistrationsRelations, paymentsRelations, documentsRelations, cpdActivitiesRelations, memberRenewalsRelations, memberActivitiesRelations, userSessionsRelations, applicationWorkflowsRelations, paymentInstallmentsRelations, notificationsRelations, userPermissionsRelations, auditLogsRelations, individualApplicationsRelations, organizationApplicationsRelations, uploadedDocumentsRelations, statusHistoryRelations, registryDecisionsRelations, insertUserSchema, insertApplicantSchema, insertOrganizationApplicantSchema, insertMemberSchema, insertOrganizationSchema, insertMemberApplicationSchema, insertCaseSchema, casesQuerySchema, caseUpdateSchema, caseAssignmentSchema, bulkCaseAssignmentSchema, bulkCaseResolutionSchema, bulkCaseActionSchema, insertEventSchema, insertPaymentSchema, insertDocumentSchema, insertCpdActivitySchema, insertMemberRenewalSchema, insertMemberActivitySchema, insertUserSessionSchema, insertApplicationWorkflowSchema, insertPaymentInstallmentSchema, insertNotificationSchema, insertUserPermissionSchema, insertAuditLogSchema, insertSystemSettingsSchema, insertIndividualApplicationSchema, insertOrganizationApplicationSchema, insertUploadedDocumentSchema, insertStatusHistorySchema, insertRegistryDecisionSchema, insertNamingSeriesCounterSchema, insertAppLoginTokenSchema, insertAchievementBadgeSchema, insertMemberAchievementBadgeSchema, businessExperienceItemSchema, businessExperienceSchema;
+var userRoleEnum, userStatusEnum, memberTypeEnum, organizationTypeEnum, membershipStatusEnum, caseStatusEnum, casePriorityEnum, caseTypeEnum, eventTypeEnum, activityTypeEnum, renewalStatusEnum, paymentStatusEnum, paymentMethodEnum, applicationStatusEnum, applicationStageEnum, applicationTypeEnum, documentStatusEnum, documentTypeEnum, decisionEnum, educationLevelEnum, notificationTypeEnum, notificationStatusEnum, applicantStatusEnum, users, applicants, organizationApplicants, organizations, members, directors, individualApplications, memberApplications, organizationApplications, uploadedDocuments2, statusHistory, registryDecisions, namingSeriesCounters, appLoginTokens, cases, events, eventRegistrations, payments, cpdActivities, memberRenewals, memberActivities, documents, userSessions, applicationWorkflows, paymentInstallments, notifications, userPermissions, auditLogs, badgeTypeEnum, badgeDifficultyEnum, achievementBadges, memberAchievementBadges, systemSettings, usersRelations, organizationsRelations, membersRelations, directorsRelations, casesRelations, eventsRelations, eventRegistrationsRelations, paymentsRelations, documentsRelations, cpdActivitiesRelations, memberRenewalsRelations, memberActivitiesRelations, userSessionsRelations, applicationWorkflowsRelations, paymentInstallmentsRelations, notificationsRelations, userPermissionsRelations, auditLogsRelations, individualApplicationsRelations, organizationApplicationsRelations, uploadedDocumentsRelations, statusHistoryRelations, registryDecisionsRelations, insertUserSchema, insertApplicantSchema, insertOrganizationApplicantSchema, insertMemberSchema, insertOrganizationSchema, insertMemberApplicationSchema, insertCaseSchema, casesQuerySchema, caseUpdateSchema, caseAssignmentSchema, bulkCaseAssignmentSchema, bulkCaseResolutionSchema, bulkCaseActionSchema, insertEventSchema, insertPaymentSchema, insertDocumentSchema, insertCpdActivitySchema, insertMemberRenewalSchema, insertMemberActivitySchema, insertUserSessionSchema, insertApplicationWorkflowSchema, insertPaymentInstallmentSchema, insertNotificationSchema, insertUserPermissionSchema, insertAuditLogSchema, insertSystemSettingsSchema, insertIndividualApplicationSchema, insertOrganizationApplicationSchema, insertUploadedDocumentSchema, insertStatusHistorySchema, insertRegistryDecisionSchema, insertNamingSeriesCounterSchema, insertAppLoginTokenSchema, insertAchievementBadgeSchema, insertMemberAchievementBadgeSchema, businessExperienceItemSchema, businessExperienceSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -329,7 +329,7 @@ var init_schema = __esm({
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
-    uploadedDocuments = pgTable("uploaded_documents", {
+    uploadedDocuments2 = pgTable("uploaded_documents", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       applicationType: varchar("application_type").notNull(),
       // Not enum in DB - stores 'individual' or 'organization'
@@ -337,8 +337,10 @@ var init_schema = __esm({
       // References individual_applications.id or organization_applications.id
       docType: varchar("doc_type").notNull(),
       // Not enum in DB - stores various document type strings
-      fileKey: text("file_key").notNull(),
+      fileKey: text("file_key"),
       fileName: text("file_name").notNull(),
+      fileData: text("file_data"),
+      // Base64 encoded file content for database storage (fallback when object storage not available)
       mime: text("mime"),
       sizeBytes: integer("size_bytes"),
       sha256: text("sha256"),
@@ -874,7 +876,7 @@ var init_schema = __esm({
         fields: [individualApplications.createdMemberId],
         references: [members.id]
       }),
-      documents: many(uploadedDocuments),
+      documents: many(uploadedDocuments2),
       statusHistory: many(statusHistory),
       decisions: many(registryDecisions),
       loginTokens: many(appLoginTokens)
@@ -884,14 +886,14 @@ var init_schema = __esm({
         fields: [organizationApplications.createdOrganizationId],
         references: [organizations.id]
       }),
-      documents: many(uploadedDocuments),
+      documents: many(uploadedDocuments2),
       statusHistory: many(statusHistory),
       decisions: many(registryDecisions),
       loginTokens: many(appLoginTokens)
     }));
-    uploadedDocumentsRelations = relations(uploadedDocuments, ({ one }) => ({
+    uploadedDocumentsRelations = relations(uploadedDocuments2, ({ one }) => ({
       verifierUser: one(users, {
-        fields: [uploadedDocuments.verifierUserId],
+        fields: [uploadedDocuments2.verifierUserId],
         references: [users.id]
       })
     }));
@@ -1047,7 +1049,7 @@ var init_schema = __esm({
       createdAt: true,
       updatedAt: true
     });
-    insertUploadedDocumentSchema = createInsertSchema(uploadedDocuments).omit({
+    insertUploadedDocumentSchema = createInsertSchema(uploadedDocuments2).omit({
       id: true,
       uploadedAt: true,
       updatedAt: true
@@ -2817,6 +2819,13 @@ var init_storage = __esm({
           }
         }).returning();
         return setting;
+      }
+      /**
+       * Create uploaded document record
+       */
+      async createUploadedDocument(doc) {
+        const [document] = await db.insert(uploadedDocuments).values(doc).returning();
+        return document;
       }
     };
     storage = new DatabaseStorage();
@@ -7147,9 +7156,9 @@ function registerApplicationRoutes(app2) {
       const { applicationId } = req.params;
       const [individualApp] = await db.select().from(individualApplications).where(eq8(individualApplications.applicationId, applicationId)).limit(1);
       if (individualApp) {
-        const documents2 = await db.select().from(uploadedDocuments).where(and5(
-          eq8(uploadedDocuments.applicationType, "individual"),
-          eq8(uploadedDocuments.applicationIdFk, applicationId)
+        const documents2 = await db.select().from(uploadedDocuments2).where(and5(
+          eq8(uploadedDocuments2.applicationType, "individual"),
+          eq8(uploadedDocuments2.applicationIdFk, applicationId)
         ));
         const history = await db.select().from(statusHistory).where(and5(
           eq8(statusHistory.applicationType, "individual"),
@@ -7164,9 +7173,9 @@ function registerApplicationRoutes(app2) {
       }
       const [orgApp] = await db.select().from(organizationApplications).where(eq8(organizationApplications.applicationId, applicationId)).limit(1);
       if (orgApp) {
-        const documents2 = await db.select().from(uploadedDocuments).where(and5(
-          eq8(uploadedDocuments.applicationType, "organization"),
-          eq8(uploadedDocuments.applicationIdFk, applicationId)
+        const documents2 = await db.select().from(uploadedDocuments2).where(and5(
+          eq8(uploadedDocuments2.applicationType, "organization"),
+          eq8(uploadedDocuments2.applicationIdFk, applicationId)
         ));
         const history = await db.select().from(statusHistory).where(and5(
           eq8(statusHistory.applicationType, "organization"),
@@ -7225,9 +7234,9 @@ function registerApplicationRoutes(app2) {
             code: "APPLICATION_NOT_FOUND"
           });
         }
-        const uploadedDocs = await db.select().from(uploadedDocuments).where(and5(
-          eq8(uploadedDocuments.applicationType, applicationType),
-          eq8(uploadedDocuments.applicationIdFk, applicationId)
+        const uploadedDocs = await db.select().from(uploadedDocuments2).where(and5(
+          eq8(uploadedDocuments2.applicationType, applicationType),
+          eq8(uploadedDocuments2.applicationIdFk, applicationId)
         ));
         const docTypes = uploadedDocs.map((doc) => doc.docType);
         const docValidation = validateDocumentRequirements(
@@ -7548,7 +7557,7 @@ function registerApplicationRoutes(app2) {
           });
         }
       }
-      const [document] = await db.insert(uploadedDocuments).values({
+      const [document] = await db.insert(uploadedDocuments2).values({
         applicationType,
         applicationIdFk: applicationId,
         docType: "application_fee_pop",
@@ -7647,11 +7656,11 @@ function registerApplicationRoutes(app2) {
       const calculatedHash = validationResult.fileInfo.hash;
       console.log("File validation passed. Calculated SHA-256:", calculatedHash);
       const existingByHash = await db.select({
-        id: uploadedDocuments.id,
-        applicationIdFk: uploadedDocuments.applicationIdFk,
-        docType: uploadedDocuments.docType,
-        fileName: uploadedDocuments.fileName
-      }).from(uploadedDocuments).where(eq8(uploadedDocuments.sha256, calculatedHash)).limit(1);
+        id: uploadedDocuments2.id,
+        applicationIdFk: uploadedDocuments2.applicationIdFk,
+        docType: uploadedDocuments2.docType,
+        fileName: uploadedDocuments2.fileName
+      }).from(uploadedDocuments2).where(eq8(uploadedDocuments2.sha256, calculatedHash)).limit(1);
       if (existingByHash.length > 0) {
         const existingDoc = existingByHash[0];
         console.log("Duplicate file detected with hash:", calculatedHash);
@@ -7699,16 +7708,16 @@ function registerApplicationRoutes(app2) {
           code: "INVALID_APPLICATION_STATUS"
         });
       }
-      const existingDocForType = await db.select().from(uploadedDocuments).where(
+      const existingDocForType = await db.select().from(uploadedDocuments2).where(
         and5(
-          eq8(uploadedDocuments.applicationIdFk, applicationId),
-          eq8(uploadedDocuments.docType, docType)
+          eq8(uploadedDocuments2.applicationIdFk, applicationId),
+          eq8(uploadedDocuments2.docType, docType)
         )
       ).limit(1);
       const singleDocumentTypes = ["id_or_passport", "birth_certificate", "certificate_incorporation"];
       if (singleDocumentTypes.includes(docType) && existingDocForType.length > 0) {
         console.log("Updating existing single-document type:", docType);
-        const [document2] = await db.update(uploadedDocuments).set({
+        const [document2] = await db.update(uploadedDocuments2).set({
           fileKey,
           fileName,
           mime: mimeType,
@@ -7716,7 +7725,7 @@ function registerApplicationRoutes(app2) {
           sha256: calculatedHash,
           status: "uploaded",
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq8(uploadedDocuments.id, existingDocForType[0].id)).returning();
+        }).where(eq8(uploadedDocuments2.id, existingDocForType[0].id)).returning();
         return res.status(200).json({
           documentId: document2.id,
           docType,
@@ -7732,7 +7741,7 @@ function registerApplicationRoutes(app2) {
         });
       }
       console.log("Creating new document record for:", docType);
-      const [document] = await db.insert(uploadedDocuments).values({
+      const [document] = await db.insert(uploadedDocuments2).values({
         applicationType,
         applicationIdFk: applicationId,
         docType,
@@ -7771,7 +7780,7 @@ function registerApplicationRoutes(app2) {
   app2.get("/api/public/applications/:applicationId/documents", async (req, res) => {
     try {
       const { applicationId } = req.params;
-      const documents2 = await db.select().from(uploadedDocuments).where(eq8(uploadedDocuments.applicationIdFk, applicationId)).orderBy(desc3(uploadedDocuments.uploadedAt));
+      const documents2 = await db.select().from(uploadedDocuments2).where(eq8(uploadedDocuments2.applicationIdFk, applicationId)).orderBy(desc3(uploadedDocuments2.uploadedAt));
       res.json(documents2);
     } catch (error) {
       console.error("Get documents error:", error);
@@ -7787,9 +7796,9 @@ function registerApplicationRoutes(app2) {
   app2.delete("/api/public/applications/:applicationId/documents/:documentId", async (req, res) => {
     try {
       const { applicationId, documentId } = req.params;
-      const [document] = await db.select().from(uploadedDocuments).where(and5(
-        eq8(uploadedDocuments.id, documentId),
-        eq8(uploadedDocuments.applicationIdFk, applicationId)
+      const [document] = await db.select().from(uploadedDocuments2).where(and5(
+        eq8(uploadedDocuments2.id, documentId),
+        eq8(uploadedDocuments2.applicationIdFk, applicationId)
       )).limit(1);
       if (!document) {
         return res.status(404).json({
@@ -7809,7 +7818,7 @@ function registerApplicationRoutes(app2) {
           code: "DOCUMENT_PROCESSED"
         });
       }
-      await db.delete(uploadedDocuments).where(eq8(uploadedDocuments.id, documentId));
+      await db.delete(uploadedDocuments2).where(eq8(uploadedDocuments2.id, documentId));
       res.json({
         message: "Document deleted successfully"
       });
@@ -7892,9 +7901,9 @@ function registerApplicationRoutes(app2) {
       if (!application) {
         return res.status(404).json({ message: "Application not found" });
       }
-      const documents2 = await db.select().from(uploadedDocuments).where(and5(
-        eq8(uploadedDocuments.applicationType, applicationType),
-        eq8(uploadedDocuments.applicationIdFk, applicationId)
+      const documents2 = await db.select().from(uploadedDocuments2).where(and5(
+        eq8(uploadedDocuments2.applicationType, applicationType),
+        eq8(uploadedDocuments2.applicationIdFk, applicationId)
       ));
       const history = await db.select().from(statusHistory).where(and5(
         eq8(statusHistory.applicationType, applicationType),
@@ -7972,9 +7981,9 @@ function registerApplicationRoutes(app2) {
       if (!status || !["verified", "rejected"].includes(status)) {
         return res.status(400).json({ message: "Valid status (verified/rejected) is required" });
       }
-      const [document] = await db.select().from(uploadedDocuments).where(and5(
-        eq8(uploadedDocuments.id, documentId),
-        eq8(uploadedDocuments.applicationIdFk, applicationId)
+      const [document] = await db.select().from(uploadedDocuments2).where(and5(
+        eq8(uploadedDocuments2.id, documentId),
+        eq8(uploadedDocuments2.applicationIdFk, applicationId)
       )).limit(1);
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
@@ -7988,7 +7997,7 @@ function registerApplicationRoutes(app2) {
       if (status === "rejected" && notes) {
         updateData.rejectionReason = notes;
       }
-      await db.update(uploadedDocuments).set(updateData).where(eq8(uploadedDocuments.id, documentId));
+      await db.update(uploadedDocuments2).set(updateData).where(eq8(uploadedDocuments2.id, documentId));
       res.json({
         documentId,
         status,
@@ -8001,7 +8010,7 @@ function registerApplicationRoutes(app2) {
   });
   app2.get("/api/admin/documents", authorizeRole2(STAFF_ROLES2), async (req, res) => {
     try {
-      const documents2 = await db.select().from(uploadedDocuments).orderBy(desc3(uploadedDocuments.uploadedAt));
+      const documents2 = await db.select().from(uploadedDocuments2).orderBy(desc3(uploadedDocuments2.uploadedAt));
       res.json(documents2);
     } catch (error) {
       console.error("Error fetching documents:", error);
@@ -9914,19 +9923,37 @@ async function registerRoutes(app2) {
       }
       req.session.applicantId = applicant.applicantId;
       req.session.applicantDbId = applicant.id;
-      res.status(200).json({
-        success: true,
-        message: "Login successful",
-        applicant: {
-          id: applicant.id,
-          applicantId: applicant.applicantId,
-          firstName: applicant.firstName,
-          surname: applicant.surname,
-          fullName: `${applicant.firstName} ${applicant.surname}`,
-          email: applicant.email,
-          status: applicant.status,
-          emailVerified: applicant.emailVerified
+      console.log("Login - Saving session:", {
+        sessionId: req.sessionID,
+        applicantId: applicant.applicantId,
+        applicantDbId: applicant.id
+      });
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({
+            error: "Session error",
+            details: "Failed to save session"
+          });
         }
+        console.log("Login - Session saved successfully:", {
+          sessionId: req.sessionID,
+          applicantId: req.session.applicantId
+        });
+        res.status(200).json({
+          success: true,
+          message: "Login successful",
+          applicant: {
+            id: applicant.id,
+            applicantId: applicant.applicantId,
+            firstName: applicant.firstName,
+            surname: applicant.surname,
+            fullName: `${applicant.firstName} ${applicant.surname}`,
+            email: applicant.email,
+            status: applicant.status,
+            emailVerified: applicant.emailVerified
+          }
+        });
       });
     } catch (error) {
       console.error("Applicant login error:", error);
@@ -10021,7 +10048,18 @@ async function registerRoutes(app2) {
           details: "Applicant ID must be in format APP-MBR-YYYY-XXXX or APP-ORG-YYYY-XXXX"
         });
       }
+      console.log("Save draft - Session check:", {
+        sessionId: req.sessionID,
+        sessionApplicantId: req.session.applicantId,
+        requestApplicantId: applicantId,
+        sessionData: req.session
+      });
       if (!req.session.applicantId || req.session.applicantId !== applicantId) {
+        console.error("Session authorization failed:", {
+          hasSession: !!req.session,
+          sessionApplicantId: req.session.applicantId,
+          requestApplicantId: applicantId
+        });
         return res.status(401).json({
           error: "Unauthorized",
           details: "You can only save drafts for your own application"
@@ -12706,7 +12744,7 @@ async function registerRoutes(app2) {
       }
       const fileHash = validationResult.fileInfo.hash;
       const fileSizeActual = validationResult.fileInfo.size;
-      const existingDoc = await db.select().from(uploadedDocuments).where(eq12(uploadedDocuments.sha256, fileHash)).limit(1);
+      const existingDoc = await db.select().from(uploadedDocuments2).where(eq12(uploadedDocuments2.sha256, fileHash)).limit(1);
       if (existingDoc.length > 0) {
         const duplicate = existingDoc[0];
         return res.status(409).json({
@@ -12723,7 +12761,7 @@ async function registerRoutes(app2) {
           }
         });
       }
-      const [documentRecord] = await db.insert(uploadedDocuments).values({
+      const [documentRecord] = await db.insert(uploadedDocuments2).values({
         applicationType: applicationType || "individual",
         applicationIdFk: applicationId || "",
         docType,
@@ -12892,6 +12930,67 @@ async function registerRoutes(app2) {
         status: 500,
         detail: "Failed to validate uploaded file",
         code: "FILE_VALIDATION_ERROR"
+      });
+    }
+  });
+  app2.post("/api/uploads/simple", async (req, res) => {
+    try {
+      const {
+        applicationId,
+        applicationType,
+        documentType,
+        fileName,
+        fileData,
+        // base64 encoded
+        mimeType
+      } = req.body;
+      if (!applicationId || !applicationType || !documentType || !fileName || !fileData || !mimeType) {
+        return res.status(400).json({
+          error: "Missing required fields",
+          details: "applicationId, applicationType, documentType, fileName, fileData, and mimeType are required"
+        });
+      }
+      const base64Data = fileData.split(",")[1] || fileData;
+      const sizeBytes = Math.ceil(base64Data.length * 3 / 4);
+      const { DOCUMENT_TYPE_CONFIG: DOCUMENT_TYPE_CONFIG2 } = await Promise.resolve().then(() => (init_fileValidation(), fileValidation_exports));
+      if (DOCUMENT_TYPE_CONFIG2[documentType]) {
+        const typeConfig = DOCUMENT_TYPE_CONFIG2[documentType];
+        const maxDbSize = Math.min(typeConfig.maxSize, 5 * 1024 * 1024);
+        if (sizeBytes > maxDbSize) {
+          return res.status(400).json({
+            error: "File too large",
+            details: `File size exceeds maximum of ${(maxDbSize / 1024 / 1024).toFixed(1)}MB for database storage`
+          });
+        }
+        if (!typeConfig.allowedMimeTypes.includes(mimeType)) {
+          return res.status(400).json({
+            error: "Invalid file type",
+            details: `File type '${mimeType}' not allowed. Allowed types: ${typeConfig.allowedMimeTypes.join(", ")}`
+          });
+        }
+      }
+      const document = await storage.createUploadedDocument({
+        applicationIdFk: applicationId,
+        applicationType,
+        docType: documentType,
+        fileName,
+        fileData: base64Data,
+        mime: mimeType,
+        sizeBytes,
+        status: "uploaded"
+      });
+      res.status(200).json({
+        success: true,
+        message: "Document uploaded successfully",
+        documentId: document.id,
+        fileName,
+        sizeBytes
+      });
+    } catch (error) {
+      console.error("Simple upload error:", error);
+      res.status(500).json({
+        error: "Upload failed",
+        details: error.message || "Failed to upload document"
       });
     }
   });

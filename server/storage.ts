@@ -2005,6 +2005,16 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return setting;
   }
+
+  /**
+   * Create uploaded document record
+   */
+  async createUploadedDocument(doc: InsertUploadedDocument): Promise<UploadedDocument> {
+    const [document] = await db.insert(uploadedDocuments)
+      .values(doc)
+      .returning();
+    return document;
+  }
 }
 
 export const storage = new DatabaseStorage();
