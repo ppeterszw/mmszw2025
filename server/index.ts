@@ -3,6 +3,10 @@ import dotenv from "dotenv";
 // Load environment variables from .env.local file
 dotenv.config({ path: ".env.local" });
 
+// Validate environment variables before proceeding
+import { validateEnv } from "./utils/env";
+const env = validateEnv();
+
 import express, { type Request, Response, NextFunction } from "express";
 import { setupVite, serveStatic, log } from "./vite";
 
