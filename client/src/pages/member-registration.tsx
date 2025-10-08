@@ -1982,7 +1982,7 @@ export default function MemberRegistration() {
         {renderSection()}
       </div>
 
-      {/* FormFooter with integrated cityscape background */}
+      {/* FormFooter */}
       <FormFooter />
     </div>
   );

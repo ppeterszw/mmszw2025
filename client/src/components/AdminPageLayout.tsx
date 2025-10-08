@@ -24,7 +24,7 @@ export function AdminPageLayout({
         {children}
       </div>
 
-      {/* FormFooter with integrated cityscape background */}
+      {/* FormFooter */}
       <FormFooter />
     </div>
   );
