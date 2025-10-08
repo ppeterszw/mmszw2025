@@ -313,14 +313,16 @@ export default function MemberRegistration() {
   const addressForm = useForm<AddressData>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
-      residentialAddress: "",
-      residentialCity: "",
-      residentialProvince: "",
-      residentialPostalCode: "",
+      addressType: undefined,
+      country: "",
+      province: "",
+      city: "",
+      streetAddress: "",
+      postalCode: "",
       postalAddress: "",
       postalCity: "",
-      postalCode: "",
-      sameAsResidential: false,
+      postalCountry: "",
+      sameAsPhysical: false,
     },
   });
 
@@ -1077,19 +1079,29 @@ export default function MemberRegistration() {
                       control={addressForm.control}
                       name="sameAsPhysical"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-lg bg-blue-50/30 md:col-span-2">
+                        <FormItem className="space-y-3 p-4 border rounded-lg bg-blue-50/30 md:col-span-2">
+                          <FormLabel className="font-medium">Is your postal address the same as your physical address?</FormLabel>
                           <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              data-testid="checkbox-same-as-physical"
-                            />
+                            <RadioGroup
+                              onValueChange={(value) => field.onChange(value === "yes")}
+                              value={field.value ? "yes" : "no"}
+                              className="flex flex-col space-y-2"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="yes" id="postal-same-yes" />
+                                <label htmlFor="postal-same-yes" className="text-sm font-normal cursor-pointer">
+                                  Yes, my postal address is the same as my physical address
+                                </label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="no" id="postal-same-no" />
+                                <label htmlFor="postal-same-no" className="text-sm font-normal cursor-pointer">
+                                  No, I have a different postal address
+                                </label>
+                              </div>
+                            </RadioGroup>
                           </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="font-medium">
-                              My postal address is the same as my physical address
-                            </FormLabel>
-                          </div>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
