@@ -1,7 +1,20 @@
 export function FormFooter() {
   return (
-    <div className="gradient-bg py-8 mt-16">
-      <div className="max-w-6xl mx-auto px-4">
+    <div className="relative gradient-bg py-8 mt-16 overflow-hidden">
+      {/* Cityscape Background Image */}
+      <div
+        className="absolute bottom-0 left-0 right-0 w-full h-full bg-no-repeat bg-center bg-cover pointer-events-none"
+        style={{
+          backgroundImage: "url('/assets/images/cityscape-bg.svg')",
+          opacity: 0.4,
+          backgroundPosition: "center bottom",
+          backgroundSize: "cover",
+          zIndex: 0
+        }}
+      />
+
+      {/* Footer Content */}
+      <div className="max-w-6xl mx-auto px-4 relative z-10">
         <div className="text-left text-white">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             <div>

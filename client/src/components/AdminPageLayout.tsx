@@ -24,21 +24,8 @@ export function AdminPageLayout({
         {children}
       </div>
 
-      {/* Cityscape Background Image - positioned at footer with 30% opacity */}
-      <div className="relative">
-        <div
-          className="absolute bottom-0 left-0 right-0 bg-no-repeat bg-center bg-contain pointer-events-none"
-          style={{
-            backgroundImage: "url('/assets/images/cityscape-bg.svg')",
-            opacity: 0.3,
-            backgroundPosition: "center bottom",
-            backgroundSize: "40% auto", // Reduced by 60%
-            height: "300px",
-            zIndex: 0
-          }}
-        />
-        <FormFooter />
-      </div>
+      {/* FormFooter with integrated cityscape background */}
+      <FormFooter />
     </div>
   );
 }
