@@ -173,6 +173,7 @@ export interface IStorage {
   updatePaymentStatus(id: string, status: string): Promise<Payment>;
   processRefund(id: string, refundAmount: number, reason: string): Promise<Payment>;
   getAllPayments(): Promise<Payment[]>;
+  getRecentPayments(limit: number): Promise<Payment[]>;
   getPaymentsByDateRange(startDate: Date, endDate: Date): Promise<Payment[]>;
   getPaymentsByMethod(method: string): Promise<Payment[]>;
   
@@ -1242,6 +1243,10 @@ export class DatabaseStorage implements IStorage {
 
   async getAllPayments(): Promise<Payment[]> {
     return await db.select().from(payments).orderBy(desc(payments.createdAt));
+  }
+
+  async getRecentPayments(limit: number): Promise<Payment[]> {
+    return await db.select().from(payments).orderBy(desc(payments.createdAt)).limit(limit);
   }
 
   async getPaymentsByDateRange(startDate: Date, endDate: Date): Promise<Payment[]> {

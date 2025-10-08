@@ -2621,6 +2621,9 @@ var init_storage = __esm({
       async getAllPayments() {
         return await db.select().from(payments).orderBy(desc(payments.createdAt));
       }
+      async getRecentPayments(limit) {
+        return await db.select().from(payments).orderBy(desc(payments.createdAt)).limit(limit);
+      }
       async getPaymentsByDateRange(startDate, endDate) {
         return await db.select().from(payments).where(and2(
           sql4`${payments.createdAt} >= ${startDate}`,
