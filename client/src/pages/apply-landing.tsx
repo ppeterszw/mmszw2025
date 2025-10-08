@@ -18,12 +18,6 @@ export default function ApplyLanding() {
       icon: LogIn,
       gradient: "from-egyptian-blue to-powder-blue",
       bgGradient: "from-blue-50 to-cyan-50",
-      benefits: [
-        "Resume where you left off",
-        "All your progress is saved",
-        "Complete remaining sections",
-        "Track application status"
-      ],
       action: () => setLocation("/application-login-choice"),
       buttonText: "Log In to Continue",
       badge: "Returning Applicant"
@@ -35,12 +29,6 @@ export default function ApplyLanding() {
       icon: UserPlus,
       gradient: "from-emerald-600 to-teal-600",
       bgGradient: "from-emerald-50 to-teal-50",
-      benefits: [
-        "Quick registration process",
-        "Email verification",
-        "Receive your Applicant ID",
-        "Begin application immediately"
-      ],
       action: () => setLocation("/application-type-choice"),
       buttonText: "Register Now",
       badge: "New Applicant"
@@ -112,28 +100,36 @@ export default function ApplyLanding() {
                   </CardHeader>
 
                   <CardContent className="p-6 space-y-6">
-                    {/* Requirements */}
+                    {/* Requirements Checklist */}
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
                         <FileText className="w-5 h-5 text-egyptian-blue mr-2" />
                         Requirements
                       </h4>
-                      <ul className="space-y-2 text-sm text-gray-700">
-                        <li className="flex items-center">
-                          <span className="text-egyptian-blue mr-2">•</span>
-                          National ID or Passport
+                      <ul className="space-y-3 text-sm text-gray-700">
+                        <li className="flex items-start gap-2">
+                          <div className="mt-0.5">
+                            <CheckCircle className="w-4 h-4 text-egyptian-blue" />
+                          </div>
+                          <span>National ID or Passport</span>
                         </li>
-                        <li className="flex items-center">
-                          <span className="text-egyptian-blue mr-2">•</span>
-                          Educational Certificates
+                        <li className="flex items-start gap-2">
+                          <div className="mt-0.5">
+                            <CheckCircle className="w-4 h-4 text-egyptian-blue" />
+                          </div>
+                          <span>Educational Certificates</span>
                         </li>
-                        <li className="flex items-center">
-                          <span className="text-egyptian-blue mr-2">•</span>
-                          Proof of Address
+                        <li className="flex items-start gap-2">
+                          <div className="mt-0.5">
+                            <CheckCircle className="w-4 h-4 text-egyptian-blue" />
+                          </div>
+                          <span>Proof of Address</span>
                         </li>
-                        <li className="flex items-center">
-                          <span className="text-egyptian-blue mr-2">•</span>
-                          Professional References
+                        <li className="flex items-start gap-2">
+                          <div className="mt-0.5">
+                            <CheckCircle className="w-4 h-4 text-egyptian-blue" />
+                          </div>
+                          <span>Professional References</span>
                         </li>
                       </ul>
                     </div>

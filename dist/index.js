@@ -11529,8 +11529,8 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/admin/applicants", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
-      const individualApps = await storage.listIndividualApplications();
-      res.json(individualApps || []);
+      const applicants2 = await storage.listApplicants();
+      res.json(applicants2 || []);
     } catch (error) {
       console.error("Admin applicants fetch error:", error);
       res.status(500).json({ message: "Failed to fetch applicants" });
@@ -11538,8 +11538,8 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/admin/organization-applicants", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
     try {
-      const orgApps = await storage.listOrganizationApplications();
-      res.json(orgApps || []);
+      const orgApplicants = await storage.listOrganizationApplicants();
+      res.json(orgApplicants || []);
     } catch (error) {
       console.error("Admin organization applicants fetch error:", error);
       res.status(500).json({ message: "Failed to fetch organization applicants" });
