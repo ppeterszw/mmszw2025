@@ -4,6 +4,23 @@
 
 The comprehensive 4-stage application workflow system with email notifications and PDF certificate generation is now fully implemented and deployed.
 
+## 📝 **ID Naming Convention**
+
+### **Application IDs (Pre-Approval):**
+- **Individual Applications**: `APP-MBR-YYYY-XXXX` (e.g., APP-MBR-2025-0001)
+- **Organization Applications**: `APP-ORG-YYYY-XXXX` (e.g., APP-ORG-2025-0001)
+
+### **Member IDs (Post-Approval):**
+- **Individual Members**: `EAC-MBR-YYYY-XXXX` (e.g., EAC-MBR-2025-0001)
+- **Organizations**: `EAC-ORG-YYYY-XXXX` (e.g., EAC-ORG-2025-0001)
+
+### **ID Conversion on Approval:**
+When an application is approved, the Application ID is converted to Member ID by simply replacing "APP" with "EAC":
+- `APP-MBR-2025-0001` → `EAC-MBR-2025-0001`
+- `APP-ORG-2025-0123` → `EAC-ORG-2025-0123`
+
+This ensures **traceability** - you can always track which application became which member by the matching number sequence.
+
 ---
 
 ## 📋 **Overview**

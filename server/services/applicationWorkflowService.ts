@@ -10,7 +10,6 @@ import {
 import type { Member, Organization } from "@shared/schema";
 import { storage } from "../storage";
 import { sendEmail } from "./emailService";
-import { nextMemberNumber } from "./namingSeries";
 import { sendCertificateEmail } from "./certificateService";
 
 /**
@@ -673,8 +672,9 @@ export async function approveAndCreateMember(data: WorkflowTransitionData): Prom
     // Parse personal data
     const personal = typeof app.personal === 'string' ? JSON.parse(app.personal) : app.personal;
 
-    // Generate membership number
-    const membershipNumber = await nextMemberNumber('individual');
+    // Convert Application ID to Membership Number
+    // APP-MBR-YYYY-XXXX becomes EAC-MBR-YYYY-XXXX
+    const membershipNumber = app.applicationId.replace('APP-', 'EAC-');
 
     // Calculate expiry date (1 year from now)
     const expiryDate = new Date();
@@ -736,8 +736,9 @@ export async function approveAndCreateMember(data: WorkflowTransitionData): Prom
     // Parse company data
     const company = typeof app.company === 'string' ? JSON.parse(app.company) : app.company;
 
-    // Generate registration number
-    const registrationNumber = await nextMemberNumber('organization');
+    // Convert Application ID to Registration Number
+    // APP-ORG-YYYY-XXXX becomes EAC-ORG-YYYY-XXXX
+    const registrationNumber = app.applicationId.replace('APP-', 'EAC-');
 
     // Calculate expiry date (1 year from now)
     const expiryDate = new Date();

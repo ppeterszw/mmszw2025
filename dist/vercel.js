@@ -10909,7 +10909,7 @@ async function approveAndCreateMember(data) {
       throw new Error("Application not found");
     }
     const personal = typeof app2.personal === "string" ? JSON.parse(app2.personal) : app2.personal;
-    const membershipNumber = await nextMemberNumber("individual");
+    const membershipNumber = app2.applicationId.replace("APP-", "EAC-");
     const expiryDate = /* @__PURE__ */ new Date();
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
     const [newMember] = await db.insert(members).values({
@@ -10953,7 +10953,7 @@ async function approveAndCreateMember(data) {
       throw new Error("Application not found");
     }
     const company = typeof app2.company === "string" ? JSON.parse(app2.company) : app2.company;
-    const registrationNumber = await nextMemberNumber("organization");
+    const registrationNumber = app2.applicationId.replace("APP-", "EAC-");
     const expiryDate = /* @__PURE__ */ new Date();
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
     const [newOrg] = await db.insert(organizations).values({
@@ -11001,7 +11001,6 @@ var init_applicationWorkflowService = __esm({
     init_schema();
     init_storage();
     init_emailService();
-    init_namingSeries();
     init_certificateService();
   }
 });
