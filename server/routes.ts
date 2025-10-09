@@ -7,6 +7,7 @@ import { storage } from "./storage";
 import { registerPaymentRoutes } from "./paymentRoutes";
 import { registerApplicationRoutes } from "./applicationRoutes";
 import { registerNotificationRoutes } from "./notificationRoutes";
+import { registerUserProfileRoutes } from "./userProfileRoutes";
 import { z } from "zod";
 import multer from "multer";
 import { 
@@ -322,6 +323,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup new comprehensive auth routes (RBAC, Session Management, Password Reset, etc.)
   setupAuthRoutes(app);
+
+  // Register user profile routes
+  registerUserProfileRoutes(app);
 
   // Register application routes
   registerApplicationRoutes(app);

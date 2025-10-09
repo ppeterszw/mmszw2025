@@ -19,9 +19,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { 
-  User, Settings, Lock, LogOut, Mail, 
-  ChevronDown, Save, Eye, EyeOff 
+import {
+  User, Settings, Lock, LogOut, Mail,
+  ChevronDown, Save, Eye, EyeOff, UserCircle
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -167,14 +167,21 @@ export function UserProfileDropdown() {
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
+          <DropdownMenuItem
+            onClick={() => setLocation("/admin-dashboard/profile")}
+            data-testid="view-full-profile-item"
+          >
+            <UserCircle className="mr-2 h-4 w-4" />
+            View Full Profile
+          </DropdownMenuItem>
+          <DropdownMenuItem
             onClick={() => setIsProfileDialogOpen(true)}
             data-testid="edit-profile-item"
           >
             <User className="mr-2 h-4 w-4" />
-            Edit Profile
+            Quick Edit Profile
           </DropdownMenuItem>
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={() => setIsPasswordDialogOpen(true)}
             data-testid="change-password-item"
           >
@@ -182,7 +189,7 @@ export function UserProfileDropdown() {
             Change Password
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={handleLogout}
             className="text-red-600 focus:text-red-600"
             disabled={logoutMutation.isPending}

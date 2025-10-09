@@ -143,7 +143,7 @@ import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, timestamp, integer, boolean, decimal, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { z as z2 } from "zod";
 var userRoleEnum, userStatusEnum, memberTypeEnum, organizationTypeEnum, membershipStatusEnum, caseStatusEnum, casePriorityEnum, caseTypeEnum, eventTypeEnum, activityTypeEnum, renewalStatusEnum, paymentStatusEnum, paymentMethodEnum, applicationStatusEnum, applicationStageEnum, applicationTypeEnum, documentStatusEnum, documentTypeEnum, decisionEnum, educationLevelEnum, notificationTypeEnum, notificationStatusEnum, applicantStatusEnum, users, applicants, organizationApplicants, organizations, members, directors, individualApplications, memberApplications, organizationApplications, uploadedDocuments2, statusHistory, registryDecisions, namingSeriesCounters, appLoginTokens, cases, events, eventRegistrations, payments, cpdActivities, memberRenewals, memberActivities, documents, userSessions, applicationWorkflows, paymentInstallments, notifications, userPermissions, auditLogs, badgeTypeEnum, badgeDifficultyEnum, achievementBadges, memberAchievementBadges, systemSettings, usersRelations, organizationsRelations, membersRelations, directorsRelations, casesRelations, eventsRelations, eventRegistrationsRelations, paymentsRelations, documentsRelations, cpdActivitiesRelations, memberRenewalsRelations, memberActivitiesRelations, userSessionsRelations, applicationWorkflowsRelations, paymentInstallmentsRelations, notificationsRelations, userPermissionsRelations, auditLogsRelations, individualApplicationsRelations, organizationApplicationsRelations, uploadedDocumentsRelations, statusHistoryRelations, registryDecisionsRelations, insertUserSchema, insertApplicantSchema, insertOrganizationApplicantSchema, insertMemberSchema, insertOrganizationSchema, insertMemberApplicationSchema, insertCaseSchema, casesQuerySchema, caseUpdateSchema, caseAssignmentSchema, bulkCaseAssignmentSchema, bulkCaseResolutionSchema, bulkCaseActionSchema, insertEventSchema, insertPaymentSchema, insertDocumentSchema, insertCpdActivitySchema, insertMemberRenewalSchema, insertMemberActivitySchema, insertUserSessionSchema, insertApplicationWorkflowSchema, insertPaymentInstallmentSchema, insertNotificationSchema, insertUserPermissionSchema, insertAuditLogSchema, insertSystemSettingsSchema, insertIndividualApplicationSchema, insertOrganizationApplicationSchema, insertUploadedDocumentSchema, insertStatusHistorySchema, insertRegistryDecisionSchema, insertNamingSeriesCounterSchema, insertAppLoginTokenSchema, insertAchievementBadgeSchema, insertMemberAchievementBadgeSchema, businessExperienceItemSchema, businessExperienceSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
@@ -952,12 +952,12 @@ var init_schema = __esm({
       createdAt: true,
       updatedAt: true
     });
-    casesQuerySchema = z.object({
-      status: z.enum(["open", "in_progress", "resolved", "closed"]).optional(),
-      priority: z.enum(["low", "medium", "high", "critical"]).optional(),
-      type: z.enum(["complaint", "inquiry", "dispute", "violation"]).optional(),
-      assignedTo: z.string().optional(),
-      search: z.string().optional()
+    casesQuerySchema = z2.object({
+      status: z2.enum(["open", "in_progress", "resolved", "closed"]).optional(),
+      priority: z2.enum(["low", "medium", "high", "critical"]).optional(),
+      type: z2.enum(["complaint", "inquiry", "dispute", "violation"]).optional(),
+      assignedTo: z2.string().optional(),
+      search: z2.string().optional()
     });
     caseUpdateSchema = createInsertSchema(cases).omit({
       id: true,
@@ -965,23 +965,23 @@ var init_schema = __esm({
       createdAt: true,
       updatedAt: true
     }).partial();
-    caseAssignmentSchema = z.object({
-      assignedTo: z.string().optional()
+    caseAssignmentSchema = z2.object({
+      assignedTo: z2.string().optional()
     });
-    bulkCaseAssignmentSchema = z.object({
-      caseIds: z.array(z.string()),
-      assignedTo: z.string()
+    bulkCaseAssignmentSchema = z2.object({
+      caseIds: z2.array(z2.string()),
+      assignedTo: z2.string()
     });
-    bulkCaseResolutionSchema = z.object({
-      caseIds: z.array(z.string()),
-      resolution: z.string().optional(),
-      status: z.enum(["resolved", "closed"]).default("resolved")
+    bulkCaseResolutionSchema = z2.object({
+      caseIds: z2.array(z2.string()),
+      resolution: z2.string().optional(),
+      status: z2.enum(["resolved", "closed"]).default("resolved")
     });
-    bulkCaseActionSchema = z.object({
-      caseIds: z.array(z.string()),
-      action: z.enum(["assign", "resolve", "close"]),
-      assignedTo: z.string().optional(),
-      resolution: z.string().optional()
+    bulkCaseActionSchema = z2.object({
+      caseIds: z2.array(z2.string()),
+      action: z2.enum(["assign", "resolve", "close"]),
+      assignedTo: z2.string().optional(),
+      resolution: z2.string().optional()
     });
     insertEventSchema = createInsertSchema(events).omit({
       id: true,
@@ -1075,13 +1075,13 @@ var init_schema = __esm({
       id: true,
       createdAt: true
     });
-    businessExperienceItemSchema = z.object({
-      employer: z.string().min(2, "Employer name must be at least 2 characters"),
-      typeOfBusiness: z.string().min(2, "Type of business must be at least 2 characters"),
-      jobTitle: z.string().min(2, "Job title must be at least 2 characters"),
-      dateFrom: z.string().min(1, "Start date is required"),
+    businessExperienceItemSchema = z2.object({
+      employer: z2.string().min(2, "Employer name must be at least 2 characters"),
+      typeOfBusiness: z2.string().min(2, "Type of business must be at least 2 characters"),
+      jobTitle: z2.string().min(2, "Job title must be at least 2 characters"),
+      dateFrom: z2.string().min(1, "Start date is required"),
       // ISO date format (yyyy-mm-dd)
-      dateTo: z.string().optional()
+      dateTo: z2.string().optional()
       // Optional for current positions
     }).superRefine((data, ctx) => {
       const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
@@ -1107,7 +1107,7 @@ var init_schema = __esm({
         });
       }
     });
-    businessExperienceSchema = z.array(businessExperienceItemSchema).min(1, "At least one business experience entry is required").max(20, "Too many experience entries (maximum 20 allowed)");
+    businessExperienceSchema = z2.array(businessExperienceItemSchema).min(1, "At least one business experience entry is required").max(20, "Too many experience entries (maximum 20 allowed)");
   }
 });
 
@@ -1187,6 +1187,197 @@ var init_namingSeries = __esm({
     "use strict";
     init_db();
     init_schema();
+  }
+});
+
+// server/auth/sessionService.ts
+var sessionService_exports = {};
+__export(sessionService_exports, {
+  SESSION_CONFIG: () => SESSION_CONFIG,
+  SessionService: () => SessionService,
+  refreshSessionMiddleware: () => refreshSessionMiddleware,
+  sessionTimeoutMiddleware: () => sessionTimeoutMiddleware
+});
+import { eq, and, lt } from "drizzle-orm";
+import { randomBytes } from "crypto";
+function sessionTimeoutMiddleware(req, res, next) {
+  if (!req.isAuthenticated()) {
+    return next();
+  }
+  const session3 = req.session;
+  if (session3 && session3.cookie) {
+    const lastActivity = session3.cookie.expires ? new Date(session3.cookie.expires) : /* @__PURE__ */ new Date();
+    const remaining = SessionService.getTimeoutRemaining(lastActivity);
+    res.setHeader("X-Session-Timeout-Remaining", remaining.toString());
+    if (remaining < 5) {
+      res.setHeader("X-Session-Warning", "true");
+    }
+  }
+  next();
+}
+function refreshSessionMiddleware(req, res, next) {
+  if (req.isAuthenticated() && req.session) {
+    req.session.touch();
+  }
+  next();
+}
+var SESSION_CONFIG, SessionService;
+var init_sessionService = __esm({
+  "server/auth/sessionService.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    SESSION_CONFIG = {
+      // Idle timeout: session expires after 60 minutes of inactivity
+      IDLE_TIMEOUT_MINUTES: 60,
+      // Absolute timeout: session expires after 8 hours regardless of activity
+      ABSOLUTE_TIMEOUT_HOURS: 8,
+      // Session cleanup: remove expired sessions every 1 hour
+      CLEANUP_INTERVAL_MINUTES: 60
+    };
+    SessionService = class {
+      static cleanupInterval = null;
+      /**
+       * Start automatic session cleanup
+       */
+      static startCleanup() {
+        if (this.cleanupInterval) return;
+        this.cleanupInterval = setInterval(
+          () => {
+            this.cleanupExpiredSessions().catch(console.error);
+          },
+          SESSION_CONFIG.CLEANUP_INTERVAL_MINUTES * 60 * 1e3
+        );
+        console.log("\u2705 Session cleanup started");
+      }
+      /**
+       * Stop automatic session cleanup
+       */
+      static stopCleanup() {
+        if (this.cleanupInterval) {
+          clearInterval(this.cleanupInterval);
+          this.cleanupInterval = null;
+          console.log("Session cleanup stopped");
+        }
+      }
+      /**
+       * Clean up expired sessions
+       */
+      static async cleanupExpiredSessions() {
+        const now = /* @__PURE__ */ new Date();
+        const result = await db.delete(userSessions).where(
+          and(
+            lt(userSessions.expiresAt, now),
+            eq(userSessions.isActive, true)
+          )
+        );
+        const count2 = result.rowCount || 0;
+        if (count2 > 0) {
+          console.log(`\u{1F9F9} Cleaned up ${count2} expired sessions`);
+        }
+        return count2;
+      }
+      /**
+       * Create a new session
+       */
+      static async createSession(userId, ipAddress, userAgent) {
+        const sessionToken = randomBytes(32).toString("hex");
+        const now = /* @__PURE__ */ new Date();
+        const expiresAt = new Date(
+          now.getTime() + SESSION_CONFIG.ABSOLUTE_TIMEOUT_HOURS * 60 * 60 * 1e3
+        );
+        await db.insert(userSessions).values({
+          userId,
+          sessionToken,
+          ipAddress,
+          userAgent,
+          expiresAt,
+          lastActivity: now,
+          isActive: true
+        });
+        return sessionToken;
+      }
+      /**
+       * Validate and update session
+       */
+      static async validateSession(sessionToken) {
+        const [session3] = await db.select().from(userSessions).where(
+          and(
+            eq(userSessions.sessionToken, sessionToken),
+            eq(userSessions.isActive, true)
+          )
+        ).limit(1);
+        if (!session3) {
+          return { valid: false, reason: "Session not found" };
+        }
+        const now = /* @__PURE__ */ new Date();
+        if (new Date(session3.expiresAt) < now) {
+          await this.invalidateSession(sessionToken);
+          return { valid: false, reason: "Session expired (absolute timeout)" };
+        }
+        const lastActivity = new Date(session3.lastActivity || now);
+        const idleMinutes = (now.getTime() - lastActivity.getTime()) / (1e3 * 60);
+        if (idleMinutes > SESSION_CONFIG.IDLE_TIMEOUT_MINUTES) {
+          await this.invalidateSession(sessionToken);
+          return {
+            valid: false,
+            reason: "Session expired (idle timeout)"
+          };
+        }
+        await db.update(userSessions).set({
+          lastActivity: now
+        }).where(eq(userSessions.sessionToken, sessionToken));
+        return { valid: true, userId: session3.userId };
+      }
+      /**
+       * Invalidate a session (logout)
+       */
+      static async invalidateSession(sessionToken) {
+        await db.update(userSessions).set({
+          isActive: false
+        }).where(eq(userSessions.sessionToken, sessionToken));
+      }
+      /**
+       * Invalidate all sessions for a user
+       */
+      static async invalidateAllUserSessions(userId) {
+        await db.update(userSessions).set({
+          isActive: false
+        }).where(
+          and(
+            eq(userSessions.userId, userId),
+            eq(userSessions.isActive, true)
+          )
+        );
+      }
+      /**
+       * Get active sessions for a user
+       */
+      static async getUserActiveSessions(userId) {
+        return await db.select({
+          sessionToken: userSessions.sessionToken,
+          createdAt: userSessions.createdAt,
+          lastActivity: userSessions.lastActivity,
+          expiresAt: userSessions.expiresAt,
+          ipAddress: userSessions.ipAddress,
+          userAgent: userSessions.userAgent
+        }).from(userSessions).where(
+          and(
+            eq(userSessions.userId, userId),
+            eq(userSessions.isActive, true)
+          )
+        );
+      }
+      /**
+       * Get session timeout remaining (in minutes)
+       */
+      static getTimeoutRemaining(lastActivity) {
+        const now = /* @__PURE__ */ new Date();
+        const elapsed = (now.getTime() - lastActivity.getTime()) / (1e3 * 60);
+        const remaining = SESSION_CONFIG.IDLE_TIMEOUT_MINUTES - elapsed;
+        return Math.max(0, Math.round(remaining));
+      }
+    };
   }
 });
 
@@ -1327,7 +1518,7 @@ var init_applicantUtils = __esm({
 });
 
 // server/storage.ts
-import { eq, and, desc, asc, sql as sql4 } from "drizzle-orm";
+import { eq as eq2, and as and2, desc, asc, sql as sql4 } from "drizzle-orm";
 async function migrateToHashedPasswords() {
   try {
     console.log("Checking for plaintext passwords to migrate...");
@@ -1342,7 +1533,7 @@ async function migrateToHashedPasswords() {
       await db.update(users).set({
         password: hashedPassword,
         passwordChangedAt: /* @__PURE__ */ new Date()
-      }).where(eq(users.id, user.id));
+      }).where(eq2(users.id, user.id));
       console.log(`Migrated password for user: ${user.email}`);
     }
     console.log(`Successfully migrated ${plainTextUsers.length} passwords to hashed format.`);
@@ -1416,7 +1607,7 @@ async function initializeDemoData() {
         await db.update(users).set({
           password: hashedPassword,
           passwordChangedAt: /* @__PURE__ */ new Date()
-        }).where(eq(users.id, existingUser.id));
+        }).where(eq2(users.id, existingUser.id));
         const updatedUser = await storage.getUser(existingUser.id);
         createdUsers.push(updatedUser);
         continue;
@@ -1824,15 +2015,15 @@ var init_storage = __esm({
       }
       // User operations
       async getUser(id) {
-        const [user] = await db.select().from(users).where(eq(users.id, id));
+        const [user] = await db.select().from(users).where(eq2(users.id, id));
         return user || void 0;
       }
       async getUserByEmail(email) {
-        const [user] = await db.select().from(users).where(eq(users.email, email));
+        const [user] = await db.select().from(users).where(eq2(users.email, email));
         return user || void 0;
       }
       async getUserByUsername(username) {
-        const [user] = await db.select().from(users).where(eq(users.email, username));
+        const [user] = await db.select().from(users).where(eq2(users.email, username));
         return user || void 0;
       }
       async createUser(insertUser) {
@@ -1855,23 +2046,23 @@ var init_storage = __esm({
         return applicant;
       }
       async getApplicant(id) {
-        const [applicant] = await db.select().from(applicants).where(eq(applicants.id, id));
+        const [applicant] = await db.select().from(applicants).where(eq2(applicants.id, id));
         return applicant || void 0;
       }
       async getApplicantByEmail(email) {
-        const [applicant] = await db.select().from(applicants).where(eq(applicants.email, email));
+        const [applicant] = await db.select().from(applicants).where(eq2(applicants.email, email));
         return applicant || void 0;
       }
       async getApplicantByApplicantId(applicantId) {
-        const [applicant] = await db.select().from(applicants).where(eq(applicants.applicantId, applicantId));
+        const [applicant] = await db.select().from(applicants).where(eq2(applicants.applicantId, applicantId));
         return applicant || void 0;
       }
       async getApplicantByVerificationToken(token) {
-        const [applicant] = await db.select().from(applicants).where(eq(applicants.emailVerificationToken, token));
+        const [applicant] = await db.select().from(applicants).where(eq2(applicants.emailVerificationToken, token));
         return applicant || void 0;
       }
       async updateApplicant(id, updates) {
-        const [applicant] = await db.update(applicants).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(applicants.id, id)).returning();
+        const [applicant] = await db.update(applicants).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(applicants.id, id)).returning();
         return applicant;
       }
       async verifyApplicantEmail(id) {
@@ -1881,7 +2072,7 @@ var init_storage = __esm({
           emailVerificationToken: null,
           emailVerificationExpires: null,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(applicants.id, id)).returning();
+        }).where(eq2(applicants.id, id)).returning();
         return applicant;
       }
       async listApplicants() {
@@ -1903,23 +2094,23 @@ var init_storage = __esm({
         return orgApplicant;
       }
       async getOrganizationApplicant(id) {
-        const [orgApplicant] = await db.select().from(organizationApplicants).where(eq(organizationApplicants.id, id));
+        const [orgApplicant] = await db.select().from(organizationApplicants).where(eq2(organizationApplicants.id, id));
         return orgApplicant || void 0;
       }
       async getOrganizationApplicantByEmail(email) {
-        const [orgApplicant] = await db.select().from(organizationApplicants).where(eq(organizationApplicants.email, email));
+        const [orgApplicant] = await db.select().from(organizationApplicants).where(eq2(organizationApplicants.email, email));
         return orgApplicant || void 0;
       }
       async getOrganizationApplicantByApplicantId(applicantId) {
-        const [orgApplicant] = await db.select().from(organizationApplicants).where(eq(organizationApplicants.applicantId, applicantId));
+        const [orgApplicant] = await db.select().from(organizationApplicants).where(eq2(organizationApplicants.applicantId, applicantId));
         return orgApplicant || void 0;
       }
       async getOrganizationApplicantByVerificationToken(token) {
-        const [orgApplicant] = await db.select().from(organizationApplicants).where(eq(organizationApplicants.emailVerificationToken, token));
+        const [orgApplicant] = await db.select().from(organizationApplicants).where(eq2(organizationApplicants.emailVerificationToken, token));
         return orgApplicant || void 0;
       }
       async updateOrganizationApplicant(id, updates) {
-        const [orgApplicant] = await db.update(organizationApplicants).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(organizationApplicants.id, id)).returning();
+        const [orgApplicant] = await db.update(organizationApplicants).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(organizationApplicants.id, id)).returning();
         return orgApplicant;
       }
       async verifyOrganizationApplicantEmail(id) {
@@ -1929,7 +2120,7 @@ var init_storage = __esm({
           emailVerificationToken: null,
           emailVerificationExpires: null,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(organizationApplicants.id, id)).returning();
+        }).where(eq2(organizationApplicants.id, id)).returning();
         return orgApplicant;
       }
       async listOrganizationApplicants() {
@@ -1941,7 +2132,7 @@ var init_storage = __esm({
         if (!applicant) {
           throw new Error("Applicant not found");
         }
-        const [existingDraft] = await db.select().from(individualApplications).where(eq(individualApplications.applicationId, applicant.applicantId));
+        const [existingDraft] = await db.select().from(individualApplications).where(eq2(individualApplications.applicationId, applicant.applicantId));
         const draftData = {
           personal: JSON.stringify(applicationData.personalInfo || {}),
           oLevel: JSON.stringify(applicationData.oLevel || {}),
@@ -1952,7 +2143,7 @@ var init_storage = __esm({
           updatedAt: /* @__PURE__ */ new Date()
         };
         if (existingDraft) {
-          const [updated] = await db.update(individualApplications).set(draftData).where(eq(individualApplications.id, existingDraft.id)).returning();
+          const [updated] = await db.update(individualApplications).set(draftData).where(eq2(individualApplications.id, existingDraft.id)).returning();
           return {
             id: updated.id,
             applicationData,
@@ -1975,7 +2166,7 @@ var init_storage = __esm({
         if (!applicant) {
           throw new Error("Applicant not found");
         }
-        const [draft] = await db.select().from(individualApplications).where(eq(individualApplications.applicationId, applicant.applicantId));
+        const [draft] = await db.select().from(individualApplications).where(eq2(individualApplications.applicationId, applicant.applicantId));
         if (!draft) {
           return null;
         }
@@ -1994,19 +2185,19 @@ var init_storage = __esm({
       }
       // Member operations
       async getMember(id) {
-        const [member] = await db.select().from(members).where(eq(members.id, id));
+        const [member] = await db.select().from(members).where(eq2(members.id, id));
         return member || void 0;
       }
       async getMemberByUserId(userId) {
-        const [member] = await db.select().from(members).where(eq(members.clerkId, userId));
+        const [member] = await db.select().from(members).where(eq2(members.clerkId, userId));
         return member || void 0;
       }
       async getMemberByEmail(email) {
-        const [member] = await db.select().from(members).where(eq(members.email, email));
+        const [member] = await db.select().from(members).where(eq2(members.email, email));
         return member || void 0;
       }
       async getMemberByMembershipNumber(number) {
-        const [member] = await db.select().from(members).where(eq(members.membershipNumber, number));
+        const [member] = await db.select().from(members).where(eq2(members.membershipNumber, number));
         return member || void 0;
       }
       async createMember(insertMember) {
@@ -2019,7 +2210,7 @@ var init_storage = __esm({
         return member;
       }
       async updateMember(id, updates) {
-        const [member] = await db.update(members).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(members.id, id)).returning();
+        const [member] = await db.update(members).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(members.id, id)).returning();
         return member;
       }
       async getAllMembers() {
@@ -2029,7 +2220,7 @@ var init_storage = __esm({
         const results = await db.select({
           member: members,
           organization: organizations
-        }).from(members).leftJoin(organizations, eq(members.organizationId, organizations.id)).orderBy(desc(members.createdAt));
+        }).from(members).leftJoin(organizations, eq2(members.organizationId, organizations.id)).orderBy(desc(members.createdAt));
         return results.map((row) => ({
           ...row.member,
           organization: row.organization || null
@@ -2037,11 +2228,11 @@ var init_storage = __esm({
       }
       // Organization operations
       async getOrganization(id) {
-        const [org] = await db.select().from(organizations).where(eq(organizations.id, id));
+        const [org] = await db.select().from(organizations).where(eq2(organizations.id, id));
         return org || void 0;
       }
       async getOrganizationByRegistrationNumber(number) {
-        const [org] = await db.select().from(organizations).where(eq(organizations.registrationNumber, number));
+        const [org] = await db.select().from(organizations).where(eq2(organizations.registrationNumber, number));
         return org || void 0;
       }
       async createOrganization(insertOrg) {
@@ -2057,7 +2248,7 @@ var init_storage = __esm({
         return org;
       }
       async updateOrganization(id, updates) {
-        const [org] = await db.update(organizations).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(organizations.id, id)).returning();
+        const [org] = await db.update(organizations).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(organizations.id, id)).returning();
         return org;
       }
       async getAllOrganizations() {
@@ -2067,7 +2258,7 @@ var init_storage = __esm({
         const allOrgs = await db.select().from(organizations).orderBy(desc(organizations.createdAt));
         const orgsWithMembers = await Promise.all(
           allOrgs.map(async (org) => {
-            const orgMembers = await db.select().from(members).where(eq(members.organizationId, org.id));
+            const orgMembers = await db.select().from(members).where(eq2(members.organizationId, org.id));
             return {
               ...org,
               members: orgMembers,
@@ -2078,15 +2269,15 @@ var init_storage = __esm({
         return orgsWithMembers;
       }
       async getOrganizationByMemberId(memberId) {
-        const [org] = await db.select().from(organizations).where(eq(organizations.preaMemberId, memberId));
+        const [org] = await db.select().from(organizations).where(eq2(organizations.preaMemberId, memberId));
         return org || void 0;
       }
       async getOrganizationWithDetails(organizationId) {
-        const [organization] = await db.select().from(organizations).where(eq(organizations.id, organizationId));
+        const [organization] = await db.select().from(organizations).where(eq2(organizations.id, organizationId));
         if (!organization) return void 0;
-        const orgDirectors = await db.select().from(directors).where(and(eq(directors.organizationId, organizationId), eq(directors.isActive, true))).orderBy(asc(directors.lastName));
-        const orgMembers = await db.select().from(members).where(eq(members.organizationId, organizationId)).orderBy(asc(members.lastName));
-        const preaMember = organization.preaMemberId ? await db.select().from(members).where(eq(members.id, organization.preaMemberId)).then((rows) => rows[0]) : null;
+        const orgDirectors = await db.select().from(directors).where(and2(eq2(directors.organizationId, organizationId), eq2(directors.isActive, true))).orderBy(asc(directors.lastName));
+        const orgMembers = await db.select().from(members).where(eq2(members.organizationId, organizationId)).orderBy(asc(members.lastName));
+        const preaMember = organization.preaMemberId ? await db.select().from(members).where(eq2(members.id, organization.preaMemberId)).then((rows) => rows[0]) : null;
         return {
           ...organization,
           directors: orgDirectors,
@@ -2096,29 +2287,29 @@ var init_storage = __esm({
       }
       // Director operations
       async getDirectorsByOrganization(organizationId) {
-        return await db.select().from(directors).where(and(eq(directors.organizationId, organizationId), eq(directors.isActive, true))).orderBy(asc(directors.lastName));
+        return await db.select().from(directors).where(and2(eq2(directors.organizationId, organizationId), eq2(directors.isActive, true))).orderBy(asc(directors.lastName));
       }
       async createDirector(insertDirector) {
         const [director] = await db.insert(directors).values(insertDirector).returning();
         return director;
       }
       async updateDirector(id, updates) {
-        const [director] = await db.update(directors).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(directors.id, id)).returning();
+        const [director] = await db.update(directors).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(directors.id, id)).returning();
         return director;
       }
       async deleteDirector(id) {
-        await db.update(directors).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq(directors.id, id));
+        await db.update(directors).set({ isActive: false, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(directors.id, id));
       }
       async getMembersByOrganization(organizationId) {
-        return await db.select().from(members).where(eq(members.organizationId, organizationId)).orderBy(asc(members.lastName));
+        return await db.select().from(members).where(eq2(members.organizationId, organizationId)).orderBy(asc(members.lastName));
       }
       async updateOrganizationPREA(organizationId, memberId) {
-        const [org] = await db.update(organizations).set({ preaMemberId: memberId, updatedAt: /* @__PURE__ */ new Date() }).where(eq(organizations.id, organizationId)).returning();
+        const [org] = await db.update(organizations).set({ preaMemberId: memberId, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(organizations.id, organizationId)).returning();
         return org;
       }
       // Application operations
       async getMemberApplication(id) {
-        const [app2] = await db.select().from(individualApplications).where(eq(individualApplications.id, id));
+        const [app2] = await db.select().from(individualApplications).where(eq2(individualApplications.id, id));
         return app2 || void 0;
       }
       async createMemberApplication(insertApp) {
@@ -2128,7 +2319,7 @@ var init_storage = __esm({
         return app2;
       }
       async updateMemberApplication(id, updates) {
-        const [app2] = await db.update(individualApplications).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(individualApplications.id, id)).returning();
+        const [app2] = await db.update(individualApplications).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(individualApplications.id, id)).returning();
         return app2;
       }
       // Helper function to transform JSONB fields to flat structure for backward compatibility
@@ -2154,7 +2345,7 @@ var init_storage = __esm({
       }
       // Organization Application operations
       async getOrganizationApplication(id) {
-        const [app2] = await db.select().from(organizationApplications).where(eq(organizationApplications.id, id));
+        const [app2] = await db.select().from(organizationApplications).where(eq2(organizationApplications.id, id));
         return app2 || void 0;
       }
       async createOrganizationApplication(insertApp) {
@@ -2164,30 +2355,30 @@ var init_storage = __esm({
         return app2;
       }
       async updateOrganizationApplication(id, updates) {
-        const [app2] = await db.update(organizationApplications).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(organizationApplications.id, id)).returning();
+        const [app2] = await db.update(organizationApplications).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(organizationApplications.id, id)).returning();
         return app2;
       }
       async getAllOrganizationApplications() {
         return await db.select().from(organizationApplications).orderBy(desc(organizationApplications.createdAt));
       }
       async getOrganizationApplicationsByStatus(status) {
-        return await db.select().from(organizationApplications).where(eq(organizationApplications.status, status)).orderBy(desc(organizationApplications.createdAt));
+        return await db.select().from(organizationApplications).where(eq2(organizationApplications.status, status)).orderBy(desc(organizationApplications.createdAt));
       }
       async assignOrganizationApplicationReviewer(id, reviewerId) {
         const [application] = await db.update(organizationApplications).set({
           createdByUserId: reviewerId,
           // Using this field for reviewer assignment temporarily
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(organizationApplications.id, id)).returning();
+        }).where(eq2(organizationApplications.id, id)).returning();
         return application;
       }
       // Case operations
       async getCase(id) {
-        const [caseItem] = await db.select().from(cases).where(eq(cases.id, id));
+        const [caseItem] = await db.select().from(cases).where(eq2(cases.id, id));
         return caseItem || void 0;
       }
       async getCaseByCaseNumber(number) {
-        const [caseItem] = await db.select().from(cases).where(eq(cases.caseNumber, number));
+        const [caseItem] = await db.select().from(cases).where(eq2(cases.caseNumber, number));
         return caseItem || void 0;
       }
       async createCase(insertCase) {
@@ -2196,26 +2387,26 @@ var init_storage = __esm({
         return caseItem;
       }
       async updateCase(id, updates) {
-        const [caseItem] = await db.update(cases).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(cases.id, id)).returning();
+        const [caseItem] = await db.update(cases).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(cases.id, id)).returning();
         return caseItem;
       }
       async getAllCases() {
         return await db.select().from(cases).orderBy(desc(cases.createdAt));
       }
       async getCasesByStatus(status) {
-        return await db.select().from(cases).where(eq(cases.status, status)).orderBy(desc(cases.createdAt));
+        return await db.select().from(cases).where(eq2(cases.status, status)).orderBy(desc(cases.createdAt));
       }
       async getCasesByPriority(priority) {
-        return await db.select().from(cases).where(eq(cases.priority, priority)).orderBy(desc(cases.createdAt));
+        return await db.select().from(cases).where(eq2(cases.priority, priority)).orderBy(desc(cases.createdAt));
       }
       async assignCase(caseId, assignedTo) {
-        const [caseItem] = await db.update(cases).set({ assignedTo, updatedAt: /* @__PURE__ */ new Date() }).where(eq(cases.id, caseId)).returning();
+        const [caseItem] = await db.update(cases).set({ assignedTo, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(cases.id, caseId)).returning();
         return caseItem;
       }
       async bulkAssignCases(caseIds, assignedTo) {
         const updatedCases = [];
         for (const caseId of caseIds) {
-          const [caseItem] = await db.update(cases).set({ assignedTo, updatedAt: /* @__PURE__ */ new Date() }).where(eq(cases.id, caseId)).returning();
+          const [caseItem] = await db.update(cases).set({ assignedTo, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(cases.id, caseId)).returning();
           updatedCases.push(caseItem);
         }
         return updatedCases;
@@ -2227,7 +2418,7 @@ var init_storage = __esm({
             status: "resolved",
             resolution: resolution || "Case resolved via bulk action",
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq(cases.id, caseId)).returning();
+          }).where(eq2(cases.id, caseId)).returning();
           updatedCases.push(caseItem);
         }
         return updatedCases;
@@ -2238,7 +2429,7 @@ var init_storage = __esm({
           const [caseItem] = await db.update(cases).set({
             status: "closed",
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq(cases.id, caseId)).returning();
+          }).where(eq2(cases.id, caseId)).returning();
           updatedCases.push(caseItem);
         }
         return updatedCases;
@@ -2248,7 +2439,7 @@ var init_storage = __esm({
       }
       // Event operations
       async getEvent(id) {
-        const [event] = await db.select().from(events).where(eq(events.id, id));
+        const [event] = await db.select().from(events).where(eq2(events.id, id));
         return event || void 0;
       }
       async createEvent(insertEvent) {
@@ -2256,15 +2447,15 @@ var init_storage = __esm({
         return event;
       }
       async updateEvent(id, updates) {
-        const [event] = await db.update(events).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(events.id, id)).returning();
+        const [event] = await db.update(events).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(events.id, id)).returning();
         return event;
       }
       async getAllEvents() {
         return await db.select().from(events).orderBy(desc(events.startDate));
       }
       async getUpcomingEvents() {
-        return await db.select().from(events).where(and(
-          eq(events.isActive, true),
+        return await db.select().from(events).where(and2(
+          eq2(events.isActive, true),
           sql4`${events.startDate} > NOW()`
         )).orderBy(events.startDate);
       }
@@ -2274,10 +2465,10 @@ var init_storage = __esm({
         return payment;
       }
       async getPaymentsByMember(memberId) {
-        return await db.select().from(payments).where(eq(payments.memberId, memberId)).orderBy(desc(payments.createdAt));
+        return await db.select().from(payments).where(eq2(payments.memberId, memberId)).orderBy(desc(payments.createdAt));
       }
       async updatePaymentStatus(id, status) {
-        const [payment] = await db.update(payments).set({ status, paymentDate: /* @__PURE__ */ new Date() }).where(eq(payments.id, id)).returning();
+        const [payment] = await db.update(payments).set({ status, paymentDate: /* @__PURE__ */ new Date() }).where(eq2(payments.id, id)).returning();
         return payment;
       }
       // Document operations
@@ -2286,17 +2477,17 @@ var init_storage = __esm({
         return doc;
       }
       async getDocumentsByMember(memberId) {
-        return await db.select().from(documents).where(eq(documents.memberId, memberId)).orderBy(desc(documents.createdAt));
+        return await db.select().from(documents).where(eq2(documents.memberId, memberId)).orderBy(desc(documents.createdAt));
       }
       async getDocumentsByApplication(applicationId) {
-        return await db.select().from(documents).where(eq(documents.applicationId, applicationId)).orderBy(desc(documents.createdAt));
+        return await db.select().from(documents).where(eq2(documents.applicationId, applicationId)).orderBy(desc(documents.createdAt));
       }
       async verifyDocument(id, verifierId) {
         const [doc] = await db.update(documents).set({
           isVerified: true,
           verifiedBy: verifierId,
           verificationDate: /* @__PURE__ */ new Date()
-        }).where(eq(documents.id, id)).returning();
+        }).where(eq2(documents.id, id)).returning();
         return doc;
       }
       // CPD Activities
@@ -2357,14 +2548,14 @@ var init_storage = __esm({
       }
       // Enhanced User Management Methods
       async updateUser(id, updates) {
-        const [user] = await db.update(users).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
+        const [user] = await db.update(users).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(users.id, id)).returning();
         return user;
       }
       async getAllUsers() {
         return await db.select().from(users).orderBy(desc(users.createdAt));
       }
       async getUsersByRole(role) {
-        return await db.select().from(users).where(eq(users.role, role));
+        return await db.select().from(users).where(eq2(users.role, role));
       }
       async lockUser(id, lockedUntil) {
         return await this.updateUser(id, {
@@ -2392,7 +2583,7 @@ var init_storage = __esm({
         const [user] = await db.update(users).set({
           loginAttempts: sql4`${users.loginAttempts} + 1`,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(users.id, id)).returning();
+        }).where(eq2(users.id, id)).returning();
         return user;
       }
       async resetLoginAttempts(id) {
@@ -2413,7 +2604,7 @@ var init_storage = __esm({
       }
       // Clerk integration methods
       async getUserByClerkId(clerkId) {
-        const [user] = await db.select().from(users).where(eq(users.clerkId, clerkId));
+        const [user] = await db.select().from(users).where(eq2(users.clerkId, clerkId));
         return user || void 0;
       }
       async createUserFromClerk(clerkData) {
@@ -2432,14 +2623,14 @@ var init_storage = __esm({
       }
       // Enhanced Payment Methods
       async getPayment(id) {
-        const [payment] = await db.select().from(payments).where(eq(payments.id, id));
+        const [payment] = await db.select().from(payments).where(eq2(payments.id, id));
         return payment || void 0;
       }
       async getPaymentsByOrganization(organizationId) {
-        return await db.select().from(payments).where(eq(payments.organizationId, organizationId)).orderBy(desc(payments.createdAt));
+        return await db.select().from(payments).where(eq2(payments.organizationId, organizationId)).orderBy(desc(payments.createdAt));
       }
       async getPaymentsByApplication(applicationId) {
-        return await db.select().from(payments).where(eq(payments.applicationId, applicationId)).orderBy(desc(payments.createdAt));
+        return await db.select().from(payments).where(eq2(payments.applicationId, applicationId)).orderBy(desc(payments.createdAt));
       }
       async processRefund(id, refundAmount, reason) {
         const [payment] = await db.update(payments).set({
@@ -2448,7 +2639,7 @@ var init_storage = __esm({
           refundReason: reason,
           refundedAt: /* @__PURE__ */ new Date(),
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(payments.id, id)).returning();
+        }).where(eq2(payments.id, id)).returning();
         return payment;
       }
       async getAllPayments() {
@@ -2458,13 +2649,13 @@ var init_storage = __esm({
         return await db.select().from(payments).orderBy(desc(payments.createdAt)).limit(limit);
       }
       async getPaymentsByDateRange(startDate, endDate) {
-        return await db.select().from(payments).where(and(
+        return await db.select().from(payments).where(and2(
           sql4`${payments.createdAt} >= ${startDate}`,
           sql4`${payments.createdAt} <= ${endDate}`
         )).orderBy(desc(payments.createdAt));
       }
       async getPaymentsByMethod(method) {
-        return await db.select().from(payments).where(eq(payments.paymentMethod, method)).orderBy(desc(payments.createdAt));
+        return await db.select().from(payments).where(eq2(payments.paymentMethod, method)).orderBy(desc(payments.createdAt));
       }
       // Payment Installments
       async createPaymentInstallment(installment) {
@@ -2472,19 +2663,19 @@ var init_storage = __esm({
         return newInstallment;
       }
       async getInstallmentsByPayment(paymentId) {
-        return await db.select().from(paymentInstallments).where(eq(paymentInstallments.paymentId, paymentId)).orderBy(paymentInstallments.installmentNumber);
+        return await db.select().from(paymentInstallments).where(eq2(paymentInstallments.paymentId, paymentId)).orderBy(paymentInstallments.installmentNumber);
       }
       async updateInstallmentStatus(id, status) {
-        const [installment] = await db.update(paymentInstallments).set({ status, paidDate: /* @__PURE__ */ new Date() }).where(eq(paymentInstallments.id, id)).returning();
+        const [installment] = await db.update(paymentInstallments).set({ status, paidDate: /* @__PURE__ */ new Date() }).where(eq2(paymentInstallments.id, id)).returning();
         return installment;
       }
       // Enhanced Application Methods
       async getApplicationsByStatus(status) {
-        const apps = await db.select().from(individualApplications).where(eq(individualApplications.status, status)).orderBy(desc(individualApplications.createdAt));
+        const apps = await db.select().from(individualApplications).where(eq2(individualApplications.status, status)).orderBy(desc(individualApplications.createdAt));
         return apps.map((app2) => this.transformApplication(app2));
       }
       async getApplicationsByStage(stage) {
-        const apps = await db.select().from(individualApplications).where(eq(individualApplications.currentStage, stage)).orderBy(desc(individualApplications.createdAt));
+        const apps = await db.select().from(individualApplications).where(eq2(individualApplications.currentStage, stage)).orderBy(desc(individualApplications.createdAt));
         return apps.map((app2) => this.transformApplication(app2));
       }
       async getAllApplications() {
@@ -2496,7 +2687,7 @@ var init_storage = __esm({
           reviewedBy: reviewerId,
           reviewStartedAt: /* @__PURE__ */ new Date(),
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(individualApplications.id, id)).returning();
+        }).where(eq2(individualApplications.id, id)).returning();
         return application;
       }
       // Application Workflow Methods
@@ -2505,17 +2696,17 @@ var init_storage = __esm({
         return newWorkflow;
       }
       async getWorkflowsByApplication(applicationId) {
-        return await db.select().from(applicationWorkflows).where(eq(applicationWorkflows.applicationId, applicationId)).orderBy(applicationWorkflows.createdAt);
+        return await db.select().from(applicationWorkflows).where(eq2(applicationWorkflows.applicationId, applicationId)).orderBy(applicationWorkflows.createdAt);
       }
       async updateWorkflowStage(id, updates) {
-        const [workflow] = await db.update(applicationWorkflows).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(applicationWorkflows.id, id)).returning();
+        const [workflow] = await db.update(applicationWorkflows).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(applicationWorkflows.id, id)).returning();
         return workflow;
       }
       async getWorkflowsByStage(stage) {
-        return await db.select().from(applicationWorkflows).where(eq(applicationWorkflows.stage, stage)).orderBy(desc(applicationWorkflows.createdAt));
+        return await db.select().from(applicationWorkflows).where(eq2(applicationWorkflows.stage, stage)).orderBy(desc(applicationWorkflows.createdAt));
       }
       async getWorkflowsByAssignee(userId) {
-        return await db.select().from(applicationWorkflows).where(eq(applicationWorkflows.assignedTo, userId)).orderBy(desc(applicationWorkflows.createdAt));
+        return await db.select().from(applicationWorkflows).where(eq2(applicationWorkflows.assignedTo, userId)).orderBy(desc(applicationWorkflows.createdAt));
       }
       // Session Management
       async createUserSession(session3) {
@@ -2523,17 +2714,17 @@ var init_storage = __esm({
         return newSession;
       }
       async getUserSessions(userId) {
-        return await db.select().from(userSessions).where(and(
-          eq(userSessions.userId, userId),
-          eq(userSessions.isActive, true)
+        return await db.select().from(userSessions).where(and2(
+          eq2(userSessions.userId, userId),
+          eq2(userSessions.isActive, true)
         )).orderBy(desc(userSessions.lastActivity));
       }
       async updateSessionActivity(sessionId) {
-        const [session3] = await db.update(userSessions).set({ lastActivity: /* @__PURE__ */ new Date() }).where(eq(userSessions.id, sessionId)).returning();
+        const [session3] = await db.update(userSessions).set({ lastActivity: /* @__PURE__ */ new Date() }).where(eq2(userSessions.id, sessionId)).returning();
         return session3;
       }
       async deactivateSession(sessionId) {
-        const [session3] = await db.update(userSessions).set({ isActive: false }).where(eq(userSessions.id, sessionId)).returning();
+        const [session3] = await db.update(userSessions).set({ isActive: false }).where(eq2(userSessions.id, sessionId)).returning();
         return session3;
       }
       async cleanupExpiredSessions() {
@@ -2546,22 +2737,22 @@ var init_storage = __esm({
         return newPermission;
       }
       async getUserPermissions(userId) {
-        return await db.select().from(userPermissions).where(and(
-          eq(userPermissions.userId, userId),
-          eq(userPermissions.isActive, true)
+        return await db.select().from(userPermissions).where(and2(
+          eq2(userPermissions.userId, userId),
+          eq2(userPermissions.isActive, true)
         ));
       }
       async checkUserPermission(userId, permission, resource) {
-        const permissions = await db.select().from(userPermissions).where(and(
-          eq(userPermissions.userId, userId),
-          eq(userPermissions.permission, permission),
-          eq(userPermissions.isActive, true),
-          resource ? eq(userPermissions.resource, resource) : sql4`1=1`
+        const permissions = await db.select().from(userPermissions).where(and2(
+          eq2(userPermissions.userId, userId),
+          eq2(userPermissions.permission, permission),
+          eq2(userPermissions.isActive, true),
+          resource ? eq2(userPermissions.resource, resource) : sql4`1=1`
         ));
         return permissions.length > 0;
       }
       async revokeUserPermission(id) {
-        const [permission] = await db.update(userPermissions).set({ isActive: false }).where(eq(userPermissions.id, id)).returning();
+        const [permission] = await db.update(userPermissions).set({ isActive: false }).where(eq2(userPermissions.id, id)).returning();
         return permission;
       }
       // Notifications
@@ -2570,44 +2761,44 @@ var init_storage = __esm({
         return newNotification;
       }
       async getUserNotifications(userId) {
-        return await db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+        return await db.select().from(notifications).where(eq2(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
       }
       async getMemberNotifications(memberId) {
-        return await db.select().from(notifications).where(eq(notifications.memberId, memberId)).orderBy(desc(notifications.createdAt));
+        return await db.select().from(notifications).where(eq2(notifications.memberId, memberId)).orderBy(desc(notifications.createdAt));
       }
       async markNotificationSent(id) {
-        const [notification] = await db.update(notifications).set({ status: "sent", sentAt: /* @__PURE__ */ new Date() }).where(eq(notifications.id, id)).returning();
+        const [notification] = await db.update(notifications).set({ status: "sent", sentAt: /* @__PURE__ */ new Date() }).where(eq2(notifications.id, id)).returning();
         return notification;
       }
       async markNotificationDelivered(id) {
-        const [notification] = await db.update(notifications).set({ status: "delivered", deliveredAt: /* @__PURE__ */ new Date() }).where(eq(notifications.id, id)).returning();
+        const [notification] = await db.update(notifications).set({ status: "delivered", deliveredAt: /* @__PURE__ */ new Date() }).where(eq2(notifications.id, id)).returning();
         return notification;
       }
       async markNotificationOpened(id) {
-        const [notification] = await db.update(notifications).set({ openedAt: /* @__PURE__ */ new Date() }).where(eq(notifications.id, id)).returning();
+        const [notification] = await db.update(notifications).set({ openedAt: /* @__PURE__ */ new Date() }).where(eq2(notifications.id, id)).returning();
         return notification;
       }
       async getPendingNotifications() {
-        return await db.select().from(notifications).where(eq(notifications.status, "pending")).orderBy(notifications.scheduledFor || notifications.createdAt);
+        return await db.select().from(notifications).where(eq2(notifications.status, "pending")).orderBy(notifications.scheduledFor || notifications.createdAt);
       }
       // Audit Logging
-      async createAuditLog(log) {
-        const [newLog] = await db.insert(auditLogs).values(log).returning();
+      async createAuditLog(log2) {
+        const [newLog] = await db.insert(auditLogs).values(log2).returning();
         return newLog;
       }
       async getAuditLogs(filters) {
         const conditions = [];
         if (filters?.userId) {
-          conditions.push(eq(auditLogs.userId, filters.userId));
+          conditions.push(eq2(auditLogs.userId, filters.userId));
         }
         if (filters?.resource) {
-          conditions.push(eq(auditLogs.resource, filters.resource));
+          conditions.push(eq2(auditLogs.resource, filters.resource));
         }
         if (filters?.action) {
-          conditions.push(eq(auditLogs.action, filters.action));
+          conditions.push(eq2(auditLogs.action, filters.action));
         }
         if (conditions.length > 0) {
-          return await db.select().from(auditLogs).where(and(...conditions)).orderBy(desc(auditLogs.timestamp));
+          return await db.select().from(auditLogs).where(and2(...conditions)).orderBy(desc(auditLogs.timestamp));
         }
         return await db.select().from(auditLogs).orderBy(desc(auditLogs.timestamp));
       }
@@ -2617,14 +2808,14 @@ var init_storage = __esm({
         const totalMembers = totalMembersResult[0]?.count || 0;
         const totalOrganizationsResult = await db.select({ count: sql4`count(*)` }).from(organizations);
         const totalOrganizations = totalOrganizationsResult[0]?.count || 0;
-        const activeOrganizationsResult = await db.select({ count: sql4`count(*)` }).from(organizations).where(eq(organizations.status, "active"));
+        const activeOrganizationsResult = await db.select({ count: sql4`count(*)` }).from(organizations).where(eq2(organizations.status, "active"));
         const activeOrganizations = activeOrganizationsResult[0]?.count || 0;
         const pendingIndividualApplicationsResult = await db.select({ count: sql4`count(*)` }).from(individualApplications).where(sql4`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`);
         const pendingIndividualApplications = pendingIndividualApplicationsResult[0]?.count || 0;
         const pendingOrganizationApplicationsResult = await db.select({ count: sql4`count(*)` }).from(organizationApplications).where(sql4`status IN ('submitted', 'payment_pending', 'payment_received', 'under_review')`);
         const pendingOrganizationApplications = pendingOrganizationApplicationsResult[0]?.count || 0;
         const pendingApplications = pendingIndividualApplications + pendingOrganizationApplications;
-        const openCasesResult = await db.select({ count: sql4`count(*)` }).from(cases).where(eq(cases.status, "open"));
+        const openCasesResult = await db.select({ count: sql4`count(*)` }).from(cases).where(eq2(cases.status, "open"));
         const openCases = openCasesResult[0]?.count || 0;
         const totalUsersResult = await db.select({ count: sql4`count(*)` }).from(users);
         const totalUsers = totalUsersResult[0]?.count || 0;
@@ -2633,12 +2824,12 @@ var init_storage = __esm({
         const startOfMonth = /* @__PURE__ */ new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
-        const revenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
-          eq(payments.status, "completed"),
+        const revenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and2(
+          eq2(payments.status, "completed"),
           sql4`created_at >= ${startOfMonth}`
         ));
         const revenueThisMonth = Number(revenueResult[0]?.sum || 0);
-        const totalRevenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(eq(payments.status, "completed"));
+        const totalRevenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(eq2(payments.status, "completed"));
         const totalRevenue = Number(totalRevenueResult[0]?.sum || 0);
         const renewalsPending = 0;
         return {
@@ -2656,39 +2847,39 @@ var init_storage = __esm({
       }
       // Finance Statistics  
       async getFinanceStats(filters) {
-        const conditions = [eq(payments.status, "completed")];
+        const conditions = [eq2(payments.status, "completed")];
         if (filters?.startDate) {
           conditions.push(sql4`created_at >= ${filters.startDate}`);
         }
         if (filters?.endDate) {
           conditions.push(sql4`created_at <= ${filters.endDate}`);
         }
-        const totalRevenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(...conditions));
+        const totalRevenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and2(...conditions));
         const totalRevenue = Number(totalRevenueResult[0]?.sum || 0);
         const startOfMonth = /* @__PURE__ */ new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
-        const monthlyRevenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
-          eq(payments.status, "completed"),
+        const monthlyRevenueResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and2(
+          eq2(payments.status, "completed"),
           sql4`created_at >= ${startOfMonth}`
         ));
         const monthlyRevenue = Number(monthlyRevenueResult[0]?.sum || 0);
-        const pendingPaymentsResult = await db.select({ count: sql4`count(*)` }).from(payments).where(eq(payments.status, "pending"));
+        const pendingPaymentsResult = await db.select({ count: sql4`count(*)` }).from(payments).where(eq2(payments.status, "pending"));
         const pendingPayments = pendingPaymentsResult[0]?.count || 0;
-        const completedPaymentsResult = await db.select({ count: sql4`count(*)` }).from(payments).where(eq(payments.status, "completed"));
+        const completedPaymentsResult = await db.select({ count: sql4`count(*)` }).from(payments).where(eq2(payments.status, "completed"));
         const completedPayments = completedPaymentsResult[0]?.count || 0;
-        const membershipFeesResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
-          eq(payments.status, "completed"),
+        const membershipFeesResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and2(
+          eq2(payments.status, "completed"),
           sql4`purpose LIKE '%membership%' OR purpose LIKE '%renewal%'`
         ));
         const membershipFees = Number(membershipFeesResult[0]?.sum || 0);
-        const applicationFeesResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
-          eq(payments.status, "completed"),
+        const applicationFeesResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and2(
+          eq2(payments.status, "completed"),
           sql4`purpose LIKE '%application%'`
         ));
         const applicationFees = Number(applicationFeesResult[0]?.sum || 0);
-        const eventFeesResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and(
-          eq(payments.status, "completed"),
+        const eventFeesResult = await db.select({ sum: sql4`COALESCE(SUM(CAST(amount AS DECIMAL)), 0)` }).from(payments).where(and2(
+          eq2(payments.status, "completed"),
           sql4`purpose LIKE '%event%'`
         ));
         const eventFees = Number(eventFeesResult[0]?.sum || 0);
@@ -2708,14 +2899,14 @@ var init_storage = __esm({
       async listPayments(filters) {
         const conditions = [];
         if (filters?.status) {
-          conditions.push(eq(payments.status, filters.status));
+          conditions.push(eq2(payments.status, filters.status));
         }
         if (filters?.search) {
           conditions.push(sql4`(purpose ILIKE ${`%${filters.search}%`} OR payment_number ILIKE ${`%${filters.search}%`})`);
         }
-        const totalResult = await db.select({ count: sql4`count(*)` }).from(payments).where(conditions.length > 0 ? and(...conditions) : void 0);
+        const totalResult = await db.select({ count: sql4`count(*)` }).from(payments).where(conditions.length > 0 ? and2(...conditions) : void 0);
         const total = totalResult[0]?.count || 0;
-        const baseQuery = db.select().from(payments).where(conditions.length > 0 ? and(...conditions) : void 0);
+        const baseQuery = db.select().from(payments).where(conditions.length > 0 ? and2(...conditions) : void 0);
         const sortedQuery = filters?.sortBy === "amount" ? baseQuery.orderBy(filters.sortOrder === "asc" ? asc(sql4`CAST(amount AS DECIMAL)`) : desc(sql4`CAST(amount AS DECIMAL)`)) : baseQuery.orderBy(filters?.sortOrder === "asc" ? asc(payments.createdAt) : desc(payments.createdAt));
         const paginatedQuery = filters?.limit ? sortedQuery.limit(filters.limit) : sortedQuery;
         const finalQuery = filters?.offset ? paginatedQuery.offset(filters.offset) : paginatedQuery;
@@ -2729,12 +2920,12 @@ var init_storage = __esm({
       async listRenewals(filters) {
         const conditions = [];
         if (filters?.year) {
-          conditions.push(eq(memberRenewals.renewalYear, filters.year));
+          conditions.push(eq2(memberRenewals.renewalYear, filters.year));
         }
         if (filters?.status) {
-          conditions.push(eq(memberRenewals.status, filters.status));
+          conditions.push(eq2(memberRenewals.status, filters.status));
         }
-        const totalResult = await db.select({ count: sql4`count(*)` }).from(memberRenewals).where(conditions.length > 0 ? and(...conditions) : void 0);
+        const totalResult = await db.select({ count: sql4`count(*)` }).from(memberRenewals).where(conditions.length > 0 ? and2(...conditions) : void 0);
         const total = totalResult[0]?.count || 0;
         const baseQuery = db.select({
           id: memberRenewals.id,
@@ -2757,14 +2948,14 @@ var init_storage = __esm({
             email: members.email,
             memberType: members.memberType
           }
-        }).from(memberRenewals).leftJoin(members, eq(memberRenewals.memberId, members.id)).where(conditions.length > 0 ? and(...conditions) : void 0).orderBy(desc(memberRenewals.dueDate));
+        }).from(memberRenewals).leftJoin(members, eq2(memberRenewals.memberId, members.id)).where(conditions.length > 0 ? and2(...conditions) : void 0).orderBy(desc(memberRenewals.dueDate));
         const paginatedQuery = filters?.limit ? baseQuery.limit(filters.limit) : baseQuery;
         const finalQuery = filters?.offset ? paginatedQuery.offset(filters.offset) : paginatedQuery;
         const renewalsList = await finalQuery;
         return { renewals: renewalsList, total };
       }
       async updateRenewal(id, updates) {
-        const [renewal] = await db.update(memberRenewals).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(memberRenewals.id, id)).returning();
+        const [renewal] = await db.update(memberRenewals).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq2(memberRenewals.id, id)).returning();
         return renewal;
       }
       async incrementRenewalReminder(id) {
@@ -2772,12 +2963,12 @@ var init_storage = __esm({
           remindersSent: sql4`reminders_sent + 1`,
           lastReminderDate: /* @__PURE__ */ new Date(),
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(memberRenewals.id, id)).returning();
+        }).where(eq2(memberRenewals.id, id)).returning();
         return renewal;
       }
       async generateRenewals(year, defaultFee = 50) {
-        const activeMembers = await db.select().from(members).where(eq(members.membershipStatus, "active"));
-        const existingRenewals = await db.select({ memberId: memberRenewals.memberId }).from(memberRenewals).where(eq(memberRenewals.renewalYear, year));
+        const activeMembers = await db.select().from(members).where(eq2(members.membershipStatus, "active"));
+        const existingRenewals = await db.select({ memberId: memberRenewals.memberId }).from(memberRenewals).where(eq2(memberRenewals.renewalYear, year));
         const existingMemberIds = new Set(existingRenewals.map((r) => r.memberId));
         const membersNeedingRenewal = activeMembers.filter((m) => !existingMemberIds.has(m.id));
         let created = 0;
@@ -2806,7 +2997,7 @@ var init_storage = __esm({
         return await db.select().from(systemSettings).orderBy(systemSettings.key);
       }
       async getSetting(key) {
-        const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key));
+        const [setting] = await db.select().from(systemSettings).where(eq2(systemSettings.key, key));
         return setting || void 0;
       }
       async updateSettings(settings) {
@@ -3646,10 +3837,10 @@ __export(auth_exports, {
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, randomBytes as randomBytes2, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 async function hashPassword(password) {
-  const salt = randomBytes(16).toString("hex");
+  const salt = randomBytes2(16).toString("hex");
   const buf = await scryptAsync(password, salt, 64);
   return `${buf.toString("hex")}.${salt}`;
 }
@@ -3886,9 +4077,9 @@ var init_clerkAuth = __esm({
 });
 
 // server/auth/authService.ts
-import { scrypt as scrypt2, randomBytes as randomBytes2, timingSafeEqual as timingSafeEqual2 } from "crypto";
+import { scrypt as scrypt2, randomBytes as randomBytes3, timingSafeEqual as timingSafeEqual2 } from "crypto";
 import { promisify as promisify2 } from "util";
-import { eq as eq2, and as and2, gt } from "drizzle-orm";
+import { eq as eq3, and as and3, gt } from "drizzle-orm";
 var scryptAsync2, AUTH_CONFIG, AuthService;
 var init_authService = __esm({
   "server/auth/authService.ts"() {
@@ -3923,7 +4114,7 @@ var init_authService = __esm({
         if (!validation.valid) {
           throw new Error(`Weak password: ${validation.errors.join(", ")}`);
         }
-        const salt = randomBytes2(16).toString("hex");
+        const salt = randomBytes3(16).toString("hex");
         const buf = await scryptAsync2(password, salt, 64);
         return `${buf.toString("hex")}.${salt}`;
       }
@@ -3985,7 +4176,7 @@ var init_authService = __esm({
        * Check if account is locked
        */
       static async isAccountLocked(userId) {
-        const [user] = await db.select().from(users).where(eq2(users.id, userId)).limit(1);
+        const [user] = await db.select().from(users).where(eq3(users.id, userId)).limit(1);
         if (!user) return false;
         if (user.lockedUntil && new Date(user.lockedUntil) > /* @__PURE__ */ new Date()) {
           return true;
@@ -3995,7 +4186,7 @@ var init_authService = __esm({
             lockedUntil: null,
             loginAttempts: 0,
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq2(users.id, userId));
+          }).where(eq3(users.id, userId));
         }
         return false;
       }
@@ -4003,7 +4194,7 @@ var init_authService = __esm({
        * Record failed login attempt
        */
       static async recordFailedLogin(userId) {
-        const [user] = await db.select().from(users).where(eq2(users.id, userId)).limit(1);
+        const [user] = await db.select().from(users).where(eq3(users.id, userId)).limit(1);
         if (!user) return;
         const newAttempts = (user.loginAttempts || 0) + 1;
         const updates = {
@@ -4017,7 +4208,7 @@ var init_authService = __esm({
           );
           updates.lockedUntil = lockoutUntil;
         }
-        await db.update(users).set(updates).where(eq2(users.id, userId));
+        await db.update(users).set(updates).where(eq3(users.id, userId));
       }
       /**
        * Record successful login
@@ -4028,15 +4219,15 @@ var init_authService = __esm({
           loginAttempts: 0,
           lockedUntil: null,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq2(users.id, userId));
+        }).where(eq3(users.id, userId));
       }
       /**
        * Generate password reset token
        */
       static async generatePasswordResetToken(email) {
-        const [user] = await db.select().from(users).where(eq2(users.email, email)).limit(1);
+        const [user] = await db.select().from(users).where(eq3(users.email, email)).limit(1);
         if (!user) return null;
-        const token = randomBytes2(32).toString("hex");
+        const token = randomBytes3(32).toString("hex");
         const expires = /* @__PURE__ */ new Date();
         expires.setHours(
           expires.getHours() + AUTH_CONFIG.PASSWORD_RESET_TOKEN_EXPIRY_HOURS
@@ -4045,7 +4236,7 @@ var init_authService = __esm({
           passwordResetToken: token,
           passwordResetExpires: expires,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq2(users.id, user.id));
+        }).where(eq3(users.id, user.id));
         return token;
       }
       /**
@@ -4053,8 +4244,8 @@ var init_authService = __esm({
        */
       static async verifyPasswordResetToken(token) {
         const [user] = await db.select().from(users).where(
-          and2(
-            eq2(users.passwordResetToken, token),
+          and3(
+            eq3(users.passwordResetToken, token),
             gt(users.passwordResetExpires, /* @__PURE__ */ new Date())
           )
         ).limit(1);
@@ -4073,38 +4264,38 @@ var init_authService = __esm({
           passwordResetExpires: null,
           passwordChangedAt: /* @__PURE__ */ new Date(),
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq2(users.id, userId));
+        }).where(eq3(users.id, userId));
         return true;
       }
       /**
        * Generate email verification token
        */
       static async generateEmailVerificationToken(userId) {
-        const token = randomBytes2(32).toString("hex");
+        const token = randomBytes3(32).toString("hex");
         await db.update(users).set({
           emailVerificationToken: token,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq2(users.id, userId));
+        }).where(eq3(users.id, userId));
         return token;
       }
       /**
        * Verify email with token
        */
       static async verifyEmail(token) {
-        const [user] = await db.select().from(users).where(eq2(users.emailVerificationToken, token)).limit(1);
+        const [user] = await db.select().from(users).where(eq3(users.emailVerificationToken, token)).limit(1);
         if (!user) return false;
         await db.update(users).set({
           emailVerified: true,
           emailVerificationToken: null,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq2(users.id, user.id));
+        }).where(eq3(users.id, user.id));
         return true;
       }
       /**
        * Change user password (authenticated)
        */
       static async changePassword(userId, currentPassword, newPassword) {
-        const [user] = await db.select().from(users).where(eq2(users.id, userId)).limit(1);
+        const [user] = await db.select().from(users).where(eq3(users.id, userId)).limit(1);
         if (!user) {
           return { success: false, error: "User not found" };
         }
@@ -4120,7 +4311,7 @@ var init_authService = __esm({
           password: hashedPassword,
           passwordChangedAt: /* @__PURE__ */ new Date(),
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq2(users.id, userId));
+        }).where(eq3(users.id, userId));
         return { success: true };
       }
     };
@@ -4333,190 +4524,6 @@ var init_rbacService = __esm({
        */
       static getRolePermissions(role) {
         return ROLE_PERMISSIONS[role] || [];
-      }
-    };
-  }
-});
-
-// server/auth/sessionService.ts
-import { eq as eq3, and as and3, lt as lt2 } from "drizzle-orm";
-import { randomBytes as randomBytes3 } from "crypto";
-function sessionTimeoutMiddleware(req, res, next) {
-  if (!req.isAuthenticated()) {
-    return next();
-  }
-  const session3 = req.session;
-  if (session3 && session3.cookie) {
-    const lastActivity = session3.cookie.expires ? new Date(session3.cookie.expires) : /* @__PURE__ */ new Date();
-    const remaining = SessionService.getTimeoutRemaining(lastActivity);
-    res.setHeader("X-Session-Timeout-Remaining", remaining.toString());
-    if (remaining < 5) {
-      res.setHeader("X-Session-Warning", "true");
-    }
-  }
-  next();
-}
-function refreshSessionMiddleware(req, res, next) {
-  if (req.isAuthenticated() && req.session) {
-    req.session.touch();
-  }
-  next();
-}
-var SESSION_CONFIG, SessionService;
-var init_sessionService = __esm({
-  "server/auth/sessionService.ts"() {
-    "use strict";
-    init_db();
-    init_schema();
-    SESSION_CONFIG = {
-      // Idle timeout: session expires after 60 minutes of inactivity
-      IDLE_TIMEOUT_MINUTES: 60,
-      // Absolute timeout: session expires after 8 hours regardless of activity
-      ABSOLUTE_TIMEOUT_HOURS: 8,
-      // Session cleanup: remove expired sessions every 1 hour
-      CLEANUP_INTERVAL_MINUTES: 60
-    };
-    SessionService = class {
-      static cleanupInterval = null;
-      /**
-       * Start automatic session cleanup
-       */
-      static startCleanup() {
-        if (this.cleanupInterval) return;
-        this.cleanupInterval = setInterval(
-          () => {
-            this.cleanupExpiredSessions().catch(console.error);
-          },
-          SESSION_CONFIG.CLEANUP_INTERVAL_MINUTES * 60 * 1e3
-        );
-        console.log("\u2705 Session cleanup started");
-      }
-      /**
-       * Stop automatic session cleanup
-       */
-      static stopCleanup() {
-        if (this.cleanupInterval) {
-          clearInterval(this.cleanupInterval);
-          this.cleanupInterval = null;
-          console.log("Session cleanup stopped");
-        }
-      }
-      /**
-       * Clean up expired sessions
-       */
-      static async cleanupExpiredSessions() {
-        const now = /* @__PURE__ */ new Date();
-        const result = await db.delete(userSessions).where(
-          and3(
-            lt2(userSessions.expiresAt, now),
-            eq3(userSessions.isActive, true)
-          )
-        );
-        const count2 = result.rowCount || 0;
-        if (count2 > 0) {
-          console.log(`\u{1F9F9} Cleaned up ${count2} expired sessions`);
-        }
-        return count2;
-      }
-      /**
-       * Create a new session
-       */
-      static async createSession(userId, ipAddress, userAgent) {
-        const sessionToken = randomBytes3(32).toString("hex");
-        const now = /* @__PURE__ */ new Date();
-        const expiresAt = new Date(
-          now.getTime() + SESSION_CONFIG.ABSOLUTE_TIMEOUT_HOURS * 60 * 60 * 1e3
-        );
-        await db.insert(userSessions).values({
-          userId,
-          sessionToken,
-          ipAddress,
-          userAgent,
-          expiresAt,
-          lastActivity: now,
-          isActive: true
-        });
-        return sessionToken;
-      }
-      /**
-       * Validate and update session
-       */
-      static async validateSession(sessionToken) {
-        const [session3] = await db.select().from(userSessions).where(
-          and3(
-            eq3(userSessions.sessionToken, sessionToken),
-            eq3(userSessions.isActive, true)
-          )
-        ).limit(1);
-        if (!session3) {
-          return { valid: false, reason: "Session not found" };
-        }
-        const now = /* @__PURE__ */ new Date();
-        if (new Date(session3.expiresAt) < now) {
-          await this.invalidateSession(sessionToken);
-          return { valid: false, reason: "Session expired (absolute timeout)" };
-        }
-        const lastActivity = new Date(session3.lastActivity || now);
-        const idleMinutes = (now.getTime() - lastActivity.getTime()) / (1e3 * 60);
-        if (idleMinutes > SESSION_CONFIG.IDLE_TIMEOUT_MINUTES) {
-          await this.invalidateSession(sessionToken);
-          return {
-            valid: false,
-            reason: "Session expired (idle timeout)"
-          };
-        }
-        await db.update(userSessions).set({
-          lastActivity: now
-        }).where(eq3(userSessions.sessionToken, sessionToken));
-        return { valid: true, userId: session3.userId };
-      }
-      /**
-       * Invalidate a session (logout)
-       */
-      static async invalidateSession(sessionToken) {
-        await db.update(userSessions).set({
-          isActive: false
-        }).where(eq3(userSessions.sessionToken, sessionToken));
-      }
-      /**
-       * Invalidate all sessions for a user
-       */
-      static async invalidateAllUserSessions(userId) {
-        await db.update(userSessions).set({
-          isActive: false
-        }).where(
-          and3(
-            eq3(userSessions.userId, userId),
-            eq3(userSessions.isActive, true)
-          )
-        );
-      }
-      /**
-       * Get active sessions for a user
-       */
-      static async getUserActiveSessions(userId) {
-        return await db.select({
-          sessionToken: userSessions.sessionToken,
-          createdAt: userSessions.createdAt,
-          lastActivity: userSessions.lastActivity,
-          expiresAt: userSessions.expiresAt,
-          ipAddress: userSessions.ipAddress,
-          userAgent: userSessions.userAgent
-        }).from(userSessions).where(
-          and3(
-            eq3(userSessions.userId, userId),
-            eq3(userSessions.isActive, true)
-          )
-        );
-      }
-      /**
-       * Get session timeout remaining (in minutes)
-       */
-      static getTimeoutRemaining(lastActivity) {
-        const now = /* @__PURE__ */ new Date();
-        const elapsed = (now.getTime() - lastActivity.getTime()) / (1e3 * 60);
-        const remaining = SESSION_CONFIG.IDLE_TIMEOUT_MINUTES - elapsed;
-        return Math.max(0, Math.round(remaining));
       }
     };
   }
@@ -5584,7 +5591,7 @@ var init_paynowService = __esm({
 
 // server/paymentRoutes.ts
 import { eq as eq6, and as and4, desc as desc2, sql as sql6 } from "drizzle-orm";
-import { z as z2 } from "zod";
+import { z as z3 } from "zod";
 function registerPaymentRoutes(app2) {
   const paynow = getPayNowService();
   app2.post("/api/payments/create", async (req, res) => {
@@ -5700,7 +5707,7 @@ function registerPaymentRoutes(app2) {
       });
     } catch (error) {
       console.error("Payment creation error:", error);
-      if (error instanceof z2.ZodError) {
+      if (error instanceof z3.ZodError) {
         return res.status(400).json({
           success: false,
           error: "Validation failed",
@@ -5841,7 +5848,7 @@ function registerPaymentRoutes(app2) {
       }
     } catch (error) {
       console.error("Express checkout error:", error);
-      if (error instanceof z2.ZodError) {
+      if (error instanceof z3.ZodError) {
         return res.status(400).json({
           success: false,
           error: "Validation failed",
@@ -5982,23 +5989,23 @@ var init_paymentRoutes = __esm({
     init_db();
     init_schema();
     init_paynowService();
-    createPaymentSchema = z2.object({
-      amount: z2.number().positive(),
-      currency: z2.string().default("USD"),
-      paymentMethod: z2.enum(["paynow_ecocash", "paynow_onemoney", "cash", "bank_transfer", "stripe_card"]),
-      purpose: z2.enum(["membership", "application", "renewal", "event", "fine", "subscription"]),
-      description: z2.string().optional(),
-      memberId: z2.string().optional(),
-      organizationId: z2.string().optional(),
-      applicationId: z2.string().optional(),
-      eventId: z2.string().optional(),
-      phoneNumber: z2.string().optional(),
-      email: z2.string().email().optional()
+    createPaymentSchema = z3.object({
+      amount: z3.number().positive(),
+      currency: z3.string().default("USD"),
+      paymentMethod: z3.enum(["paynow_ecocash", "paynow_onemoney", "cash", "bank_transfer", "stripe_card"]),
+      purpose: z3.enum(["membership", "application", "renewal", "event", "fine", "subscription"]),
+      description: z3.string().optional(),
+      memberId: z3.string().optional(),
+      organizationId: z3.string().optional(),
+      applicationId: z3.string().optional(),
+      eventId: z3.string().optional(),
+      phoneNumber: z3.string().optional(),
+      email: z3.string().email().optional()
     });
-    paynowExpressCheckoutSchema = z2.object({
-      paymentId: z2.string(),
-      phoneNumber: z2.string().regex(/^(?:\+263|0)[0-9]{9}$/, "Invalid Zimbabwe phone number"),
-      paymentMethod: z2.enum(["ecocash", "onemoney"])
+    paynowExpressCheckoutSchema = z3.object({
+      paymentId: z3.string(),
+      phoneNumber: z3.string().regex(/^(?:\+263|0)[0-9]{9}$/, "Invalid Zimbabwe phone number"),
+      paymentMethod: z3.enum(["ecocash", "onemoney"])
     });
   }
 });
@@ -6178,7 +6185,7 @@ var init_paynow = __esm({
 });
 
 // server/services/eligibility.ts
-import { z as z3 } from "zod";
+import { z as z4 } from "zod";
 function checkIndividualEligibility(input) {
   try {
     personalSchema.parse(input.personal);
@@ -6408,37 +6415,37 @@ var oLevelSchema, aLevelSchema, equivalentQualificationSchema, personalSchema;
 var init_eligibility = __esm({
   "server/services/eligibility.ts"() {
     "use strict";
-    oLevelSchema = z3.object({
-      subjects: z3.array(z3.string()),
-      hasEnglish: z3.boolean(),
-      hasMath: z3.boolean(),
-      passesCount: z3.number()
+    oLevelSchema = z4.object({
+      subjects: z4.array(z4.string()),
+      hasEnglish: z4.boolean(),
+      hasMath: z4.boolean(),
+      passesCount: z4.number()
     });
-    aLevelSchema = z3.object({
-      subjects: z3.array(z3.string()),
-      passesCount: z3.number()
+    aLevelSchema = z4.object({
+      subjects: z4.array(z4.string()),
+      passesCount: z4.number()
     }).optional();
-    equivalentQualificationSchema = z3.object({
-      type: z3.string(),
-      institution: z3.string(),
-      levelMap: z3.string(),
+    equivalentQualificationSchema = z4.object({
+      type: z4.string(),
+      institution: z4.string(),
+      levelMap: z4.string(),
       // How it maps to A-Level equivalent
-      evidenceDocId: z3.string().optional()
+      evidenceDocId: z4.string().optional()
     }).optional();
-    personalSchema = z3.object({
-      firstName: z3.string(),
-      lastName: z3.string(),
-      dob: z3.string(),
+    personalSchema = z4.object({
+      firstName: z4.string(),
+      lastName: z4.string(),
+      dob: z4.string(),
       // ISO date string
-      nationalId: z3.string().optional(),
-      email: z3.string().email(),
-      phone: z3.object({
-        countryCode: z3.string(),
-        number: z3.string()
+      nationalId: z4.string().optional(),
+      email: z4.string().email(),
+      phone: z4.object({
+        countryCode: z4.string(),
+        number: z4.string()
       }).optional(),
-      address: z3.string().optional(),
-      countryOfResidence: z3.string(),
-      currentEmployer: z3.string().optional()
+      address: z4.string().optional(),
+      countryOfResidence: z4.string(),
+      currentEmployer: z4.string().optional()
     });
   }
 });
@@ -6983,7 +6990,7 @@ var init_fileValidation = __esm({
 });
 
 // server/applicationRoutes.ts
-import { z as z4 } from "zod";
+import { z as z5 } from "zod";
 import { eq as eq8, and as and5, desc as desc3 } from "drizzle-orm";
 function generateOTP() {
   return Math.floor(1e5 + Math.random() * 9e5).toString();
@@ -7062,7 +7069,7 @@ function registerApplicationRoutes(app2) {
       });
     } catch (error) {
       console.error("Individual application start error:", error);
-      if (error instanceof z4.ZodError) {
+      if (error instanceof z5.ZodError) {
         return res.status(400).json({
           type: "https://tools.ietf.org/html/rfc7807",
           title: "Validation Error",
@@ -7159,7 +7166,7 @@ function registerApplicationRoutes(app2) {
       });
     } catch (error) {
       console.error("Organization application start error:", error);
-      if (error instanceof z4.ZodError) {
+      if (error instanceof z5.ZodError) {
         return res.status(400).json({
           type: "https://tools.ietf.org/html/rfc7807",
           title: "Validation Error",
@@ -8121,64 +8128,64 @@ var init_applicationRoutes = __esm({
     init_paynow();
     init_eligibility();
     init_submissionGuard();
-    individualApplicationSchema = z4.object({
-      personal: z4.object({
-        firstName: z4.string().min(2),
-        lastName: z4.string().min(2),
-        dob: z4.string().refine((dateStr) => {
+    individualApplicationSchema = z5.object({
+      personal: z5.object({
+        firstName: z5.string().min(2),
+        lastName: z5.string().min(2),
+        dob: z5.string().refine((dateStr) => {
           const dob = new Date(dateStr);
           const today = /* @__PURE__ */ new Date();
           const age = today.getFullYear() - dob.getFullYear();
           const adjustedAge = today.getMonth() < dob.getMonth() || today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate() ? age - 1 : age;
           return adjustedAge >= 18;
         }, { message: "Applicant must be at least 18 years old" }),
-        nationalId: z4.string().optional(),
-        email: z4.string().email(),
-        phone: z4.object({
-          countryCode: z4.string().min(1, "Country code is required"),
-          number: z4.string().min(5, "Phone number is required")
+        nationalId: z5.string().optional(),
+        email: z5.string().email(),
+        phone: z5.object({
+          countryCode: z5.string().min(1, "Country code is required"),
+          number: z5.string().min(5, "Phone number is required")
         }).optional(),
-        address: z4.string().optional(),
-        countryOfResidence: z4.string().min(2, "Country of residence is required"),
-        currentEmployer: z4.string().optional()
+        address: z5.string().optional(),
+        countryOfResidence: z5.string().min(2, "Country of residence is required"),
+        currentEmployer: z5.string().optional()
       }),
-      oLevel: z4.object({
-        subjects: z4.array(z4.string()),
-        hasEnglish: z4.boolean(),
-        hasMath: z4.boolean(),
-        passesCount: z4.number().min(5)
+      oLevel: z5.object({
+        subjects: z5.array(z5.string()),
+        hasEnglish: z5.boolean(),
+        hasMath: z5.boolean(),
+        passesCount: z5.number().min(5)
       }),
-      aLevel: z4.object({
-        subjects: z4.array(z4.string()),
-        passesCount: z4.number()
+      aLevel: z5.object({
+        subjects: z5.array(z5.string()),
+        passesCount: z5.number()
       }).optional(),
-      equivalentQualification: z4.object({
-        type: z4.string(),
-        institution: z4.string(),
-        levelMap: z4.string(),
-        evidenceDocId: z4.string().optional()
+      equivalentQualification: z5.object({
+        type: z5.string(),
+        institution: z5.string(),
+        levelMap: z5.string(),
+        evidenceDocId: z5.string().optional()
       }).optional()
     });
-    organizationApplicationSchema = z4.object({
-      orgProfile: z4.object({
-        legalName: z4.string().min(2),
-        tradingName: z4.string().optional(),
-        regNo: z4.string().optional(),
-        taxNo: z4.string().optional(),
-        address: z4.string().optional(),
-        emails: z4.array(z4.string().email()),
-        phones: z4.array(z4.string()).optional()
+    organizationApplicationSchema = z5.object({
+      orgProfile: z5.object({
+        legalName: z5.string().min(2),
+        tradingName: z5.string().optional(),
+        regNo: z5.string().optional(),
+        taxNo: z5.string().optional(),
+        address: z5.string().optional(),
+        emails: z5.array(z5.string().email()),
+        phones: z5.array(z5.string()).optional()
       }),
-      trustAccount: z4.object({
-        bankName: z4.string().min(2),
-        branch: z4.string().optional(),
-        accountNoMasked: z4.string().optional()
+      trustAccount: z5.object({
+        bankName: z5.string().min(2),
+        branch: z5.string().optional(),
+        accountNoMasked: z5.string().optional()
       }),
-      preaMemberId: z4.string(),
-      directors: z4.array(z4.object({
-        name: z4.string(),
-        nationalId: z4.string().optional(),
-        memberId: z4.string().optional()
+      preaMemberId: z5.string(),
+      directors: z5.array(z5.object({
+        name: z5.string(),
+        nationalId: z5.string().optional(),
+        memberId: z5.string().optional()
       }))
     });
   }
@@ -8386,7 +8393,7 @@ var init_notificationRoutes = __esm({
 
 // server/userProfileRoutes.ts
 import { eq as eq10, and as and7, desc as desc5 } from "drizzle-orm";
-import { z as z5 } from "zod";
+import { z as z6 } from "zod";
 function registerUserProfileRoutes(app2) {
   app2.get("/api/user/profile", requireAuth2, async (req, res) => {
     try {
@@ -8609,22 +8616,22 @@ var init_userProfileRoutes = __esm({
     init_rbacService();
     init_db();
     init_schema();
-    updateProfileSchema = z5.object({
-      firstName: z5.string().min(2, "First name must be at least 2 characters").optional(),
-      lastName: z5.string().min(2, "Last name must be at least 2 characters").optional(),
-      email: z5.string().email("Invalid email address").optional(),
-      phone: z5.string().min(10, "Phone number must be at least 10 digits").optional(),
-      department: z5.string().optional(),
-      jobTitle: z5.string().optional(),
-      notes: z5.string().optional()
+    updateProfileSchema = z6.object({
+      firstName: z6.string().min(2, "First name must be at least 2 characters").optional(),
+      lastName: z6.string().min(2, "Last name must be at least 2 characters").optional(),
+      email: z6.string().email("Invalid email address").optional(),
+      phone: z6.string().min(10, "Phone number must be at least 10 digits").optional(),
+      department: z6.string().optional(),
+      jobTitle: z6.string().optional(),
+      notes: z6.string().optional()
     });
-    updatePreferencesSchema = z5.object({
-      emailNotifications: z5.boolean().optional(),
-      smsNotifications: z5.boolean().optional(),
-      inAppNotifications: z5.boolean().optional(),
-      dashboardView: z5.string().optional(),
-      timezone: z5.string().optional(),
-      language: z5.string().optional()
+    updatePreferencesSchema = z6.object({
+      emailNotifications: z6.boolean().optional(),
+      smsNotifications: z6.boolean().optional(),
+      inAppNotifications: z6.boolean().optional(),
+      dashboardView: z6.string().optional(),
+      timezone: z6.string().optional(),
+      language: z6.string().optional()
     });
   }
 });
@@ -8726,11 +8733,11 @@ function getObjectStorageClient() {
   }
   return objectStorageClient;
 }
-function parseObjectPath(path2) {
-  if (!path2.startsWith("/")) {
-    path2 = `/${path2}`;
+function parseObjectPath(path3) {
+  if (!path3.startsWith("/")) {
+    path3 = `/${path3}`;
   }
-  const pathParts = path2.split("/");
+  const pathParts = path3.split("/");
   if (pathParts.length < 3) {
     throw new Error("Invalid path: must contain at least a bucket name");
   }
@@ -8784,7 +8791,7 @@ var init_objectStorage = __esm({
         const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
         const paths = Array.from(
           new Set(
-            pathsStr.split(",").map((path2) => path2.trim()).filter((path2) => path2.length > 0)
+            pathsStr.split(",").map((path3) => path3.trim()).filter((path3) => path3.length > 0)
           )
         );
         if (paths.length === 0) {
@@ -8945,7 +8952,7 @@ var publicRoutes_exports = {};
 __export(publicRoutes_exports, {
   registerPublicRoutes: () => registerPublicRoutes
 });
-import { z as z6 } from "zod";
+import { z as z7 } from "zod";
 import { eq as eq11 } from "drizzle-orm";
 import crypto4 from "crypto";
 function generateVerificationToken2() {
@@ -9005,7 +9012,7 @@ function registerPublicRoutes(app2) {
       });
     } catch (error) {
       console.error("Individual registration error:", error);
-      if (error instanceof z6.ZodError) {
+      if (error instanceof z7.ZodError) {
         return res.status(400).json({
           error: "Validation failed",
           details: error.errors
@@ -9064,7 +9071,7 @@ function registerPublicRoutes(app2) {
       });
     } catch (error) {
       console.error("Organization registration error:", error);
-      if (error instanceof z6.ZodError) {
+      if (error instanceof z7.ZodError) {
         return res.status(400).json({
           error: "Validation failed",
           details: error.errors
@@ -9363,14 +9370,14 @@ var init_publicRoutes = __esm({
     init_storage();
     init_namingSeries();
     init_emailService();
-    individualRegistrationSchema = z6.object({
-      firstName: z6.string().min(2, "First name must be at least 2 characters"),
-      surname: z6.string().min(2, "Surname must be at least 2 characters"),
-      email: z6.string().email("Invalid email address")
+    individualRegistrationSchema = z7.object({
+      firstName: z7.string().min(2, "First name must be at least 2 characters"),
+      surname: z7.string().min(2, "Surname must be at least 2 characters"),
+      email: z7.string().email("Invalid email address")
     });
-    organizationRegistrationSchema = z6.object({
-      companyName: z6.string().min(2, "Company name must be at least 2 characters"),
-      email: z6.string().email("Invalid email address")
+    organizationRegistrationSchema = z7.object({
+      companyName: z7.string().min(2, "Company name must be at least 2 characters"),
+      email: z7.string().email("Invalid email address")
     });
   }
 });
@@ -9955,7 +9962,7 @@ __export(routes_exports, {
   registerRoutes: () => registerRoutes
 });
 import { createServer } from "http";
-import { z as z7 } from "zod";
+import { z as z8 } from "zod";
 import multer from "multer";
 import { eq as eq13 } from "drizzle-orm";
 import { randomUUID as randomUUID3, randomBytes as randomBytes4 } from "crypto";
@@ -10446,9 +10453,9 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/organization-applicants/login", async (req, res) => {
     try {
-      const loginSchema = z7.object({
-        applicantId: z7.string().regex(/^ORG-APP-\d{4}-\d{4}$/, "Invalid organization applicant ID format"),
-        email: z7.string().email("Invalid email format")
+      const loginSchema = z8.object({
+        applicantId: z8.string().regex(/^ORG-APP-\d{4}-\d{4}$/, "Invalid organization applicant ID format"),
+        email: z8.string().email("Invalid email format")
       });
       const { applicantId, email } = loginSchema.parse(req.body);
       const organizationApplicant = await storage.getOrganizationApplicantByApplicantId(applicantId);
@@ -10490,8 +10497,8 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/organization-applicants/verify-email", async (req, res) => {
     try {
-      const verifySchema = z7.object({
-        token: z7.string().min(1, "Verification token is required")
+      const verifySchema = z8.object({
+        token: z8.string().min(1, "Verification token is required")
       });
       const { token } = verifySchema.parse(req.body);
       const organizationApplicant = await storage.getOrganizationApplicantByVerificationToken(token);
@@ -13295,27 +13302,27 @@ var init_routes = __esm({
     STAFF_ROLES = ["admin", "member_manager", "super_admin", "staff"];
     MEMBER_MANAGER_ROLES = ["admin", "member_manager", "super_admin"];
     PAYMENT_SORT_FIELDS = ["createdAt", "amount", "status", "paymentNumber"];
-    paginationQuerySchema = z7.object({
-      limit: z7.string().optional().transform((val) => val ? parseInt(val) : void 0).refine((val) => val === void 0 || !isNaN(val) && val > 0 && val <= 1e3, {
+    paginationQuerySchema = z8.object({
+      limit: z8.string().optional().transform((val) => val ? parseInt(val) : void 0).refine((val) => val === void 0 || !isNaN(val) && val > 0 && val <= 1e3, {
         message: "Limit must be a positive number between 1 and 1000"
       }),
-      offset: z7.string().optional().transform((val) => val ? parseInt(val) : void 0).refine((val) => val === void 0 || !isNaN(val) && val >= 0, {
+      offset: z8.string().optional().transform((val) => val ? parseInt(val) : void 0).refine((val) => val === void 0 || !isNaN(val) && val >= 0, {
         message: "Offset must be a non-negative number"
       })
     });
     paymentsQuerySchema = paginationQuerySchema.extend({
-      status: z7.string().optional(),
-      type: z7.string().optional(),
-      search: z7.string().optional(),
-      sortBy: z7.enum(PAYMENT_SORT_FIELDS).optional(),
-      sortOrder: z7.enum(["asc", "desc"]).optional()
+      status: z8.string().optional(),
+      type: z8.string().optional(),
+      search: z8.string().optional(),
+      sortBy: z8.enum(PAYMENT_SORT_FIELDS).optional(),
+      sortOrder: z8.enum(["asc", "desc"]).optional()
     });
     renewalsQuerySchema = paginationQuerySchema.extend({
-      year: z7.string().optional().transform((val) => val ? parseInt(val) : void 0).refine((val) => val === void 0 || !isNaN(val) && val >= 2020 && val <= 2030, {
+      year: z8.string().optional().transform((val) => val ? parseInt(val) : void 0).refine((val) => val === void 0 || !isNaN(val) && val >= 2020 && val <= 2030, {
         message: "Year must be between 2020 and 2030"
       }),
-      status: z7.string().optional(),
-      search: z7.string().optional()
+      status: z8.string().optional(),
+      search: z8.string().optional()
     });
     upload = multer({
       storage: multer.memoryStorage(),
@@ -13330,118 +13337,279 @@ var init_routes = __esm({
         cb(null, true);
       }
     });
-    financeStatsQuerySchema = z7.object({
-      startDate: z7.string().optional().transform((val) => val ? new Date(val) : void 0).refine((val) => val === void 0 || !isNaN(val.getTime()), {
+    financeStatsQuerySchema = z8.object({
+      startDate: z8.string().optional().transform((val) => val ? new Date(val) : void 0).refine((val) => val === void 0 || !isNaN(val.getTime()), {
         message: "Start date must be a valid date"
       }),
-      endDate: z7.string().optional().transform((val) => val ? new Date(val) : void 0).refine((val) => val === void 0 || !isNaN(val.getTime()), {
+      endDate: z8.string().optional().transform((val) => val ? new Date(val) : void 0).refine((val) => val === void 0 || !isNaN(val.getTime()), {
         message: "End date must be a valid date"
       })
     });
-    settingsUpdateSchema = z7.object({
-      settings: z7.array(z7.object({
-        key: z7.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+$/, {
+    settingsUpdateSchema = z8.object({
+      settings: z8.array(z8.object({
+        key: z8.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+$/, {
           message: "Key must contain only alphanumeric characters, underscores, dots, and hyphens"
         }),
-        value: z7.string().max(1e4),
-        description: z7.string().max(500).optional()
+        value: z8.string().max(1e4),
+        description: z8.string().max(500).optional()
       })).min(1).max(50)
     });
-    singleSettingUpdateSchema = z7.object({
-      value: z7.string().min(1).max(1e4),
-      description: z7.string().max(500).optional()
+    singleSettingUpdateSchema = z8.object({
+      value: z8.string().min(1).max(1e4),
+      description: z8.string().max(500).optional()
     });
-    renewalUpdateSchema = z7.object({
-      status: z7.enum(["pending", "reminded", "overdue", "completed", "lapsed"]).optional(),
-      renewalFee: z7.string().optional().refine((val) => val === void 0 || !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
+    renewalUpdateSchema = z8.object({
+      status: z8.enum(["pending", "reminded", "overdue", "completed", "lapsed"]).optional(),
+      renewalFee: z8.string().optional().refine((val) => val === void 0 || !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
         message: "Renewal fee must be a valid non-negative number"
       }),
-      notes: z7.string().max(1e3).optional(),
-      dueDate: z7.string().optional().transform((val) => val ? new Date(val) : void 0).refine((val) => val === void 0 || !isNaN(val.getTime()), {
+      notes: z8.string().max(1e3).optional(),
+      dueDate: z8.string().optional().transform((val) => val ? new Date(val) : void 0).refine((val) => val === void 0 || !isNaN(val.getTime()), {
         message: "Due date must be a valid date"
       })
     });
-    generateRenewalsSchema = z7.object({
-      year: z7.number().int().min(2020).max(2030),
-      defaultFee: z7.number().positive().max(1e4).optional()
+    generateRenewalsSchema = z8.object({
+      year: z8.number().int().min(2020).max(2030),
+      defaultFee: z8.number().positive().max(1e4).optional()
     });
     casesQuerySchema2 = paginationQuerySchema.extend({
-      status: z7.string().optional(),
-      priority: z7.string().optional(),
-      type: z7.string().optional(),
-      assignedTo: z7.string().optional(),
-      search: z7.string().optional()
+      status: z8.string().optional(),
+      priority: z8.string().optional(),
+      type: z8.string().optional(),
+      assignedTo: z8.string().optional(),
+      search: z8.string().optional()
     });
     caseUpdateSchema2 = insertCaseSchema.partial().extend({
-      resolution: z7.string().optional()
+      resolution: z8.string().optional()
     });
-    caseAssignmentSchema2 = z7.object({
-      assignedTo: z7.string().uuid("Invalid user ID format").optional()
+    caseAssignmentSchema2 = z8.object({
+      assignedTo: z8.string().uuid("Invalid user ID format").optional()
     });
-    bulkCaseActionSchema2 = z7.object({
-      caseIds: z7.array(z7.string().uuid("Invalid case ID format")).min(1).max(100),
-      action: z7.enum(["resolve", "assign", "close"]),
-      assignedTo: z7.string().uuid("Invalid user ID format").optional(),
+    bulkCaseActionSchema2 = z8.object({
+      caseIds: z8.array(z8.string().uuid("Invalid case ID format")).min(1).max(100),
+      action: z8.enum(["resolve", "assign", "close"]),
+      assignedTo: z8.string().uuid("Invalid user ID format").optional(),
       // For bulk assign
-      resolution: z7.string().optional()
+      resolution: z8.string().optional()
       // For bulk resolve
     });
   }
 });
 
-// server/vercel.ts
-import express from "express";
-import fs from "fs";
-import path from "path";
-var app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
+// server/index.ts
+import dotenv from "dotenv";
+
+// server/utils/env.ts
+import { z } from "zod";
+var envSchema = z.object({
+  // Node Environment
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  PORT: z.string().transform(Number).default("5000"),
+  // Database
+  DATABASE_URL: z.string().url("DATABASE_URL must be a valid PostgreSQL URL"),
+  DATABASE_URL_UNPOOLED: z.string().url().optional(),
+  // Security
+  SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters for security"),
+  // Clerk Authentication
+  CLERK_SECRET_KEY: z.string().startsWith("sk_", "CLERK_SECRET_KEY must start with sk_"),
+  VITE_CLERK_PUBLISHABLE_KEY: z.string().startsWith("pk_", "VITE_CLERK_PUBLISHABLE_KEY must start with pk_"),
+  // Email Service (ZeptoMail)
+  Send_Mail_Token: z.string().min(50, "Send_Mail_Token is required for email service"),
+  Host: z.string().min(1, "Email Host is required"),
+  Sender_Address: z.string().email("Sender_Address must be a valid email"),
+  // PayNow (Zimbabwe Payments) - Optional
+  PAYNOW_INTEGRATION_ID: z.string().optional(),
+  PAYNOW_INTEGRATION_KEY: z.string().uuid().optional(),
+  PAYNOW_RETURN_URL: z.string().url().optional(),
+  PAYNOW_RESULT_URL: z.string().url().optional(),
+  // Base URL
+  BASE_URL: z.string().url().optional(),
+  // Google Cloud Storage - Optional
+  GOOGLE_CLOUD_PROJECT_ID: z.string().optional(),
+  GOOGLE_CLOUD_PRIVATE_KEY: z.string().optional(),
+  GOOGLE_CLOUD_CLIENT_EMAIL: z.string().email().optional()
 });
-var appInitialized = false;
-async function initializeApp() {
-  if (appInitialized) return app;
+function validateEnv() {
   try {
-    console.log("Initializing Vercel serverless function...");
-    const { initializeApplicationCounters: initializeApplicationCounters2 } = await Promise.resolve().then(() => (init_namingSeries(), namingSeries_exports));
-    await initializeApplicationCounters2();
-    const { registerRoutes: registerRoutes2 } = await Promise.resolve().then(() => (init_routes(), routes_exports));
-    await registerRoutes2(app);
-    app.use((err, _req, res, _next) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      console.error("Error:", err);
-      res.status(status).json({ message });
-    });
-    const distPath = path.resolve(import.meta.dirname, "public");
-    if (!fs.existsSync(distPath)) {
-      throw new Error(
-        `Could not find the build directory: ${distPath}, make sure to build the client first`
-      );
-    }
-    app.use(express.static(distPath));
-    app.use("*", (_req, res) => {
-      res.sendFile(path.resolve(distPath, "index.html"));
-    });
-    appInitialized = true;
-    console.log("App initialized successfully for Vercel");
+    const env2 = envSchema.parse(process.env);
+    console.log("\u2705 Environment variables validated successfully");
+    return env2;
   } catch (error) {
-    console.error("Failed to initialize app:", error);
+    if (error instanceof z.ZodError) {
+      console.error("\u274C Invalid environment variables:");
+      console.error("");
+      error.errors.forEach((err) => {
+        const path3 = err.path.join(".");
+        console.error(`  \u2022 ${path3}: ${err.message}`);
+      });
+      console.error("");
+      console.error("\u{1F4A1} Please check your .env.local file and ensure all required variables are set correctly.");
+      console.error("");
+      process.exit(1);
+    }
     throw error;
   }
-  return app;
 }
-var vercel_default = async (req, res) => {
-  try {
-    const initializedApp = await initializeApp();
-    return initializedApp(req, res);
-  } catch (error) {
-    console.error("Handler error:", error);
-    res.status(500).json({ error: "Internal server error" });
+
+// server/index.ts
+import express2 from "express";
+
+// server/vite.ts
+import express from "express";
+import fs from "fs";
+import path2 from "path";
+import { createServer as createViteServer, createLogger } from "vite";
+
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+var vite_config_default = defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@assets": path.resolve(import.meta.dirname, "attached_assets")
+    }
+  },
+  root: path.resolve(import.meta.dirname, "client"),
+  build: {
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true
+  },
+  server: {
+    fs: {
+      strict: true,
+      deny: ["**/.*"]
+    }
   }
-};
-export {
-  vercel_default as default
-};
+});
+
+// server/vite.ts
+import { nanoid } from "nanoid";
+var viteLogger = createLogger();
+function log(message, source = "express") {
+  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
+async function setupVite(app2, server) {
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server },
+    allowedHosts: true
+  };
+  const vite = await createViteServer({
+    ...vite_config_default,
+    configFile: false,
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      }
+    },
+    server: serverOptions,
+    appType: "custom"
+  });
+  app2.use(vite.middlewares);
+  app2.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    try {
+      const clientTemplate = path2.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html"
+      );
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+}
+function serveStatic(app2) {
+  const distPath = path2.resolve(import.meta.dirname, "public");
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    );
+  }
+  app2.use(express.static(distPath));
+  app2.use("*", (_req, res) => {
+    res.sendFile(path2.resolve(distPath, "index.html"));
+  });
+}
+
+// server/index.ts
+dotenv.config({ path: ".env.local" });
+var env = validateEnv();
+var app = express2();
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === "production" && req.headers["x-forwarded-proto"] !== "https") {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+app.use(express2.json());
+app.use(express2.urlencoded({ extended: false }));
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path3 = req.path;
+  let capturedJsonResponse = void 0;
+  const originalResJson = res.json;
+  res.json = function(bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path3.startsWith("/api")) {
+      let logLine = `${req.method} ${path3} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "\u2026";
+      }
+      log(logLine);
+    }
+  });
+  next();
+});
+(async () => {
+  const { initializeApplicationCounters: initializeApplicationCounters2 } = await Promise.resolve().then(() => (init_namingSeries(), namingSeries_exports));
+  await initializeApplicationCounters2();
+  const { SessionService: SessionService2 } = await Promise.resolve().then(() => (init_sessionService(), sessionService_exports));
+  SessionService2.startCleanup();
+  log("Session cleanup service initialized");
+  const { registerRoutes: registerRoutes2 } = await Promise.resolve().then(() => (init_routes(), routes_exports));
+  const server = await registerRoutes2(app);
+  app.use((err, _req, res, _next) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ message });
+    throw err;
+  });
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+  const port = parseInt(process.env.PORT || "5000", 10);
+  server.listen(port, "127.0.0.1", () => {
+    log(`serving on port ${port}`);
+  });
+})();

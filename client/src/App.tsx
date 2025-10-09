@@ -55,6 +55,7 @@ import AdminFinanceDashboard from "@/pages/admin/finance-dashboard";
 import EnhancedFinanceDashboard from "@/pages/admin/enhanced-finance-dashboard";
 import AdminSettings from "@/pages/admin/admin-settings";
 import UserManagement from "@/pages/admin/user-management";
+import UserProfile from "@/pages/admin/user-profile";
 
 // Member Portal Pages
 import MemberProfile from "@/pages/member/profile-management";
@@ -129,6 +130,7 @@ function Router() {
       <ProtectedRoute path="/admin-dashboard/finance" component={AdminFinanceDashboard} />
       <ProtectedRoute path="/admin-dashboard/finance-enhanced" component={EnhancedFinanceDashboard} />
       <ProtectedRoute path="/admin-dashboard/settings" component={AdminSettings} />
+      <ProtectedRoute path="/admin-dashboard/profile" component={UserProfile} />
       
       {/* Member Portal Routes */}
       <ProtectedRoute path="/member/profile" component={MemberProfile} />
