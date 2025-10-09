@@ -2492,7 +2492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/organizations", requireAuth, async (req, res) => {
     try {
-      const allOrganizations = await storage.getAllOrganizations();
+      const allOrganizations = await storage.getAllOrganizationsWithMembers();
       res.json(allOrganizations);
     } catch (error: any) {
       console.error("Admin organizations fetch error:", error);

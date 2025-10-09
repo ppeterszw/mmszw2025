@@ -2063,6 +2063,20 @@ var init_storage = __esm({
       async getAllOrganizations() {
         return await db.select().from(organizations).orderBy(desc(organizations.createdAt));
       }
+      async getAllOrganizationsWithMembers() {
+        const allOrgs = await db.select().from(organizations).orderBy(desc(organizations.createdAt));
+        const orgsWithMembers = await Promise.all(
+          allOrgs.map(async (org) => {
+            const orgMembers = await db.select().from(members).where(eq(members.organizationId, org.id));
+            return {
+              ...org,
+              members: orgMembers,
+              memberCount: orgMembers.length
+            };
+          })
+        );
+        return orgsWithMembers;
+      }
       async getOrganizationByMemberId(memberId) {
         const [org] = await db.select().from(organizations).where(eq(organizations.preaMemberId, memberId));
         return org || void 0;
@@ -11525,7 +11539,7 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/admin/organizations", requireAuth3, async (req, res) => {
     try {
-      const allOrganizations = await storage.getAllOrganizations();
+      const allOrganizations = await storage.getAllOrganizationsWithMembers();
       res.json(allOrganizations);
     } catch (error) {
       console.error("Admin organizations fetch error:", error);

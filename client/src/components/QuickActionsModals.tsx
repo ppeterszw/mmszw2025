@@ -20,8 +20,12 @@ interface ModalProps {
   onSuccess?: () => void;
 }
 
+interface ReviewApplicationsModalProps extends ModalProps {
+  type?: "individual" | "organization";
+}
+
 // Review Applications Modal
-export function ReviewApplicationsModal({ open, onOpenChange, onSuccess }: ModalProps) {
+export function ReviewApplicationsModal({ open, onOpenChange, onSuccess, type }: ReviewApplicationsModalProps) {
   const [filterStatus, setFilterStatus] = useState("all");
   const { toast } = useToast();
 
@@ -33,12 +37,20 @@ export function ReviewApplicationsModal({ open, onOpenChange, onSuccess }: Modal
     if (onSuccess) onSuccess();
   };
 
+  // Filter applications based on type
+  const sampleApplications = [
+    { id: 1, name: "John Smith", type: "Individual", status: "initial_review", priority: "high" },
+    { id: 2, name: "ABC Real Estate", type: "Organization", status: "document_verification", priority: "medium" },
+    { id: 3, name: "Jane Doe", type: "Individual", status: "committee_review", priority: "low" },
+    { id: 4, name: "XYZ Properties", type: "Organization", status: "initial_review", priority: "medium" }
+  ].filter(app => !type || (type === "individual" && app.type === "Individual") || (type === "organization" && app.type === "Organization"));
+
   return (
     <ModernModal
       open={open}
       onOpenChange={onOpenChange}
       title="Review Applications"
-      subtitle="Process pending membership applications"
+      subtitle={`Process pending ${type === "organization" ? "organization" : type === "individual" ? "individual" : "membership"} applications`}
       icon={FileText}
       colorVariant="green"
       maxWidth="5xl"
@@ -52,7 +64,7 @@ export function ReviewApplicationsModal({ open, onOpenChange, onSuccess }: Modal
       <div className="space-y-6">
         <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-green-800">Pending Applications</h3>
+            <h3 className="text-lg font-semibold text-green-800">Pending Applications ({sampleApplications.length})</h3>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by status" />
@@ -68,12 +80,8 @@ export function ReviewApplicationsModal({ open, onOpenChange, onSuccess }: Modal
           </div>
 
           <div className="space-y-4">
-            {/* Sample Applications */}
-            {[
-              { id: 1, name: "John Smith", type: "Individual", status: "initial_review", priority: "high" },
-              { id: 2, name: "ABC Real Estate", type: "Organization", status: "document_verification", priority: "medium" },
-              { id: 3, name: "Jane Doe", type: "Individual", status: "committee_review", priority: "low" }
-            ].map((app) => (
+            {/* Filtered Applications */}
+            {sampleApplications.map((app) => (
               <div key={app.id} className="bg-white/80 p-4 rounded-lg border border-green-200 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">

@@ -118,6 +118,7 @@ export interface IStorage {
   createOrganization(org: InsertOrganization): Promise<Organization>;
   updateOrganization(id: string, updates: Partial<Organization>): Promise<Organization>;
   getAllOrganizations(): Promise<Organization[]>;
+  getAllOrganizationsWithMembers(): Promise<any[]>;
   
   // Enhanced Application operations
   getMemberApplication(id: string): Promise<MemberApplication | undefined>;
@@ -653,6 +654,28 @@ export class DatabaseStorage implements IStorage {
 
   async getAllOrganizations(): Promise<Organization[]> {
     return await db.select().from(organizations).orderBy(desc(organizations.createdAt));
+  }
+
+  async getAllOrganizationsWithMembers(): Promise<any[]> {
+    const allOrgs = await db.select().from(organizations).orderBy(desc(organizations.createdAt));
+
+    // For each organization, get its members
+    const orgsWithMembers = await Promise.all(
+      allOrgs.map(async (org) => {
+        const orgMembers = await db
+          .select()
+          .from(members)
+          .where(eq(members.organizationId, org.id));
+
+        return {
+          ...org,
+          members: orgMembers,
+          memberCount: orgMembers.length
+        };
+      })
+    );
+
+    return orgsWithMembers;
   }
 
   async getOrganizationByMemberId(memberId: string): Promise<Organization | undefined> {

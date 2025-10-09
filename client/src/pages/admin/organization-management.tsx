@@ -13,6 +13,7 @@ import { AdminHeader } from "@/components/AdminHeader";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { BulkImportModal } from "@/components/BulkImportModal";
 import { QuickActions } from "@/components/QuickActions";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ReviewApplicationsModal,
   ExportDataModal,
@@ -301,102 +302,130 @@ export default function OrganizationManagement() {
           </div>
         </div>
 
-        {/* Organizations Grid */}
+        {/* Organizations Table */}
         {isLoading ? (
           <div className="text-center py-8">Loading organizations...</div>
         ) : filteredOrganizations.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredOrganizations.map((org) => (
-              <Card key={org.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Building2 className="w-6 h-6 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{org.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          {org.registrationNumber}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge className={getStatusColor(org.membershipStatus || "")}>
-                      <div className="flex items-center space-x-1">
-                        {getStatusIcon(org.membershipStatus || "")}
-                        <span>{org.membershipStatus}</span>
-                      </div>
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <Building2 className="w-4 h-4 mr-2 text-muted-foreground" />
-                      {org.businessType?.replace(/_/g, " ") || "Not specified"}
-                    </div>
-
-                    <div className="flex items-center text-sm">
-                      <Users className="w-4 h-4 mr-2 text-muted-foreground" />
-                      {org.memberCount || 0} members
-                    </div>
-
-                    {org.email && (
-                      <div className="flex items-center text-sm">
-                        <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <a 
-                          href={`mailto:${org.email}`}
-                          className="text-primary hover:underline truncate"
-                        >
-                          {org.email}
-                        </a>
-                      </div>
-                    )}
-
-                    {org.phone && (
-                      <div className="flex items-center text-sm">
-                        <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <a 
-                          href={`tel:${org.phone}`}
-                          className="text-primary hover:underline"
-                        >
-                          {org.phone}
-                        </a>
-                      </div>
-                    )}
-
-                    {org.physicalAddress && (
-                      <div className="flex items-start text-sm">
-                        <MapPin className="w-4 h-4 mr-2 mt-0.5 text-muted-foreground" />
-                        <span className="line-clamp-2">{org.physicalAddress}</span>
-                      </div>
-                    )}
-
-                    <div className="flex space-x-2 pt-3">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            size="sm" 
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Registration Number</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Members</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrganizations.map((org, index) => (
+                    <TableRow
+                      key={org.id}
+                      className={index % 2 === 0 ? 'bg-white' : 'bg-blue-50/30'}
+                    >
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                            <Building2 className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <div className="font-medium">{org.name}</div>
+                            <div className="text-sm text-gray-500">{org.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {org.registrationNumber}
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        {org.businessType?.replace(/_/g, " ") || "Not specified"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(org.status || "")}>
+                          <div className="flex items-center space-x-1">
+                            {getStatusIcon(org.status || "")}
+                            <span>{org.status}</span>
+                          </div>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Users className="w-4 h-4 mr-2 text-muted-foreground" />
+                          {org.memberCount || 0}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {org.phone && (
+                          <a href={`tel:${org.phone}`} className="text-primary hover:underline text-sm">
+                            {org.phone}
+                          </a>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
                             variant="outline"
+                            className="h-8 px-3 text-purple-600 border-purple-200 hover:bg-purple-50"
                             onClick={() => setSelectedOrg(org)}
                           >
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
+                            <Eye className="w-3 h-3 mr-1" />
+                            <span className="text-xs">View</span>
                           </Button>
-                        </DialogTrigger>
-                      </Dialog>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-3 text-blue-600 border-blue-200 hover:bg-blue-50"
+                            onClick={() => setLocation(`/admin-dashboard/organizations/${org.id}`)}
+                          >
+                            <Edit className="w-3 h-3 mr-1" />
+                            <span className="text-xs">Edit</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Organizations Found</h3>
+              <p className="text-gray-500 mb-4">
+                {searchQuery || statusFilter !== "all" || typeFilter !== "all"
+                  ? "Try adjusting your search criteria or filters."
+                  : "Get started by registering your first organization."
+                }
+              </p>
+              <Button
+                className="gradient-button text-white border-0"
+                onClick={() => setLocation("/organization-registration")}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Register Organization
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-                      <ModernModal
-                        open={!!selectedOrg && selectedOrg.id === org.id}
-                        onOpenChange={() => setSelectedOrg(null)}
-                        title={selectedOrg?.name || org.name}
-                        subtitle={`Organization Details - ${selectedOrg?.registrationNumber || org.registrationNumber}`}
-                        icon={Building2}
-                        colorVariant="purple"
-                        maxWidth="2xl"
-                      >
-                        {selectedOrg && (
-                          <div className="space-y-6">
+        {/* Organization Detail Modal */}
+        {selectedOrg && (
+          <ModernModal
+            open={!!selectedOrg}
+            onOpenChange={() => setSelectedOrg(null)}
+            title={selectedOrg.name}
+            subtitle={`Organization Details - ${selectedOrg.registrationNumber}`}
+            icon={Building2}
+            colorVariant="purple"
+            maxWidth="4xl"
+          >
+            <div className="space-y-6">
                             {/* Status & Basic Info Section */}
                             <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200">
                               <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
@@ -469,6 +498,44 @@ export default function OrganizationManagement() {
                               </div>
                             </div>
 
+                            {/* Members List Section */}
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+                              <h3 className="text-lg font-semibold text-green-800 mb-4 flex items-center">
+                                <Users className="w-5 h-5 mr-2" />
+                                Organization Members ({selectedOrg.members?.length || 0})
+                              </h3>
+                              {selectedOrg.members && selectedOrg.members.length > 0 ? (
+                                <div className="space-y-2">
+                                  {selectedOrg.members.map((member) => (
+                                    <div key={member.id} className="bg-white/80 p-3 rounded-lg border border-green-200 flex items-center justify-between hover:shadow-md transition-shadow">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                          <Users className="w-4 h-4 text-green-600" />
+                                        </div>
+                                        <div>
+                                          <div className="font-medium text-green-800">{member.firstName} {member.lastName}</div>
+                                          <div className="text-sm text-green-600">{member.membershipNumber}</div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-green-700 border-green-300 capitalize">
+                                          {member.memberType?.replace(/_/g, " ")}
+                                        </Badge>
+                                        <Badge className={member.membershipStatus === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                                          {member.membershipStatus}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-center py-6">
+                                  <Users className="w-12 h-12 text-green-300 mx-auto mb-2" />
+                                  <p className="text-green-600">No members assigned to this organization yet.</p>
+                                </div>
+                              )}
+                            </div>
+
                             {/* Quick Actions Section */}
                             <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-xl border border-gray-200">
                               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -476,21 +543,14 @@ export default function OrganizationManagement() {
                                 Quick Actions
                               </h3>
                               <div className="flex space-x-3">
-                                <Button 
+                                <Button
                                   className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
                                   onClick={() => setLocation(`/admin-dashboard/organizations/${selectedOrg.id}`)}
                                 >
                                   <Edit className="w-4 h-4 mr-2" />
                                   Edit Details
                                 </Button>
-                                <Button 
-                                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
-                                  onClick={() => setLocation(`/admin-dashboard/organizations/${selectedOrg.id}/members`)}
-                                >
-                                  <Users className="w-4 h-4 mr-2" />
-                                  View Members ({selectedOrg.memberCount || 0})
-                                </Button>
-                                <Button 
+                                <Button
                                   className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
                                   onClick={() => {
                                     toast({
@@ -505,43 +565,7 @@ export default function OrganizationManagement() {
                               </div>
                             </div>
                           </div>
-                        )}
                       </ModernModal>
-
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => setLocation(`/admin-dashboard/organizations/${org.id}`)}
-                      >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="text-center py-8">
-              <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No Organizations Found</h3>
-              <p className="text-gray-500 mb-4">
-                {searchQuery || statusFilter !== "all" || typeFilter !== "all" 
-                  ? "Try adjusting your search criteria or filters."
-                  : "Get started by registering your first organization."
-                }
-              </p>
-              <Button 
-                className="gradient-button text-white border-0"
-                onClick={() => setLocation("/organization-registration")}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Register Organization
-              </Button>
-            </CardContent>
-          </Card>
         )}
       </div>
 
@@ -557,6 +581,7 @@ export default function OrganizationManagement() {
         open={reviewAppsModalOpen}
         onOpenChange={setReviewAppsModalOpen}
         onSuccess={refetch}
+        type="organization"
       />
 
       <ExportDataModal
@@ -582,8 +607,6 @@ export default function OrganizationManagement() {
         onOpenChange={setComplianceModalOpen}
         onSuccess={refetch}
       />
-
-      <FormFooter />
     </div>
   );
 }
