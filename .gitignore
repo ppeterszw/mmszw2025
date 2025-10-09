@@ -1,4 +1,7 @@
 .vercel
 node_modules
 node_modules
+.env.local
+.env.vercel.production
+.env.production
 .env.*

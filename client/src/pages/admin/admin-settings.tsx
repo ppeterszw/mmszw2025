@@ -79,17 +79,28 @@ export default function AdminSettings() {
   });
 
   // Fetch settings from API
-  const { data: fetchedSettings, isLoading, refetch } = useQuery({
+  const { data: fetchedSettings, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/settings"],
     queryFn: async () => {
-      console.log("Fetching settings from API...");
-      const response = await apiRequest("GET", "/api/settings");
-      console.log("Received settings:", response);
-      return response as SystemSettings;
+      console.log("[SETTINGS] Fetching settings from API...");
+      try {
+        const response = await apiRequest("GET", "/api/settings");
+        console.log("[SETTINGS] Received settings:", response);
+        return response as SystemSettings;
+      } catch (err) {
+        console.error("[SETTINGS] Fetch error:", err);
+        throw err;
+      }
     },
+    retry: false, // Don't retry on error
     staleTime: 0, // Always refetch on mount
     gcTime: 0, // Don't cache
   });
+
+  // Log query state changes
+  useEffect(() => {
+    console.log("[SETTINGS] Query state - isLoading:", isLoading, "error:", error, "hasData:", !!fetchedSettings);
+  }, [isLoading, error, fetchedSettings]);
 
   // Update local state when data is fetched
   useEffect(() => {
@@ -135,6 +146,16 @@ export default function AdminSettings() {
   });
 
   const handleSaveSettings = () => {
+    if (!fetchedSettings) {
+      toast({
+        title: "Cannot Save",
+        description: "Settings haven't loaded yet. Please wait or click 'Reload from Database'.",
+        variant: "destructive"
+      });
+      console.error("[SETTINGS] Attempted to save before data loaded");
+      return;
+    }
+    console.log("[SETTINGS] Saving settings...");
     saveSettingsMutation.mutate(settings);
   };
 
@@ -186,8 +207,25 @@ export default function AdminSettings() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
         <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Loading settings from database...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <AlertTriangle className="w-12 h-12 text-destructive" />
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">Failed to Load Settings</h2>
+          <p className="text-muted-foreground mb-4">Error: {error instanceof Error ? error.message : "Unknown error"}</p>
+          <Button onClick={() => refetch()}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }
