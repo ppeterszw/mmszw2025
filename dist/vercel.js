@@ -9353,6 +9353,113 @@ function registerPublicRoutes(app2) {
       return res.status(500).json({ error: "Internal server error" });
     }
   });
+  app2.get("/api/public/applications/:applicationId", async (req, res) => {
+    try {
+      const { applicationId } = req.params;
+      const application = await storage.getApplicationById(applicationId);
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+      res.json(application);
+    } catch (error) {
+      console.error("Application tracking error:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  app2.get("/api/cases/track", async (req, res) => {
+    try {
+      const { caseNumber, email } = req.query;
+      if (!caseNumber && !email) {
+        return res.status(400).json({ error: "Case number or email is required" });
+      }
+      let caseData;
+      if (caseNumber) {
+        caseData = await storage.getCaseByCaseNumber(caseNumber);
+      } else if (email) {
+        const cases2 = await storage.getCasesByEmail(email);
+        caseData = cases2[0];
+      }
+      if (!caseData) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      res.json(caseData);
+    } catch (error) {
+      console.error("Case tracking error:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  const caseReportSchema = z6.object({
+    reporterName: z6.string().min(2),
+    reporterEmail: z6.string().email(),
+    reporterPhone: z6.string().optional(),
+    caseType: z6.enum(["complaint", "violation", "malpractice", "misconduct", "fraud", "breach_of_duty"]),
+    respondentType: z6.enum(["individual", "firm"]),
+    respondentName: z6.string().min(2),
+    respondentLicense: z6.string().optional(),
+    incidentDate: z6.string().optional(),
+    incidentLocation: z6.string().optional(),
+    description: z6.string().min(50),
+    evidence: z6.string().optional(),
+    witnesses: z6.string().optional(),
+    previousAction: z6.string().optional(),
+    expectedOutcome: z6.string().optional()
+  });
+  app2.post("/api/cases/report", async (req, res) => {
+    try {
+      const caseData = caseReportSchema.parse(req.body);
+      const newCase = await storage.createCase({
+        title: `${caseData.caseType.toUpperCase()}: ${caseData.respondentName}`,
+        description: caseData.description,
+        type: caseData.caseType,
+        priority: "medium",
+        status: "open",
+        submittedBy: caseData.reporterName,
+        submittedByEmail: caseData.reporterEmail
+      });
+      const emailData = {
+        reporterName: caseData.reporterName,
+        caseNumber: newCase.caseNumber,
+        caseType: caseData.caseType,
+        respondentName: caseData.respondentName
+      };
+      await Promise.race([
+        sendEmail({
+          to: caseData.reporterEmail,
+          from: "sysadmin@estateagentscouncil.org",
+          subject: `Case Report Received - ${newCase.caseNumber}`,
+          html: `
+            <h2>Case Report Received</h2>
+            <p>Dear ${emailData.reporterName},</p>
+            <p>Thank you for submitting your case to the Estate Agents Council of Zimbabwe.</p>
+            <p><strong>Case Number:</strong> ${emailData.caseNumber}</p>
+            <p><strong>Case Type:</strong> ${emailData.caseType}</p>
+            <p><strong>Respondent:</strong> ${emailData.respondentName}</p>
+            <p>Your case will be reviewed within 5 business days. We may contact you for additional information.</p>
+            <p>You can track your case status using the case number above at: https://mms.estateagentscouncil.org/cases/track</p>
+            <br>
+            <p>Best regards,<br>Estate Agents Council of Zimbabwe</p>
+          `
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Email timeout")), 5e3))
+      ]).catch((err) => {
+        console.error("Failed to send case notification email:", err);
+      });
+      res.status(201).json({
+        success: true,
+        caseNumber: newCase.caseNumber,
+        message: "Case reported successfully. A confirmation email has been sent."
+      });
+    } catch (error) {
+      console.error("Case reporting error:", error);
+      if (error instanceof z6.ZodError) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: error.errors
+        });
+      }
+      return res.status(500).json({ error: "Failed to report case" });
+    }
+  });
 }
 var individualRegistrationSchema, organizationRegistrationSchema;
 var init_publicRoutes = __esm({
