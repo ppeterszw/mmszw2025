@@ -10,11 +10,12 @@ import { registerNotificationRoutes } from "./notificationRoutes";
 import { registerUserProfileRoutes } from "./userProfileRoutes";
 import { z } from "zod";
 import multer from "multer";
-import { 
+import {
   insertMemberApplicationSchema, insertCaseSchema, insertEventSchema,
   insertOrganizationSchema, insertPaymentSchema, insertDocumentSchema,
   insertCpdActivitySchema, insertMemberRenewalSchema, insertMemberActivitySchema,
-  insertOrganizationApplicantSchema, uploadedDocuments, individualApplications, organizationApplications
+  insertOrganizationApplicantSchema, uploadedDocuments, individualApplications, organizationApplications,
+  systemSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -2647,6 +2648,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Admin applications fetch error:", error);
       res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
+  // System Settings Routes
+  app.get("/api/settings", requireAuth, authorizeRole(ADMIN_ROLES), async (req, res) => {
+    try {
+      // Fetch all settings from database
+      const settingsRows = await db.select().from(systemSettings);
+
+      // Convert to key-value object
+      const settings: Record<string, any> = {};
+      for (const row of settingsRows) {
+        try {
+          settings[row.key] = JSON.parse(row.value);
+        } catch {
+          settings[row.key] = row.value;
+        }
+      }
+
+      // Define default values for all settings
+      const defaults = {
+        // Organization Settings
+        organizationName: "Estate Agents Council of Zimbabwe",
+        contactEmail: "admin@eacz.org",
+        phone: "+263 4 123456",
+        website: "https://eacz.org",
+
+        // Business Settings
+        membershipFee: 500,
+        applicationFee: 100,
+        renewalDeadline: 30,
+        cpdRequirement: 20,
+
+        // User Management Settings
+        maxLoginAttempts: 3,
+        sessionTimeout: 60,
+        passwordMinLength: 8,
+        accountLockout: 15,
+
+        // Security Settings
+        jwtExpiry: 24,
+        refreshTokenExpiry: 7,
+        apiRateLimit: 1000,
+
+        // Email Settings
+        smtpHost: "smtp.gmail.com",
+        smtpPort: 587,
+        smtpUsername: "noreply@eacz.org",
+
+        // Notification Preferences
+        welcomeEmail: true,
+        paymentReminder: true
+      };
+
+      // Merge defaults with database values
+      const finalSettings = { ...defaults, ...settings };
+
+      res.json(finalSettings);
+    } catch (error: any) {
+      console.error("Settings fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.put("/api/settings", requireAuth, authorizeRole(ADMIN_ROLES), async (req, res) => {
+    try {
+      const updates = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Update each setting in the database
+      for (const [key, value] of Object.entries(updates)) {
+        const jsonValue = JSON.stringify(value);
+
+        // Upsert the setting
+        await db.insert(systemSettings)
+          .values({
+            key,
+            value: jsonValue,
+            updatedBy: userId,
+            updatedAt: new Date()
+          })
+          .onConflictDoUpdate({
+            target: systemSettings.key,
+            set: {
+              value: jsonValue,
+              updatedBy: userId,
+              updatedAt: new Date()
+            }
+          });
+      }
+
+      res.json({ message: "Settings updated successfully", count: Object.keys(updates).length });
+    } catch (error: any) {
+      console.error("Settings update error:", error);
+      res.status(500).json({ message: "Failed to update settings", error: error.message });
     }
   });
 
