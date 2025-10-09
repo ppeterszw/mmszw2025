@@ -2025,6 +2025,16 @@ var init_storage = __esm({
       async getAllMembers() {
         return await db.select().from(members).orderBy(desc(members.createdAt));
       }
+      async getAllMembersWithOrganizations() {
+        const results = await db.select({
+          member: members,
+          organization: organizations
+        }).from(members).leftJoin(organizations, eq(members.organizationId, organizations.id)).orderBy(desc(members.createdAt));
+        return results.map((row) => ({
+          ...row.member,
+          organization: row.organization || null
+        }));
+      }
       // Organization operations
       async getOrganization(id) {
         const [org] = await db.select().from(organizations).where(eq(organizations.id, id));
@@ -10772,7 +10782,7 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/admin/members", requireAuth3, async (req, res) => {
     try {
-      const allMembers = await storage.getAllMembers();
+      const allMembers = await storage.getAllMembersWithOrganizations();
       res.json(allMembers);
     } catch (error) {
       console.error("Admin members fetch error:", error);
@@ -10787,11 +10797,35 @@ async function registerRoutes(app2) {
       if (!member) {
         return res.status(404).json({ message: "Member not found" });
       }
-      await storage.updateMember(id, updates);
-      res.json({ message: "Member updated successfully" });
+      const updatedMember = await storage.updateMember(id, updates);
+      res.json(updatedMember);
     } catch (error) {
       console.error("Admin member update error:", error);
       res.status(500).json({ message: "Failed to update member" });
+    }
+  });
+  app2.put("/api/admin/members/:id/assign-organization", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { organizationId } = req.body;
+      const member = await storage.getMember(id);
+      if (!member) {
+        return res.status(404).json({ message: "Member not found" });
+      }
+      if (organizationId) {
+        const organization = await storage.getOrganization(organizationId);
+        if (!organization) {
+          return res.status(404).json({ message: "Organization not found" });
+        }
+      }
+      const updatedMember = await storage.updateMember(id, { organizationId: organizationId || null });
+      res.json({
+        message: organizationId ? "Member assigned to organization successfully" : "Member removed from organization",
+        member: updatedMember
+      });
+    } catch (error) {
+      console.error("Assign organization error:", error);
+      res.status(500).json({ message: "Failed to assign organization" });
     }
   });
   app2.post("/api/admin/members/simplified-add", requireAuth3, authorizeRole(STAFF_ROLES), async (req, res) => {

@@ -1561,7 +1561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin Portal Routes
   app.get("/api/admin/members", requireAuth, async (req, res) => {
     try {
-      const allMembers = await storage.getAllMembers();
+      const allMembers = await storage.getAllMembersWithOrganizations();
       res.json(allMembers);
     } catch (error: any) {
       console.error("Admin members fetch error:", error);
@@ -1574,20 +1574,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const updates = req.body;
-      
+
       // Find the member first
       const member = await storage.getMember(id);
       if (!member) {
         return res.status(404).json({ message: "Member not found" });
       }
-      
+
       // Update the member
-      await storage.updateMember(id, updates);
-      
-      res.json({ message: "Member updated successfully" });
+      const updatedMember = await storage.updateMember(id, updates);
+
+      res.json(updatedMember);
     } catch (error: any) {
       console.error("Admin member update error:", error);
       res.status(500).json({ message: "Failed to update member" });
+    }
+  });
+
+  // Assign member to organization
+  app.put("/api/admin/members/:id/assign-organization", requireAuth, authorizeRole(STAFF_ROLES), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { organizationId } = req.body;
+
+      // Find the member first
+      const member = await storage.getMember(id);
+      if (!member) {
+        return res.status(404).json({ message: "Member not found" });
+      }
+
+      // Verify organization exists if organizationId is provided
+      if (organizationId) {
+        const organization = await storage.getOrganization(organizationId);
+        if (!organization) {
+          return res.status(404).json({ message: "Organization not found" });
+        }
+      }
+
+      // Update the member's organization
+      const updatedMember = await storage.updateMember(id, { organizationId: organizationId || null });
+
+      res.json({
+        message: organizationId ? "Member assigned to organization successfully" : "Member removed from organization",
+        member: updatedMember
+      });
+    } catch (error: any) {
+      console.error("Assign organization error:", error);
+      res.status(500).json({ message: "Failed to assign organization" });
     }
   });
 

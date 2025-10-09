@@ -110,6 +110,7 @@ export interface IStorage {
   createMember(member: InsertMember): Promise<Member>;
   updateMember(id: string, updates: Partial<Member>): Promise<Member>;
   getAllMembers(): Promise<Member[]>;
+  getAllMembersWithOrganizations(): Promise<any[]>;
   
   // Organization operations
   getOrganization(id: string): Promise<Organization | undefined>;
@@ -592,6 +593,22 @@ export class DatabaseStorage implements IStorage {
 
   async getAllMembers(): Promise<Member[]> {
     return await db.select().from(members).orderBy(desc(members.createdAt));
+  }
+
+  async getAllMembersWithOrganizations(): Promise<any[]> {
+    const results = await db
+      .select({
+        member: members,
+        organization: organizations
+      })
+      .from(members)
+      .leftJoin(organizations, eq(members.organizationId, organizations.id))
+      .orderBy(desc(members.createdAt));
+
+    return results.map(row => ({
+      ...row.member,
+      organization: row.organization || null
+    }));
   }
 
   // Organization operations
