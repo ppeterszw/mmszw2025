@@ -99,9 +99,8 @@ export default function OrganizationApplicantLogin() {
         />
         <div className="w-full px-4 py-8 flex-1">
           <PageBreadcrumb items={[
-            { label: "Home", href: "/" },
             { label: "Organization Login", href: "/organization-applicant-login" },
-            { label: "Login Successful", href: "#" }
+            { label: "Login Successful" }
           ]} />
           
           <div className="max-w-md mx-auto mt-8">
@@ -151,8 +150,7 @@ export default function OrganizationApplicantLogin() {
       />
       <div className="w-full px-4 py-8 flex-1">
         <PageBreadcrumb items={[
-          { label: "Home", href: "/" },
-          { label: "Organization Login", href: "/organization-applicant-login" }
+          { label: "Organization Login" }
         ]} />
         
         <div className="max-w-md mx-auto mt-8">

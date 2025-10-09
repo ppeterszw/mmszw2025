@@ -8946,7 +8946,7 @@ __export(publicRoutes_exports, {
   registerPublicRoutes: () => registerPublicRoutes
 });
 import { z as z6 } from "zod";
-import { eq as eq11 } from "drizzle-orm";
+import { eq as eq11, sql as sql7 } from "drizzle-orm";
 import crypto4 from "crypto";
 function generateVerificationToken2() {
   return crypto4.randomBytes(32).toString("hex");
@@ -9025,6 +9025,20 @@ function registerPublicRoutes(app2) {
         return res.status(409).json({
           error: "Email already registered",
           message: "An organization applicant with this email address already exists."
+        });
+      }
+      const existingCompanyInApplicants = await db.select().from(organizationApplicants).where(sql7`LOWER(${organizationApplicants.companyName}) = LOWER(${registrationData.companyName})`).limit(1);
+      if (existingCompanyInApplicants.length > 0) {
+        return res.status(409).json({
+          error: "Company already registered",
+          message: "An organization with this company name has already been registered. Please contact support if you believe this is an error."
+        });
+      }
+      const existingCompanyInOrgs = await db.select().from(organizations).where(sql7`LOWER(${organizations.name}) = LOWER(${registrationData.companyName})`).limit(1);
+      if (existingCompanyInOrgs.length > 0) {
+        return res.status(409).json({
+          error: "Company already exists",
+          message: "An organization with this company name already exists in our system. Please contact support if you believe this is an error."
         });
       }
       const applicantId = await nextApplicationId("organization");
@@ -9669,7 +9683,7 @@ __export(idMigration_exports, {
   getMigrationStatus: () => getMigrationStatus,
   previewIdFormatMigration: () => previewIdFormatMigration
 });
-import { sql as sql7 } from "drizzle-orm";
+import { sql as sql8 } from "drizzle-orm";
 function getEnrollmentYear(joiningDate, createdAt) {
   if (joiningDate) {
     return joiningDate.getFullYear();
@@ -9686,7 +9700,7 @@ function isNewFormat(id) {
 }
 async function isMigrationCompleted() {
   try {
-    const result = await db.execute(sql7`
+    const result = await db.execute(sql8`
       SELECT value FROM system_settings 
       WHERE key = 'id_format_migration_2025_completed'
     `);
@@ -9696,14 +9710,14 @@ async function isMigrationCompleted() {
   }
 }
 async function markMigrationCompleted() {
-  await db.execute(sql7`
+  await db.execute(sql8`
     CREATE TABLE IF NOT EXISTS system_settings (
       key VARCHAR(255) PRIMARY KEY,
       value TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
-  await db.execute(sql7`
+  await db.execute(sql8`
     INSERT INTO system_settings (key, value) 
     VALUES ('id_format_migration_2025_completed', 'true')
     ON CONFLICT (key) 
@@ -9712,12 +9726,12 @@ async function markMigrationCompleted() {
 }
 async function previewIdFormatMigration() {
   console.log("\u{1F50D} Running ID format migration preview...");
-  const memberRecords = await db.execute(sql7`
+  const memberRecords = await db.execute(sql8`
     SELECT id, membership_number, joining_date, created_at 
     FROM members 
     ORDER BY created_at ASC
   `);
-  const orgRecords = await db.execute(sql7`
+  const orgRecords = await db.execute(sql8`
     SELECT id, registration_number, registration_date, created_at 
     FROM organizations 
     ORDER BY created_at ASC
@@ -9792,7 +9806,7 @@ async function executeIdFormatMigration() {
       let membersUpdated = 0;
       let organizationsUpdated = 0;
       for (const change of preview.members) {
-        await tx.execute(sql7`
+        await tx.execute(sql8`
           UPDATE members 
           SET membership_number = ${change.new}
           WHERE id = ${change.id}
@@ -9801,7 +9815,7 @@ async function executeIdFormatMigration() {
         console.log(`Updated member ${change.id}: ${change.old} \u2192 ${change.new}`);
       }
       for (const change of preview.organizations) {
-        await tx.execute(sql7`
+        await tx.execute(sql8`
           UPDATE organizations 
           SET registration_number = ${change.new}
           WHERE id = ${change.id}
@@ -9817,7 +9831,7 @@ async function executeIdFormatMigration() {
         }).onConflictDoUpdate({
           target: [namingSeriesCounters.seriesCode, namingSeriesCounters.year],
           set: {
-            counter: sql7`GREATEST(${namingSeriesCounters.counter}, ${count2})`
+            counter: sql8`GREATEST(${namingSeriesCounters.counter}, ${count2})`
           }
         });
       }
@@ -9829,7 +9843,7 @@ async function executeIdFormatMigration() {
         }).onConflictDoUpdate({
           target: [namingSeriesCounters.seriesCode, namingSeriesCounters.year],
           set: {
-            counter: sql7`GREATEST(${namingSeriesCounters.counter}, ${count2})`
+            counter: sql8`GREATEST(${namingSeriesCounters.counter}, ${count2})`
           }
         });
       }
@@ -9854,12 +9868,12 @@ async function executeIdFormatMigration() {
 }
 async function getMigrationStatus() {
   const completed = await isMigrationCompleted();
-  const membersOldFormat = await db.execute(sql7`
+  const membersOldFormat = await db.execute(sql8`
     SELECT COUNT(*) as count FROM members 
     WHERE membership_number IS NOT NULL 
     AND NOT (membership_number ~ '^EAC-MBR-\\d{4}-\\d{4}$')
   `);
-  const orgsOldFormat = await db.execute(sql7`
+  const orgsOldFormat = await db.execute(sql8`
     SELECT COUNT(*) as count FROM organizations 
     WHERE registration_number IS NOT NULL 
     AND NOT (registration_number ~ '^EAC-ORG-\\d{4}-\\d{4}$')

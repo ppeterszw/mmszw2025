@@ -14,6 +14,7 @@ import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
+import { HCaptchaComponent } from "@/components/HCaptcha";
 
 const registrationSchema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters"),
@@ -26,6 +27,7 @@ export default function OrganizationApplicantRegistration() {
   const [, setLocation] = useLocation();
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [applicantId, setApplicantId] = useState<string>("");
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<RegistrationData>({
@@ -72,9 +74,8 @@ export default function OrganizationApplicantRegistration() {
         />
         <div className="w-full px-4 py-8 flex-1">
           <PageBreadcrumb items={[
-            { label: "Home", href: "/" },
             { label: "Organization Application", href: "/organization-applicant-registration" },
-            { label: "Registration Complete", href: "#" }
+            { label: "Registration Complete" }
           ]} />
           
           <div className="max-w-2xl mx-auto mt-8">
@@ -145,8 +146,7 @@ export default function OrganizationApplicantRegistration() {
       />
       <div className="w-full px-4 py-8 flex-1">
         <PageBreadcrumb items={[
-          { label: "Home", href: "/" },
-          { label: "Organization Application", href: "/organization-applicant-registration" }
+          { label: "Organization Application" }
         ]} />
         
         <div className="max-w-lg mx-auto mt-8">
@@ -209,11 +209,20 @@ export default function OrganizationApplicantRegistration() {
                     </ul>
                   </div>
 
+                  <div className="pt-2">
+                    <HCaptchaComponent onVerify={(token) => setCaptchaVerified(true)} />
+                    {!captchaVerified && (
+                      <p className="text-sm text-gray-500 text-center mt-2">
+                        Please complete the verification above to continue
+                      </p>
+                    )}
+                  </div>
+
                   <div className="space-y-3">
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={registrationMutation.isPending}
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={registrationMutation.isPending || !captchaVerified}
                       data-testid="button-register"
                     >
                       {registrationMutation.isPending ? "Registering..." : "Start Organization Application"}

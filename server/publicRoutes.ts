@@ -1,9 +1,9 @@
 import type { Express } from "express";
 import { z } from "zod";
 import { db } from "./db";
-import { applicants, organizationApplicants } from "@shared/schema";
+import { applicants, organizationApplicants, organizations } from "@shared/schema";
 import { storage } from "./storage";
-import { eq } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
 import { nextApplicationId } from "./services/namingSeries";
 import { sendEmail, generateWelcomeEmail, generateVerificationEmail, generateOrgApplicantVerificationEmail } from "./services/emailService";
 import crypto from "crypto";
@@ -144,6 +144,34 @@ export function registerPublicRoutes(app: Express) {
         return res.status(409).json({
           error: "Email already registered",
           message: "An organization applicant with this email address already exists."
+        });
+      }
+
+      // Check if company name already exists in organization applicants
+      const existingCompanyInApplicants = await db
+        .select()
+        .from(organizationApplicants)
+        .where(sql`LOWER(${organizationApplicants.companyName}) = LOWER(${registrationData.companyName})`)
+        .limit(1);
+
+      if (existingCompanyInApplicants.length > 0) {
+        return res.status(409).json({
+          error: "Company already registered",
+          message: "An organization with this company name has already been registered. Please contact support if you believe this is an error."
+        });
+      }
+
+      // Check if company name already exists in active organizations
+      const existingCompanyInOrgs = await db
+        .select()
+        .from(organizations)
+        .where(sql`LOWER(${organizations.name}) = LOWER(${registrationData.companyName})`)
+        .limit(1);
+
+      if (existingCompanyInOrgs.length > 0) {
+        return res.status(409).json({
+          error: "Company already exists",
+          message: "An organization with this company name already exists in our system. Please contact support if you believe this is an error."
         });
       }
 

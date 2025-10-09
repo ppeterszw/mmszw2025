@@ -14,6 +14,7 @@ import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
+import { HCaptchaComponent } from "@/components/HCaptcha";
 
 const registrationSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -29,6 +30,7 @@ export default function ApplicantRegistration() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [formData, setFormData] = useState<RegistrationData | null>(null);
   const [applicantId, setApplicantId] = useState<string>("");
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<RegistrationData>({
@@ -417,6 +419,15 @@ export default function ApplicantRegistration() {
                     </ul>
                   </div>
 
+                  <div className="pt-4">
+                    <HCaptchaComponent onVerify={(token) => setCaptchaVerified(true)} />
+                    {!captchaVerified && (
+                      <p className="text-sm text-gray-500 text-center mt-2">
+                        Please complete the verification above to continue
+                      </p>
+                    )}
+                  </div>
+
                   <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4">
                     <Button
                       type="button"
@@ -431,7 +442,7 @@ export default function ApplicantRegistration() {
                     <Button
                       type="submit"
                       className="h-12 bg-gradient-to-r from-egyptian-blue to-powder-blue hover:from-egyptian-blue/90 hover:to-powder-blue/90 text-white border-0 px-8 font-semibold shadow-lg"
-                      disabled={registrationMutation.isPending}
+                      disabled={registrationMutation.isPending || !captchaVerified}
                       data-testid="button-register"
                     >
                       {registrationMutation.isPending ? "Registering..." : "Register & Send Verification"}
