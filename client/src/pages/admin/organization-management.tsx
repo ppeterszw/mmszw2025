@@ -314,7 +314,7 @@ export default function OrganizationManagement() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Organization</TableHead>
-                    <TableHead>Registration Number</TableHead>
+                    <TableHead>Organization ID</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Members</TableHead>

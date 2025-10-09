@@ -20,7 +20,8 @@
       "Bash(tree:*)",
       "Bash(/usr/bin/head:*)",
       "Bash(npm run build:vercel:*)",
-      "Bash(./scripts/assign-members.sh:*)"
+      "Bash(./scripts/assign-members.sh:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
