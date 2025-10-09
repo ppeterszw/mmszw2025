@@ -2717,33 +2717,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = req.body;
       const userId = req.user?.id;
 
+      console.log("Settings update request - User ID:", userId);
+      console.log("Settings update request - Number of settings:", Object.keys(updates).length);
+      console.log("Settings update request - Keys:", Object.keys(updates).join(', '));
+
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
+      const savedSettings: string[] = [];
+      const failedSettings: Array<{key: string, error: string}> = [];
+
       // Update each setting in the database
       for (const [key, value] of Object.entries(updates)) {
-        const jsonValue = JSON.stringify(value);
+        try {
+          const jsonValue = JSON.stringify(value);
 
-        // Upsert the setting
-        await db.insert(systemSettings)
-          .values({
-            key,
-            value: jsonValue,
-            updatedBy: userId,
-            updatedAt: new Date()
-          })
-          .onConflictDoUpdate({
-            target: systemSettings.key,
-            set: {
+          // Upsert the setting
+          await db.insert(systemSettings)
+            .values({
+              key,
               value: jsonValue,
               updatedBy: userId,
               updatedAt: new Date()
-            }
-          });
+            })
+            .onConflictDoUpdate({
+              target: systemSettings.key,
+              set: {
+                value: jsonValue,
+                updatedBy: userId,
+                updatedAt: new Date()
+              }
+            });
+
+          savedSettings.push(key);
+          console.log(`✓ Saved setting: ${key} = ${jsonValue}`);
+        } catch (settingError: any) {
+          console.error(`✗ Failed to save setting ${key}:`, settingError.message);
+          failedSettings.push({ key, error: settingError.message });
+        }
       }
 
-      res.json({ message: "Settings updated successfully", count: Object.keys(updates).length });
+      console.log(`Settings update complete - Saved: ${savedSettings.length}, Failed: ${failedSettings.length}`);
+
+      if (failedSettings.length > 0) {
+        return res.status(207).json({
+          message: "Settings partially updated",
+          saved: savedSettings.length,
+          failed: failedSettings.length,
+          failures: failedSettings
+        });
+      }
+
+      res.json({
+        message: "Settings updated successfully",
+        count: savedSettings.length,
+        saved: savedSettings
+      });
     } catch (error: any) {
       console.error("Settings update error:", error);
       res.status(500).json({ message: "Failed to update settings", error: error.message });

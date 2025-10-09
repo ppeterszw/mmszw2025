@@ -97,16 +97,30 @@ export default function AdminSettings() {
   // Save settings mutation
   const saveSettingsMutation = useMutation({
     mutationFn: async (updatedSettings: SystemSettings) => {
-      return await apiRequest("PUT", "/api/settings", updatedSettings);
+      console.log("Saving settings:", Object.keys(updatedSettings).length, "fields");
+      const response = await apiRequest("PUT", "/api/settings", updatedSettings);
+      console.log("Save response:", response);
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
-      toast({
-        title: "Settings Saved",
-        description: "Your changes have been successfully saved to the database."
-      });
+
+      if (data.failed && data.failed > 0) {
+        toast({
+          title: "Partially Saved",
+          description: `${data.saved} settings saved, ${data.failed} failed. Check console for details.`,
+          variant: "destructive"
+        });
+        console.error("Failed settings:", data.failures);
+      } else {
+        toast({
+          title: "Settings Saved",
+          description: `Successfully saved ${data.count || data.saved} settings to the database.`
+        });
+      }
     },
     onError: (error: any) => {
+      console.error("Settings save error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to save settings. Please try again.",

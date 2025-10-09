@@ -12974,6 +12974,106 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch applications" });
     }
   });
+  app2.get("/api/settings", requireAuth3, authorizeRole(ADMIN_ROLES), async (req, res) => {
+    try {
+      const settingsRows = await db.select().from(systemSettings);
+      const settings = {};
+      for (const row of settingsRows) {
+        try {
+          settings[row.key] = JSON.parse(row.value);
+        } catch {
+          settings[row.key] = row.value;
+        }
+      }
+      const defaults = {
+        // Organization Settings
+        organizationName: "Estate Agents Council of Zimbabwe",
+        contactEmail: "admin@eacz.org",
+        phone: "+263 4 123456",
+        website: "https://eacz.org",
+        // Business Settings
+        membershipFee: 500,
+        applicationFee: 100,
+        renewalDeadline: 30,
+        cpdRequirement: 20,
+        // User Management Settings
+        maxLoginAttempts: 3,
+        sessionTimeout: 60,
+        passwordMinLength: 8,
+        accountLockout: 15,
+        // Security Settings
+        jwtExpiry: 24,
+        refreshTokenExpiry: 7,
+        apiRateLimit: 1e3,
+        // Email Settings
+        smtpHost: "smtp.gmail.com",
+        smtpPort: 587,
+        smtpUsername: "noreply@eacz.org",
+        // Notification Preferences
+        welcomeEmail: true,
+        paymentReminder: true
+      };
+      const finalSettings = { ...defaults, ...settings };
+      res.json(finalSettings);
+    } catch (error) {
+      console.error("Settings fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+  app2.put("/api/settings", requireAuth3, authorizeRole(ADMIN_ROLES), async (req, res) => {
+    try {
+      const updates = req.body;
+      const userId = req.user?.id;
+      console.log("Settings update request - User ID:", userId);
+      console.log("Settings update request - Number of settings:", Object.keys(updates).length);
+      console.log("Settings update request - Keys:", Object.keys(updates).join(", "));
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const savedSettings = [];
+      const failedSettings = [];
+      for (const [key, value] of Object.entries(updates)) {
+        try {
+          const jsonValue = JSON.stringify(value);
+          await db.insert(systemSettings).values({
+            key,
+            value: jsonValue,
+            updatedBy: userId,
+            updatedAt: /* @__PURE__ */ new Date()
+          }).onConflictDoUpdate({
+            target: systemSettings.key,
+            set: {
+              value: jsonValue,
+              updatedBy: userId,
+              updatedAt: /* @__PURE__ */ new Date()
+            }
+          });
+          savedSettings.push(key);
+          console.log(`\u2713 Saved setting: ${key} = ${jsonValue}`);
+        } catch (settingError) {
+          console.error(`\u2717 Failed to save setting ${key}:`, settingError.message);
+          failedSettings.push({ key, error: settingError.message });
+        }
+      }
+      console.log(`Settings update complete - Saved: ${savedSettings.length}, Failed: ${failedSettings.length}`);
+      if (failedSettings.length > 0) {
+        return res.status(207).json({
+          message: "Settings partially updated",
+          saved: savedSettings.length,
+          failed: failedSettings.length,
+          failures: failedSettings
+        });
+      }
+      res.json({
+        message: "Settings updated successfully",
+        count: savedSettings.length,
+        saved: savedSettings
+      });
+    } catch (error) {
+      console.error("Settings update error:", error);
+      res.status(500).json({ message: "Failed to update settings", error: error.message });
+    }
+  });
   app2.get("/api/members/profile", requireAuth3, async (req, res) => {
     try {
       const userId = req.user?.id;
