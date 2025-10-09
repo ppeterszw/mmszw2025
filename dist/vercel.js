@@ -12970,12 +12970,15 @@ async function registerRoutes(app2) {
   app2.get("/api/settings", requireAuth3, authorizeRole(ADMIN_ROLES), async (req, res) => {
     try {
       const settingsRows = await db.select().from(systemSettings);
+      console.log("Settings fetch - Found in database:", settingsRows.length, "settings");
       const settings = {};
       for (const row of settingsRows) {
         try {
           settings[row.key] = JSON.parse(row.value);
-        } catch {
+          console.log(`Loaded: ${row.key} = ${settings[row.key]} (parsed from: ${row.value})`);
+        } catch (parseError) {
           settings[row.key] = row.value;
+          console.log(`Loaded: ${row.key} = ${row.value} (parse failed, using raw value)`);
         }
       }
       const defaults = {
@@ -13007,6 +13010,8 @@ async function registerRoutes(app2) {
         paymentReminder: true
       };
       const finalSettings = { ...defaults, ...settings };
+      console.log("Settings fetch - Returning merged settings with", Object.keys(finalSettings).length, "keys");
+      console.log("Settings fetch - Database overrides:", Object.keys(settings).join(", "));
       res.json(finalSettings);
     } catch (error) {
       console.error("Settings fetch error:", error);

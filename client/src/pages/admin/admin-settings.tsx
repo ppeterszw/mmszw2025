@@ -79,17 +79,22 @@ export default function AdminSettings() {
   });
 
   // Fetch settings from API
-  const { data: fetchedSettings, isLoading } = useQuery({
+  const { data: fetchedSettings, isLoading, refetch } = useQuery({
     queryKey: ["/api/settings"],
     queryFn: async () => {
+      console.log("Fetching settings from API...");
       const response = await apiRequest("GET", "/api/settings");
+      console.log("Received settings:", response);
       return response as SystemSettings;
-    }
+    },
+    staleTime: 0, // Always refetch on mount
+    gcTime: 0, // Don't cache
   });
 
   // Update local state when data is fetched
   useEffect(() => {
     if (fetchedSettings) {
+      console.log("Updating local settings state with fetched data:", fetchedSettings);
       setSettings(fetchedSettings);
     }
   }, [fetchedSettings]);
@@ -571,7 +576,18 @@ export default function AdminSettings() {
               </TabsContent>
             </Tabs>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-3">
+              <Button
+                onClick={() => {
+                  console.log("Manual reload triggered");
+                  refetch();
+                }}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Reload from Database
+              </Button>
               <Button
                 onClick={handleSaveSettings}
                 disabled={saveSettingsMutation.isPending}

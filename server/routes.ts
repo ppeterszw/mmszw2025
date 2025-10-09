@@ -2657,13 +2657,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch all settings from database
       const settingsRows = await db.select().from(systemSettings);
 
+      console.log("Settings fetch - Found in database:", settingsRows.length, "settings");
+
       // Convert to key-value object
       const settings: Record<string, any> = {};
       for (const row of settingsRows) {
         try {
           settings[row.key] = JSON.parse(row.value);
-        } catch {
+          console.log(`Loaded: ${row.key} = ${settings[row.key]} (parsed from: ${row.value})`);
+        } catch (parseError) {
           settings[row.key] = row.value;
+          console.log(`Loaded: ${row.key} = ${row.value} (parse failed, using raw value)`);
         }
       }
 
@@ -2702,8 +2706,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentReminder: true
       };
 
-      // Merge defaults with database values
+      // Merge defaults with database values (database values override defaults)
       const finalSettings = { ...defaults, ...settings };
+
+      console.log("Settings fetch - Returning merged settings with", Object.keys(finalSettings).length, "keys");
+      console.log("Settings fetch - Database overrides:", Object.keys(settings).join(', '));
 
       res.json(finalSettings);
     } catch (error: any) {
