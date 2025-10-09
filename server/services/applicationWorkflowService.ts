@@ -11,6 +11,7 @@ import type { Member, Organization } from "@shared/schema";
 import { storage } from "../storage";
 import { sendEmail } from "./emailService";
 import { nextMemberNumber } from "./namingSeries";
+import { sendCertificateEmail } from "./certificateService";
 
 /**
  * Application Workflow Service
@@ -705,8 +706,22 @@ export async function approveAndCreateMember(data: WorkflowTransitionData): Prom
       })
       .where(eq(individualApplications.id, applicationId));
 
-    // TODO: Generate and send certificate with QR code
-    // This will be implemented in the next phase
+    // Generate and send certificate with QR code
+    try {
+      await sendCertificateEmail({
+        type: 'individual',
+        membershipNumber: membershipNumber,
+        name: `${personal.firstName} ${personal.lastName}`,
+        memberType: app.memberType,
+        registrationDate: new Date(),
+        expiryDate: expiryDate,
+        email: app.applicantEmail
+      });
+      console.log(`Certificate sent successfully to ${app.applicantEmail}`);
+    } catch (certError) {
+      console.error('Failed to send certificate:', certError);
+      // Don't fail the approval if certificate sending fails
+    }
 
     return newMember;
   } else {
@@ -755,8 +770,22 @@ export async function approveAndCreateMember(data: WorkflowTransitionData): Prom
       })
       .where(eq(organizationApplications.id, applicationId));
 
-    // TODO: Generate and send certificate with QR code
-    // This will be implemented in the next phase
+    // Generate and send certificate with QR code
+    try {
+      await sendCertificateEmail({
+        type: 'organization',
+        membershipNumber: registrationNumber,
+        name: company.name,
+        businessType: app.businessType,
+        registrationDate: new Date(),
+        expiryDate: expiryDate,
+        email: app.applicantEmail
+      });
+      console.log(`Certificate sent successfully to ${app.applicantEmail}`);
+    } catch (certError) {
+      console.error('Failed to send certificate:', certError);
+      // Don't fail the approval if certificate sending fails
+    }
 
     return newOrg;
   }

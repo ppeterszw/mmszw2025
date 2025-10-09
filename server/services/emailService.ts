@@ -23,12 +23,19 @@ if (!process.env.ZEPTOMAIL_API_KEY) {
   }
 }
 
+interface EmailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+}
+
 interface EmailParams {
   to: string;
   from: string;
   subject: string;
   text?: string;
   html?: string;
+  attachments?: EmailAttachment[];
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
@@ -40,13 +47,18 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     }
 
     // Nodemailer email format
-    const mailOptions = {
+    const mailOptions: any = {
       from: '"Estate Agents Council of Zimbabwe" <sysadmin@estateagentscouncil.org>',
       to: params.to,
       subject: params.subject,
       text: params.text,
       html: params.html
     };
+
+    // Add attachments if provided
+    if (params.attachments && params.attachments.length > 0) {
+      mailOptions.attachments = params.attachments;
+    }
 
     console.log('Sending email via ZeptoMail SMTP to:', params.to);
 
