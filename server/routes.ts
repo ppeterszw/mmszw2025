@@ -3466,19 +3466,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Review application (approve/reject)
+  // New workflow-based application review endpoints
+  // Move application to "Under Review" stage
+  app.post("/api/applications/:id/move-to-under-review", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { applicationType } = req.body;
+
+      const { moveToUnderReview } = await import("./services/applicationWorkflowService");
+
+      await moveToUnderReview({
+        applicationId: id,
+        applicationType: applicationType || 'individual',
+        reviewerId: req.user?.id || ''
+      });
+
+      res.json({ success: true, message: 'Application moved to Under Review stage' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Move application to "Document Review" stage
+  app.post("/api/applications/:id/move-to-document-review", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { applicationType } = req.body;
+
+      const { moveToDocumentReview } = await import("./services/applicationWorkflowService");
+
+      await moveToDocumentReview({
+        applicationId: id,
+        applicationType: applicationType || 'individual',
+        reviewerId: req.user?.id || ''
+      });
+
+      res.json({ success: true, message: 'Application moved to Document Review stage' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Move application to "Payment Review" stage
+  app.post("/api/applications/:id/move-to-payment-review", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { applicationType } = req.body;
+
+      const { moveToPaymentReview } = await import("./services/applicationWorkflowService");
+
+      await moveToPaymentReview({
+        applicationId: id,
+        applicationType: applicationType || 'individual',
+        reviewerId: req.user?.id || ''
+      });
+
+      res.json({ success: true, message: 'Application moved to Payment Review stage' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Final approval - Creates member/organization record
+  app.post("/api/applications/:id/approve-final", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { applicationType, notes } = req.body;
+
+      const { approveAndCreateMember } = await import("./services/applicationWorkflowService");
+
+      const result = await approveAndCreateMember({
+        applicationId: id,
+        applicationType: applicationType || 'individual',
+        reviewerId: req.user?.id || '',
+        notes
+      });
+
+      res.json({
+        success: true,
+        message: 'Application approved and member/organization created',
+        record: result
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Legacy review endpoint (kept for backward compatibility)
   app.post("/api/applications/:id/review", requireAuth, async (req, res) => {
     try {
       console.log("Review application request:", { id: req.params.id, action: req.body.action, userId: req.user?.id });
-      
+
       const { id } = req.params;
       const { action, notes } = req.body;
-      
+
       // Validate action - accept both forms for flexibility
       if (!['approve', 'approved', 'reject', 'rejected'].includes(action)) {
         return res.status(400).json({ message: "Invalid action. Must be 'approve', 'approved', 'reject', or 'rejected'" });
       }
-      
+
       // Update application status based on action
       const isApprove = ['approve', 'approved'].includes(action);
       const updates: any = {
@@ -3487,7 +3573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reviewedBy: req.user?.id,
         reviewStartedAt: new Date()
       };
-      
+
       if (isApprove) {
         updates.approvedAt = new Date();
       } else {
@@ -3496,9 +3582,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updates.rejectionReason = notes;
         }
       }
-      
+
       const updatedApplication = await storage.updateMemberApplication(id, updates);
-      
+
       res.json(updatedApplication);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

@@ -10077,6 +10077,608 @@ var init_googlePayService = __esm({
   }
 });
 
+// server/services/applicationWorkflowService.ts
+var applicationWorkflowService_exports = {};
+__export(applicationWorkflowService_exports, {
+  approveAndCreateMember: () => approveAndCreateMember,
+  generateAdminNotificationEmail: () => generateAdminNotificationEmail,
+  generateDocumentReviewEmail: () => generateDocumentReviewEmail,
+  generatePaymentReviewEmail: () => generatePaymentReviewEmail,
+  generateUnderReviewEmail: () => generateUnderReviewEmail,
+  moveToDocumentReview: () => moveToDocumentReview,
+  moveToPaymentReview: () => moveToPaymentReview,
+  moveToUnderReview: () => moveToUnderReview
+});
+import { eq as eq13 } from "drizzle-orm";
+function generateUnderReviewEmail(applicantName, applicationId, applicationType) {
+  const typeDisplay = applicationType === "individual" ? "Individual Membership" : "Organization Registration";
+  const subject = `Application Under Review - ${applicationId}`;
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .header { background: #1034A6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .status-box { background: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0284c7; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #ddd; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Application Under Review</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${applicantName},</h2>
+          <p>Your ${typeDisplay} application has been submitted and is now under review by our team.</p>
+
+          <div class="status-box">
+            <h3 style="margin-top: 0;">Application Status: Under Review</h3>
+            <p><strong>Application ID:</strong> ${applicationId}</p>
+            <p><strong>Current Stage:</strong> Initial Review</p>
+            <p><strong>Next Stage:</strong> Document Verification</p>
+          </div>
+
+          <p><strong>What happens next:</strong></p>
+          <ol>
+            <li>Our Member Manager and Administrator will review your application</li>
+            <li>We will verify all submitted documents</li>
+            <li>You may be contacted if additional information is needed</li>
+            <li>Once reviewed, your application will proceed to document verification</li>
+          </ol>
+
+          <p>We aim to complete the initial review within 5-7 business days.</p>
+
+          <p>If you have any questions, please contact us at info@eacz.co.zw</p>
+        </div>
+        <div class="footer">
+          <p>\xA9 2024 Estate Agents Council of Zimbabwe. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  const text2 = `
+    Application Under Review - ${applicationId}
+
+    Hello ${applicantName},
+
+    Your ${typeDisplay} application has been submitted and is now under review by our team.
+
+    Application Status: Under Review
+    Application ID: ${applicationId}
+    Current Stage: Initial Review
+    Next Stage: Document Verification
+
+    What happens next:
+    1. Our Member Manager and Administrator will review your application
+    2. We will verify all submitted documents
+    3. You may be contacted if additional information is needed
+    4. Once reviewed, your application will proceed to document verification
+
+    We aim to complete the initial review within 5-7 business days.
+
+    If you have any questions, please contact us at info@eacz.co.zw
+
+    \xA9 2024 Estate Agents Council of Zimbabwe. All rights reserved.
+  `;
+  return { subject, html, text: text2 };
+}
+function generateDocumentReviewEmail(applicantName, applicationId, applicationType) {
+  const typeDisplay = applicationType === "individual" ? "Individual Membership" : "Organization Registration";
+  const subject = `Document Review Stage - ${applicationId}`;
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .header { background: #1034A6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .status-box { background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #ddd; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Document Review In Progress</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${applicantName},</h2>
+          <p>Good news! Your ${typeDisplay} application has passed initial review and is now in the document verification stage.</p>
+
+          <div class="status-box">
+            <h3 style="margin-top: 0;">Application Status: Document Review</h3>
+            <p><strong>Application ID:</strong> ${applicationId}</p>
+            <p><strong>Current Stage:</strong> Document Verification</p>
+            <p><strong>Next Stage:</strong> Payment Review</p>
+          </div>
+
+          <p><strong>What's happening now:</strong></p>
+          <ul>
+            <li>Our Administrator is reviewing all uploaded documents</li>
+            <li>Documents are being verified for authenticity and completeness</li>
+            <li>We may contact you if any documents need clarification or resubmission</li>
+          </ul>
+
+          <p>Document verification typically takes 3-5 business days.</p>
+
+          <p>If you have any questions, please contact us at info@eacz.co.zw</p>
+        </div>
+        <div class="footer">
+          <p>\xA9 2024 Estate Agents Council of Zimbabwe. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  const text2 = `
+    Document Review In Progress - ${applicationId}
+
+    Hello ${applicantName},
+
+    Good news! Your ${typeDisplay} application has passed initial review and is now in the document verification stage.
+
+    Application Status: Document Review
+    Application ID: ${applicationId}
+    Current Stage: Document Verification
+    Next Stage: Payment Review
+
+    What's happening now:
+    - Our Administrator is reviewing all uploaded documents
+    - Documents are being verified for authenticity and completeness
+    - We may contact you if any documents need clarification or resubmission
+
+    Document verification typically takes 3-5 business days.
+
+    If you have any questions, please contact us at info@eacz.co.zw
+
+    \xA9 2024 Estate Agents Council of Zimbabwe. All rights reserved.
+  `;
+  return { subject, html, text: text2 };
+}
+function generatePaymentReviewEmail(applicantName, applicationId, applicationType) {
+  const typeDisplay = applicationType === "individual" ? "Individual Membership" : "Organization Registration";
+  const subject = `Payment Review - ${applicationId}`;
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .header { background: #1034A6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .status-box { background: #dcfce7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #16a34a; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #ddd; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Payment Review</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${applicantName},</h2>
+          <p>Excellent progress! Your ${typeDisplay} application documents have been verified and we are now reviewing your payment.</p>
+
+          <div class="status-box">
+            <h3 style="margin-top: 0;">Application Status: Payment Review</h3>
+            <p><strong>Application ID:</strong> ${applicationId}</p>
+            <p><strong>Current Stage:</strong> Payment Verification</p>
+            <p><strong>Next Stage:</strong> Final Approval</p>
+          </div>
+
+          <p><strong>What's happening now:</strong></p>
+          <ul>
+            <li>Our Administrator is verifying your payment details</li>
+            <li>Payment confirmation is being processed</li>
+            <li>Once confirmed, your application will proceed to final approval</li>
+          </ul>
+
+          <p>Payment verification typically takes 1-2 business days.</p>
+
+          <p>You're almost there! Once payment is confirmed, we'll proceed with final approval and membership activation.</p>
+
+          <p>If you have any questions, please contact us at info@eacz.co.zw</p>
+        </div>
+        <div class="footer">
+          <p>\xA9 2024 Estate Agents Council of Zimbabwe. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  const text2 = `
+    Payment Review - ${applicationId}
+
+    Hello ${applicantName},
+
+    Excellent progress! Your ${typeDisplay} application documents have been verified and we are now reviewing your payment.
+
+    Application Status: Payment Review
+    Application ID: ${applicationId}
+    Current Stage: Payment Verification
+    Next Stage: Final Approval
+
+    What's happening now:
+    - Our Administrator is verifying your payment details
+    - Payment confirmation is being processed
+    - Once confirmed, your application will proceed to final approval
+
+    Payment verification typically takes 1-2 business days.
+
+    You're almost there! Once payment is confirmed, we'll proceed with final approval and membership activation.
+
+    If you have any questions, please contact us at info@eacz.co.zw
+
+    \xA9 2024 Estate Agents Council of Zimbabwe. All rights reserved.
+  `;
+  return { subject, html, text: text2 };
+}
+function generateAdminNotificationEmail(adminName, applicationId, applicantName, stage, applicationType) {
+  const typeDisplay = applicationType === "individual" ? "Individual Membership" : "Organization Registration";
+  const subject = `Action Required: ${stage} - ${applicationId}`;
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .header { background: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .action-box { background: #fee2e2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626; }
+        .button { display: inline-block; background: #1034A6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #ddd; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Application Requires Your Review</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${adminName},</h2>
+          <p>An application requires your attention and review.</p>
+
+          <div class="action-box">
+            <h3 style="margin-top: 0;">Action Required</h3>
+            <p><strong>Application ID:</strong> ${applicationId}</p>
+            <p><strong>Applicant:</strong> ${applicantName}</p>
+            <p><strong>Type:</strong> ${typeDisplay}</p>
+            <p><strong>Stage:</strong> ${stage}</p>
+          </div>
+
+          <p>Please log in to the admin panel to review this application.</p>
+
+          <div style="text-align: center;">
+            <a href="https://mms.estateagentscouncil.org/admin/applications" class="button">Review Application</a>
+          </div>
+
+          <p>If you have any questions, please contact the system administrator.</p>
+        </div>
+        <div class="footer">
+          <p>\xA9 2024 Estate Agents Council of Zimbabwe. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  const text2 = `
+    Application Requires Your Review - ${applicationId}
+
+    Hello ${adminName},
+
+    An application requires your attention and review.
+
+    Action Required:
+    - Application ID: ${applicationId}
+    - Applicant: ${applicantName}
+    - Type: ${typeDisplay}
+    - Stage: ${stage}
+
+    Please log in to the admin panel to review this application:
+    https://mms.estateagentscouncil.org/admin/applications
+
+    If you have any questions, please contact the system administrator.
+
+    \xA9 2024 Estate Agents Council of Zimbabwe. All rights reserved.
+  `;
+  return { subject, html, text: text2 };
+}
+async function moveToUnderReview(data) {
+  const { applicationId, applicationType, reviewerId } = data;
+  if (applicationType === "individual") {
+    await db.update(individualApplications).set({
+      status: "under_review",
+      reviewedBy: reviewerId,
+      reviewStartedAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq13(individualApplications.id, applicationId));
+    const [app2] = await db.select().from(individualApplications).where(eq13(individualApplications.id, applicationId));
+    if (app2) {
+      const personal = typeof app2.personal === "string" ? JSON.parse(app2.personal) : app2.personal;
+      const applicantName = `${personal.firstName} ${personal.lastName}`;
+      const email = generateUnderReviewEmail(applicantName, app2.applicationId, "individual");
+      await sendEmail({
+        to: app2.applicantEmail,
+        from: "sysadmin@estateagentscouncil.org",
+        ...email
+      });
+      const admins = await storage.getUsersByRole("admin");
+      const memberManagers = await storage.getUsersByRole("member_manager");
+      const notifyUsers = [...admins, ...memberManagers];
+      for (const user of notifyUsers) {
+        const adminEmail = generateAdminNotificationEmail(
+          user.fullName || user.email,
+          app2.applicationId,
+          applicantName,
+          "Under Review",
+          "individual"
+        );
+        await sendEmail({
+          to: user.email,
+          from: "sysadmin@estateagentscouncil.org",
+          ...adminEmail
+        });
+      }
+    }
+  } else {
+    await db.update(organizationApplications).set({
+      status: "under_review",
+      reviewedBy: reviewerId,
+      reviewedAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq13(organizationApplications.id, applicationId));
+    const [app2] = await db.select().from(organizationApplications).where(eq13(organizationApplications.id, applicationId));
+    if (app2) {
+      const company = typeof app2.company === "string" ? JSON.parse(app2.company) : app2.company;
+      const companyName = company.name || "Organization";
+      const email = generateUnderReviewEmail(companyName, app2.applicationId, "organization");
+      await sendEmail({
+        to: app2.applicantEmail,
+        from: "sysadmin@estateagentscouncil.org",
+        ...email
+      });
+      const admins = await storage.getUsersByRole("admin");
+      const memberManagers = await storage.getUsersByRole("member_manager");
+      const notifyUsers = [...admins, ...memberManagers];
+      for (const user of notifyUsers) {
+        const adminEmail = generateAdminNotificationEmail(
+          user.fullName || user.email,
+          app2.applicationId,
+          companyName,
+          "Under Review",
+          "organization"
+        );
+        await sendEmail({
+          to: user.email,
+          from: "sysadmin@estateagentscouncil.org",
+          ...adminEmail
+        });
+      }
+    }
+  }
+}
+async function moveToDocumentReview(data) {
+  const { applicationId, applicationType, reviewerId } = data;
+  if (applicationType === "individual") {
+    await db.update(individualApplications).set({
+      status: "document_review",
+      reviewedBy: reviewerId,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq13(individualApplications.id, applicationId));
+    const [app2] = await db.select().from(individualApplications).where(eq13(individualApplications.id, applicationId));
+    if (app2) {
+      const personal = typeof app2.personal === "string" ? JSON.parse(app2.personal) : app2.personal;
+      const applicantName = `${personal.firstName} ${personal.lastName}`;
+      const email = generateDocumentReviewEmail(applicantName, app2.applicationId, "individual");
+      await sendEmail({
+        to: app2.applicantEmail,
+        from: "sysadmin@estateagentscouncil.org",
+        ...email
+      });
+      const admins = await storage.getUsersByRole("admin");
+      for (const admin of admins) {
+        const adminEmail = generateAdminNotificationEmail(
+          admin.fullName || admin.email,
+          app2.applicationId,
+          applicantName,
+          "Document Review",
+          "individual"
+        );
+        await sendEmail({
+          to: admin.email,
+          from: "sysadmin@estateagentscouncil.org",
+          ...adminEmail
+        });
+      }
+    }
+  } else {
+    await db.update(organizationApplications).set({
+      status: "document_review",
+      reviewedBy: reviewerId,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq13(organizationApplications.id, applicationId));
+    const [app2] = await db.select().from(organizationApplications).where(eq13(organizationApplications.id, applicationId));
+    if (app2) {
+      const company = typeof app2.company === "string" ? JSON.parse(app2.company) : app2.company;
+      const companyName = company.name || "Organization";
+      const email = generateDocumentReviewEmail(companyName, app2.applicationId, "organization");
+      await sendEmail({
+        to: app2.applicantEmail,
+        from: "sysadmin@estateagentscouncil.org",
+        ...email
+      });
+      const admins = await storage.getUsersByRole("admin");
+      for (const admin of admins) {
+        const adminEmail = generateAdminNotificationEmail(
+          admin.fullName || admin.email,
+          app2.applicationId,
+          companyName,
+          "Document Review",
+          "organization"
+        );
+        await sendEmail({
+          to: admin.email,
+          from: "sysadmin@estateagentscouncil.org",
+          ...adminEmail
+        });
+      }
+    }
+  }
+}
+async function moveToPaymentReview(data) {
+  const { applicationId, applicationType, reviewerId } = data;
+  if (applicationType === "individual") {
+    await db.update(individualApplications).set({
+      status: "payment_received",
+      // Use existing enum value
+      reviewedBy: reviewerId,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq13(individualApplications.id, applicationId));
+    const [app2] = await db.select().from(individualApplications).where(eq13(individualApplications.id, applicationId));
+    if (app2) {
+      const personal = typeof app2.personal === "string" ? JSON.parse(app2.personal) : app2.personal;
+      const applicantName = `${personal.firstName} ${personal.lastName}`;
+      const email = generatePaymentReviewEmail(applicantName, app2.applicationId, "individual");
+      await sendEmail({
+        to: app2.applicantEmail,
+        from: "sysadmin@estateagentscouncil.org",
+        ...email
+      });
+      const admins = await storage.getUsersByRole("admin");
+      for (const admin of admins) {
+        const adminEmail = generateAdminNotificationEmail(
+          admin.fullName || admin.email,
+          app2.applicationId,
+          applicantName,
+          "Payment Review",
+          "individual"
+        );
+        await sendEmail({
+          to: admin.email,
+          from: "sysadmin@estateagentscouncil.org",
+          ...adminEmail
+        });
+      }
+    }
+  } else {
+    await db.update(organizationApplications).set({
+      status: "payment_received",
+      reviewedBy: reviewerId,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq13(organizationApplications.id, applicationId));
+    const [app2] = await db.select().from(organizationApplications).where(eq13(organizationApplications.id, applicationId));
+    if (app2) {
+      const company = typeof app2.company === "string" ? JSON.parse(app2.company) : app2.company;
+      const companyName = company.name || "Organization";
+      const email = generatePaymentReviewEmail(companyName, app2.applicationId, "organization");
+      await sendEmail({
+        to: app2.applicantEmail,
+        from: "sysadmin@estateagentscouncil.org",
+        ...email
+      });
+      const admins = await storage.getUsersByRole("admin");
+      for (const admin of admins) {
+        const adminEmail = generateAdminNotificationEmail(
+          admin.fullName || admin.email,
+          app2.applicationId,
+          companyName,
+          "Payment Review",
+          "organization"
+        );
+        await sendEmail({
+          to: admin.email,
+          from: "sysadmin@estateagentscouncil.org",
+          ...adminEmail
+        });
+      }
+    }
+  }
+}
+async function approveAndCreateMember(data) {
+  const { applicationId, applicationType, reviewerId, notes } = data;
+  if (applicationType === "individual") {
+    const [app2] = await db.select().from(individualApplications).where(eq13(individualApplications.id, applicationId));
+    if (!app2) {
+      throw new Error("Application not found");
+    }
+    const personal = typeof app2.personal === "string" ? JSON.parse(app2.personal) : app2.personal;
+    const membershipNumber = await nextMemberNumber("individual");
+    const expiryDate = /* @__PURE__ */ new Date();
+    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+    const [newMember] = await db.insert(members).values({
+      membershipNumber,
+      firstName: personal.firstName,
+      lastName: personal.lastName,
+      email: app2.applicantEmail,
+      phone: personal.phone || "",
+      memberType: app2.memberType,
+      membershipStatus: "active",
+      expiryDate,
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).returning();
+    await db.update(individualApplications).set({
+      status: "approved",
+      reviewedBy: reviewerId,
+      reviewNotes: notes,
+      approvedAt: /* @__PURE__ */ new Date(),
+      createdMemberId: newMember.id,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq13(individualApplications.id, applicationId));
+    return newMember;
+  } else {
+    const [app2] = await db.select().from(organizationApplications).where(eq13(organizationApplications.id, applicationId));
+    if (!app2) {
+      throw new Error("Application not found");
+    }
+    const company = typeof app2.company === "string" ? JSON.parse(app2.company) : app2.company;
+    const registrationNumber = await nextMemberNumber("organization");
+    const expiryDate = /* @__PURE__ */ new Date();
+    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+    const [newOrg] = await db.insert(organizations).values({
+      organizationId: registrationNumber,
+      name: company.name,
+      businessType: app2.businessType,
+      registrationNumber,
+      email: app2.applicantEmail,
+      phone: company.phone || "",
+      physicalAddress: company.physicalAddress || "",
+      status: "active",
+      expiryDate,
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).returning();
+    await db.update(organizationApplications).set({
+      status: "approved",
+      reviewedBy: reviewerId,
+      reviewNotes: notes,
+      approvedAt: /* @__PURE__ */ new Date(),
+      createdOrganizationId: newOrg.id,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq13(organizationApplications.id, applicationId));
+    return newOrg;
+  }
+}
+var init_applicationWorkflowService = __esm({
+  "server/services/applicationWorkflowService.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    init_storage();
+    init_emailService();
+    init_namingSeries();
+  }
+});
+
 // server/routes.ts
 var routes_exports = {};
 __export(routes_exports, {
@@ -10085,7 +10687,7 @@ __export(routes_exports, {
 import { createServer } from "http";
 import { z as z8 } from "zod";
 import multer from "multer";
-import { eq as eq13 } from "drizzle-orm";
+import { eq as eq14 } from "drizzle-orm";
 import { randomUUID as randomUUID3, randomBytes as randomBytes4 } from "crypto";
 function requireAuth3(req, res, next) {
   console.log("Auth middleware: req.isAuthenticated():", req.isAuthenticated());
@@ -10136,24 +10738,24 @@ async function checkApplicationAuthorization(userId, applicationId, applicationT
     let application = null;
     let appType = applicationType;
     if (appType === "individual") {
-      const individualApp = await db.select().from(individualApplications).where(eq13(individualApplications.id, applicationId)).limit(1);
+      const individualApp = await db.select().from(individualApplications).where(eq14(individualApplications.id, applicationId)).limit(1);
       if (individualApp.length === 0) {
         return { authorized: false, reason: "Individual application not found" };
       }
       application = individualApp[0];
     } else if (appType === "organization") {
-      const orgApp = await db.select().from(organizationApplications).where(eq13(organizationApplications.id, applicationId)).limit(1);
+      const orgApp = await db.select().from(organizationApplications).where(eq14(organizationApplications.id, applicationId)).limit(1);
       if (orgApp.length === 0) {
         return { authorized: false, reason: "Organization application not found" };
       }
       application = orgApp[0];
     } else {
-      const [individualApp] = await db.select().from(individualApplications).where(eq13(individualApplications.id, applicationId)).limit(1);
+      const [individualApp] = await db.select().from(individualApplications).where(eq14(individualApplications.id, applicationId)).limit(1);
       if (individualApp) {
         application = individualApp;
         appType = "individual";
       } else {
-        const [orgApp] = await db.select().from(organizationApplications).where(eq13(organizationApplications.id, applicationId)).limit(1);
+        const [orgApp] = await db.select().from(organizationApplications).where(eq14(organizationApplications.id, applicationId)).limit(1);
         if (orgApp) {
           application = orgApp;
           appType = "organization";
@@ -12209,8 +12811,8 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/admin/users", requireAuth3, async (req, res) => {
     try {
-      const users3 = await storage.getAllUsers();
-      res.json(users3);
+      const users4 = await storage.getAllUsers();
+      res.json(users4);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -12218,8 +12820,8 @@ async function registerRoutes(app2) {
   app2.get("/api/admin/users/role/:role", requireAuth3, async (req, res) => {
     try {
       const { role } = req.params;
-      const users3 = await storage.getUsersByRole(role);
-      res.json(users3);
+      const users4 = await storage.getUsersByRole(role);
+      res.json(users4);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -12259,10 +12861,10 @@ async function registerRoutes(app2) {
       if (!Array.isArray(userIds) || userIds.length === 0) {
         return res.status(400).json({ message: "User IDs array is required" });
       }
-      const users3 = await Promise.all(
+      const users4 = await Promise.all(
         userIds.map((id) => storage.getUser(id))
       );
-      const validUsers = users3.filter((user) => user !== void 0);
+      const validUsers = users4.filter((user) => user !== void 0);
       console.log(
         `Sending welcome emails to ${validUsers.length} users:`,
         validUsers.map((u) => u.email)
@@ -12282,10 +12884,10 @@ async function registerRoutes(app2) {
       if (!Array.isArray(userIds) || userIds.length === 0) {
         return res.status(400).json({ message: "User IDs array is required" });
       }
-      const users3 = await Promise.all(
+      const users4 = await Promise.all(
         userIds.map((id) => storage.getUser(id))
       );
-      const validUsers = users3.filter((user) => user !== void 0);
+      const validUsers = users4.filter((user) => user !== void 0);
       console.log(
         `Sending password reset emails to ${validUsers.length} users:`,
         validUsers.map((u) => u.email)
@@ -12666,6 +13268,71 @@ async function registerRoutes(app2) {
       const { reviewerId } = req.body;
       const application = await storage.assignApplicationReviewer(id, reviewerId);
       res.json(application);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  app2.post("/api/applications/:id/move-to-under-review", requireAuth3, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { applicationType } = req.body;
+      const { moveToUnderReview: moveToUnderReview2 } = await Promise.resolve().then(() => (init_applicationWorkflowService(), applicationWorkflowService_exports));
+      await moveToUnderReview2({
+        applicationId: id,
+        applicationType: applicationType || "individual",
+        reviewerId: req.user?.id || ""
+      });
+      res.json({ success: true, message: "Application moved to Under Review stage" });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  app2.post("/api/applications/:id/move-to-document-review", requireAuth3, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { applicationType } = req.body;
+      const { moveToDocumentReview: moveToDocumentReview2 } = await Promise.resolve().then(() => (init_applicationWorkflowService(), applicationWorkflowService_exports));
+      await moveToDocumentReview2({
+        applicationId: id,
+        applicationType: applicationType || "individual",
+        reviewerId: req.user?.id || ""
+      });
+      res.json({ success: true, message: "Application moved to Document Review stage" });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  app2.post("/api/applications/:id/move-to-payment-review", requireAuth3, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { applicationType } = req.body;
+      const { moveToPaymentReview: moveToPaymentReview2 } = await Promise.resolve().then(() => (init_applicationWorkflowService(), applicationWorkflowService_exports));
+      await moveToPaymentReview2({
+        applicationId: id,
+        applicationType: applicationType || "individual",
+        reviewerId: req.user?.id || ""
+      });
+      res.json({ success: true, message: "Application moved to Payment Review stage" });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  app2.post("/api/applications/:id/approve-final", requireAuth3, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { applicationType, notes } = req.body;
+      const { approveAndCreateMember: approveAndCreateMember2 } = await Promise.resolve().then(() => (init_applicationWorkflowService(), applicationWorkflowService_exports));
+      const result = await approveAndCreateMember2({
+        applicationId: id,
+        applicationType: applicationType || "individual",
+        reviewerId: req.user?.id || "",
+        notes
+      });
+      res.json({
+        success: true,
+        message: "Application approved and member/organization created",
+        record: result
+      });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -13147,7 +13814,7 @@ async function registerRoutes(app2) {
       }
       const fileHash = validationResult.fileInfo.hash;
       const fileSizeActual = validationResult.fileInfo.size;
-      const existingDoc = await db.select().from(uploadedDocuments2).where(eq13(uploadedDocuments2.sha256, fileHash)).limit(1);
+      const existingDoc = await db.select().from(uploadedDocuments2).where(eq14(uploadedDocuments2.sha256, fileHash)).limit(1);
       if (existingDoc.length > 0) {
         const duplicate = existingDoc[0];
         return res.status(409).json({
