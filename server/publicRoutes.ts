@@ -556,8 +556,8 @@ export function registerPublicRoutes(app: Express) {
           type: "organization",
           membershipNumber: organization.registrationNumber,
           name: organization.name,
-          organizationType: organization.type,
-          status: organization.membershipStatus, // Use 'status' for consistency with frontend
+          organizationType: organization.businessType,
+          status: organization.status, // Use 'status' for consistency with frontend
           createdAt: organization.createdAt,
           expiryDate: organization.expiryDate
         });

@@ -9301,8 +9301,8 @@ function registerPublicRoutes(app2) {
           type: "organization",
           membershipNumber: organization.registrationNumber,
           name: organization.name,
-          organizationType: organization.type,
-          status: organization.membershipStatus,
+          organizationType: organization.businessType,
+          status: organization.status,
           // Use 'status' for consistency with frontend
           createdAt: organization.createdAt,
           expiryDate: organization.expiryDate
@@ -9341,11 +9341,11 @@ function registerPublicRoutes(app2) {
   app2.get("/api/public/organizations", async (req, res) => {
     try {
       const organizations4 = await storage.getAllOrganizations();
-      const publicOrganizations = organizations4.filter((org) => org.membershipStatus === "active").map((org) => ({
+      const publicOrganizations = organizations4.filter((org) => org.status === "active").map((org) => ({
         id: org.id,
         name: org.name,
         registrationNumber: org.registrationNumber,
-        membershipStatus: org.membershipStatus
+        membershipStatus: org.status
       }));
       res.json(publicOrganizations);
     } catch (error) {

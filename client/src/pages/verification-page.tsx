@@ -18,10 +18,13 @@ import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import logoUrl from "@assets/eaclogo_1756763778691.png";
 
 interface VerificationResult {
+  type: "member" | "organization";
   membershipNumber: string;
-  firstName: string;
-  lastName: string;
-  memberType: string;
+  firstName?: string;
+  lastName?: string;
+  memberType?: string;
+  name?: string;
+  organizationType?: string;
   status: string;
   expiryDate: string;
   organizationName?: string;
@@ -573,35 +576,64 @@ export default function VerificationPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Full Name</Label>
-                    <p className="font-semibold">
-                      {verificationResult.firstName} {verificationResult.lastName}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Membership Number</Label>
-                    <p className="font-mono text-sm">{verificationResult.membershipNumber}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Member Type</Label>
-                    <p>{getMemberTypeDisplay(verificationResult.memberType)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Expiry Date</Label>
-                    <p className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      {new Date(verificationResult.expiryDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                  {verificationResult.organizationName && (
-                    <div className="md:col-span-2">
-                      <Label className="text-sm font-medium text-muted-foreground">Organization</Label>
-                      <p className="flex items-center">
-                        <Building2 className="w-4 h-4 mr-1" />
-                        {verificationResult.organizationName}
-                      </p>
-                    </div>
+                  {verificationResult.type === "member" ? (
+                    <>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Full Name</Label>
+                        <p className="font-semibold">
+                          {verificationResult.firstName} {verificationResult.lastName}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Membership Number</Label>
+                        <p className="font-mono text-sm">{verificationResult.membershipNumber}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Member Type</Label>
+                        <p>{getMemberTypeDisplay(verificationResult.memberType || "")}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Expiry Date</Label>
+                        <p className="flex items-center">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          {verificationResult.expiryDate ? new Date(verificationResult.expiryDate).toLocaleDateString() : "N/A"}
+                        </p>
+                      </div>
+                      {verificationResult.organizationName && (
+                        <div className="md:col-span-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Organization</Label>
+                          <p className="flex items-center">
+                            <Building2 className="w-4 h-4 mr-1" />
+                            {verificationResult.organizationName}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Organization Name</Label>
+                        <p className="font-semibold flex items-center">
+                          <Building2 className="w-4 h-4 mr-2" />
+                          {verificationResult.name}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Registration Number</Label>
+                        <p className="font-mono text-sm">{verificationResult.membershipNumber}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Organization Type</Label>
+                        <p>{getMemberTypeDisplay(verificationResult.organizationType || "")}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Expiry Date</Label>
+                        <p className="flex items-center">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          {verificationResult.expiryDate ? new Date(verificationResult.expiryDate).toLocaleDateString() : "N/A"}
+                        </p>
+                      </div>
+                    </>
                   )}
                 </div>
                 
