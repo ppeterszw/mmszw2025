@@ -19,7 +19,8 @@
       "Bash(/bin/ls -la dist/public/assets/)",
       "Bash(tree:*)",
       "Bash(/usr/bin/head:*)",
-      "Bash(npm run build:vercel:*)"
+      "Bash(npm run build:vercel:*)",
+      "Bash(./scripts/assign-members.sh:*)"
     ],
     "deny": [],
     "ask": []

@@ -50,8 +50,10 @@ export default function MemberManagement() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
   const [renewalsModalOpen, setRenewalsModalOpen] = useState(false);
+  const [assignOrgModalOpen, setAssignOrgModalOpen] = useState(false);
+  const [selectedOrgId, setSelectedOrgId] = useState<string>("");
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
+  const { toast} = useToast();
   const { user, isLoading: authLoading } = useAuth();
 
   // Redirect to login if not authenticated
@@ -71,6 +73,10 @@ export default function MemberManagement() {
     queryKey: ["/api/admin/members"],
   });
 
+  const { data: organizations = [] } = useQuery<Organization[]>({
+    queryKey: ["/api/organizations"],
+  });
+
   const updateMemberMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Member> }) =>
       apiRequest("PUT", `/api/members/${id}`, updates),
@@ -86,6 +92,29 @@ export default function MemberManagement() {
       toast({
         title: "Error",
         description: "Failed to update member.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const assignOrganizationMutation = useMutation({
+    mutationFn: ({ memberId, organizationId }: { memberId: string; organizationId: string | null }) =>
+      apiRequest("PUT", `/api/admin/members/${memberId}/assign-organization`, { organizationId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/members"] });
+      toast({
+        title: "Success",
+        description: selectedOrgId ? "Member assigned to organization successfully." : "Member removed from organization."
+      });
+      setAssignOrgModalOpen(false);
+      setSelectedOrgId("");
+      setMemberDetailModalOpen(false);
+      setSelectedMember(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to assign organization.",
         variant: "destructive"
       });
     }
@@ -622,7 +651,7 @@ export default function MemberManagement() {
                 Quick Actions
               </h3>
               <div className="flex flex-wrap gap-3">
-                <Button 
+                <Button
                   className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => {
                     setMemberDetailModalOpen(false);
@@ -633,14 +662,24 @@ export default function MemberManagement() {
                   <Download className="w-4 h-4 mr-2" />
                   Download Certificate
                 </Button>
-                <Button 
+                <Button
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
+                  onClick={() => {
+                    setSelectedOrgId(selectedMember.organizationId || "");
+                    setAssignOrgModalOpen(true);
+                  }}
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Assign Organization
+                </Button>
+                <Button
                   className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => handleStatusChange(selectedMember.id, "active")}
                 >
                   <UserCheck className="w-4 h-4 mr-2" />
                   Activate Member
                 </Button>
-                <Button 
+                <Button
                   className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => {
                     toast({
@@ -670,6 +709,92 @@ export default function MemberManagement() {
       <ExportDataModal open={exportModalOpen} onOpenChange={setExportModalOpen} type="members" />
       <ManageRenewalsModal open={renewalsModalOpen} onOpenChange={setRenewalsModalOpen} />
       <SendNotificationsModal open={notificationsModalOpen} onOpenChange={setNotificationsModalOpen} />
+
+      {/* Assign Organization Modal */}
+      {selectedMember && (
+        <ModernModal
+          open={assignOrgModalOpen}
+          onOpenChange={setAssignOrgModalOpen}
+          title="Assign Organization"
+          subtitle={`Assign ${selectedMember.firstName} ${selectedMember.lastName} to an organization`}
+          icon={Building2}
+          colorVariant="purple"
+          maxWidth="xl"
+          footer={{
+            secondary: {
+              label: "Cancel",
+              onClick: () => {
+                setAssignOrgModalOpen(false);
+                setSelectedOrgId("");
+              },
+              variant: "outline",
+            },
+            primary: {
+              label: assignOrganizationMutation.isPending ? "Assigning..." : "Assign Organization",
+              onClick: () => {
+                assignOrganizationMutation.mutate({
+                  memberId: selectedMember.id,
+                  organizationId: selectedOrgId || null
+                });
+              },
+              disabled: assignOrganizationMutation.isPending,
+              loading: assignOrganizationMutation.isPending,
+            }
+          }}
+        >
+          <div className="space-y-6">
+            {/* Current Organization */}
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl border border-blue-200">
+              <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+                <Building2 className="w-5 h-5 mr-2" />
+                Current Organization
+              </h3>
+              <div className="bg-blue-100 p-3 rounded-lg border border-blue-300">
+                <p className="text-sm font-medium text-blue-800">
+                  {selectedMember.organization?.name || "Independent Practitioner"}
+                </p>
+              </div>
+            </div>
+
+            {/* Select Organization */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200">
+              <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
+                <Building2 className="w-5 h-5 mr-2" />
+                Select New Organization
+              </h3>
+              <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
+                <SelectTrigger className="w-full border-purple-300 focus:border-purple-500 bg-white">
+                  <SelectValue placeholder="Select an organization" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Independent Practitioner (No Organization)</SelectItem>
+                  {organizations
+                    .filter(org => org.status === 'active')
+                    .map(org => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name} ({org.registrationNumber})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Info Notice */}
+            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-xl border border-amber-200">
+              <div className="flex items-start">
+                <AlertTriangle className="w-5 h-5 text-amber-600 mr-2 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-amber-800 mb-1">Note</h4>
+                  <p className="text-sm text-amber-700">
+                    Assigning a member to an organization links them to that firm's activities and compliance records.
+                    Select "Independent Practitioner" to remove organization assignment.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModernModal>
+      )}
     </AdminPageLayout>
   );
 }
