@@ -14,6 +14,7 @@ import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { BulkImportModal } from "@/components/BulkImportModal";
 import { QuickActions } from "@/components/QuickActions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MultiStepAddOrganizationModal } from "@/components/MultiStepAddOrganizationModal";
 import {
   ReviewApplicationsModal,
   ExportDataModal,
@@ -42,6 +43,7 @@ export default function OrganizationManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [selectedOrg, setSelectedOrg] = useState<OrganizationWithMembers | null>(null);
+  const [addOrgModalOpen, setAddOrgModalOpen] = useState(false);
   const [bulkImportModalOpen, setBulkImportModalOpen] = useState(false);
   const [reviewAppsModalOpen, setReviewAppsModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -186,7 +188,7 @@ export default function OrganizationManagement() {
             {
               icon: Building2,
               label: "Register Org",
-              action: () => setLocation("/organization-registration"),
+              action: () => setAddOrgModalOpen(true),
               color: "text-emerald-600",
               bg: "bg-emerald-100",
               testId: "button-add-organization"
@@ -244,9 +246,9 @@ export default function OrganizationManagement() {
         {/* Header Actions */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
           <div className="flex items-center space-x-4">
-            <Button 
+            <Button
               className="gradient-button text-white border-0"
-              onClick={() => setLocation("/organization-registration")}
+              onClick={() => setAddOrgModalOpen(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Organization
@@ -570,6 +572,11 @@ export default function OrganizationManagement() {
       </div>
 
       {/* Quick Actions Modals */}
+      <MultiStepAddOrganizationModal
+        open={addOrgModalOpen}
+        onOpenChange={setAddOrgModalOpen}
+      />
+
       <BulkImportModal
         open={bulkImportModalOpen}
         onOpenChange={setBulkImportModalOpen}
