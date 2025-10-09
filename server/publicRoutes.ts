@@ -614,12 +614,12 @@ export function registerPublicRoutes(app: Express) {
       
       // Return only safe, public information for verification purposes
       const publicOrganizations = organizations
-        .filter(org => org.membershipStatus === "active")
+        .filter(org => org.status === "active")
         .map(org => ({
           id: org.id,
           name: org.name,
           registrationNumber: org.registrationNumber,
-          membershipStatus: org.membershipStatus
+          membershipStatus: org.status
         }));
 
       res.json(publicOrganizations);
