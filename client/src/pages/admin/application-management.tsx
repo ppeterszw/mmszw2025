@@ -299,15 +299,15 @@ export default function ApplicationManagement() {
     <div className="bg-white rounded-lg border">
       <table className="w-full">
         <thead>
-          <tr className="border-b bg-gray-50">
-            <th className="text-left py-3 px-4 font-semibold">Name</th>
-            <th className="text-left py-3 px-4 font-semibold">Type</th>
-            <th className="text-left py-3 px-4 font-semibold">Applicant ID</th>
-            <th className="text-left py-3 px-4 font-semibold">Email</th>
-            <th className="text-left py-3 px-4 font-semibold">Status</th>
-            <th className="text-left py-3 px-4 font-semibold">Email Verified</th>
-            <th className="text-left py-3 px-4 font-semibold">Applied Date</th>
-            <th className="text-left py-3 px-4 font-semibold">Actions</th>
+          <tr className="border-b" style={{ background: 'linear-gradient(to right, #1034A6, #B0E0E6)' }}>
+            <th className="text-left py-3 px-4 font-semibold text-white">Name</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Type</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Applicant ID</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Email</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Status</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Email Verified</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Applied Date</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -447,14 +447,14 @@ export default function ApplicationManagement() {
     <div className="bg-white rounded-lg border">
       <table className="w-full">
         <thead>
-          <tr className="border-b bg-gray-50">
-            <th className="text-left py-3 px-4 font-semibold">Document Name</th>
-            <th className="text-left py-3 px-4 font-semibold">Document Type</th>
-            <th className="text-left py-3 px-4 font-semibold">Application Type</th>
-            <th className="text-left py-3 px-4 font-semibold">Size</th>
-            <th className="text-left py-3 px-4 font-semibold">Status</th>
-            <th className="text-left py-3 px-4 font-semibold">Upload Date</th>
-            <th className="text-left py-3 px-4 font-semibold">Actions</th>
+          <tr className="border-b" style={{ background: 'linear-gradient(to right, #1034A6, #B0E0E6)' }}>
+            <th className="text-left py-3 px-4 font-semibold text-white">Document Name</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Document Type</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Application Type</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Size</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Status</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Upload Date</th>
+            <th className="text-left py-3 px-4 font-semibold text-white">Actions</th>
           </tr>
         </thead>
         <tbody>

@@ -606,7 +606,7 @@ export default function CaseManagement() {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow style={{ background: 'linear-gradient(to right, #1034A6, #B0E0E6)' }}>
                     <TableHead className="w-12">
                       <Checkbox
                         checked={selectedCases.length === filteredCases.length && filteredCases.length > 0}
@@ -620,14 +620,14 @@ export default function CaseManagement() {
                         data-testid="checkbox-select-all"
                       />
                     </TableHead>
-                    <TableHead>Case #</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Submitted By</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-white font-semibold">Case #</TableHead>
+                    <TableHead className="text-white font-semibold">Title</TableHead>
+                    <TableHead className="text-white font-semibold">Type</TableHead>
+                    <TableHead className="text-white font-semibold">Priority</TableHead>
+                    <TableHead className="text-white font-semibold">Status</TableHead>
+                    <TableHead className="text-white font-semibold">Submitted By</TableHead>
+                    <TableHead className="text-white font-semibold">Created</TableHead>
+                    <TableHead className="text-white font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

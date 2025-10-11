@@ -166,7 +166,32 @@ export default function OrganizationManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <style>{`
+        .organization-management-page-body {
+          position: relative;
+        }
+        .organization-management-page-body::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-image: url(/images/bgmain.png);
+          background-size: 70%;
+          background-position: center;
+          background-repeat: no-repeat;
+          opacity: 0.2;
+          z-index: 0;
+          pointer-events: none;
+        }
+        .organization-management-page-body > * {
+          position: relative;
+          z-index: 1;
+        }
+      `}</style>
+    <div className="min-h-screen bg-background organization-management-page-body">
       <AdminHeader currentPage="organizations" />
       
       <div className="p-6">
@@ -312,14 +337,14 @@ export default function OrganizationManagement() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Organization</TableHead>
-                    <TableHead>Organization ID</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Members</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Actions</TableHead>
+                  <TableRow style={{ background: 'linear-gradient(to right, #1034A6, #B0E0E6)' }}>
+                    <TableHead className="text-white font-semibold">Organization</TableHead>
+                    <TableHead className="text-white font-semibold">Organization ID</TableHead>
+                    <TableHead className="text-white font-semibold">Type</TableHead>
+                    <TableHead className="text-white font-semibold">Status</TableHead>
+                    <TableHead className="text-white font-semibold">Members</TableHead>
+                    <TableHead className="text-white font-semibold">Contact</TableHead>
+                    <TableHead className="text-white font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -615,5 +640,6 @@ export default function OrganizationManagement() {
         onSuccess={refetch}
       />
     </div>
+    </>
   );
 }

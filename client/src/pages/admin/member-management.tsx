@@ -197,7 +197,32 @@ export default function MemberManagement() {
   };
 
   return (
-    <AdminPageLayout currentPage="members">
+    <>
+      <style>{`
+        .member-management-page-body {
+          position: relative;
+        }
+        .member-management-page-body::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-image: url(/images/bgmain.png);
+          background-size: 70%;
+          background-position: center;
+          background-repeat: no-repeat;
+          opacity: 0.2;
+          z-index: 0;
+          pointer-events: none;
+        }
+        .member-management-page-body > * {
+          position: relative;
+          z-index: 1;
+        }
+      `}</style>
+    <AdminPageLayout currentPage="members" className="member-management-page-body">
       <div className="p-6">
         <PageBreadcrumb items={[
           { label: "Admin Dashboard", href: "/admin-dashboard" },
@@ -342,15 +367,15 @@ export default function MemberManagement() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4">Full Name</th>
-                      <th className="text-left py-3 px-4">Membership #</th>
-                      <th className="text-left py-3 px-4">Member Type</th>
-                      <th className="text-left py-3 px-4">Status</th>
-                      <th className="text-left py-3 px-4">Organization</th>
-                      <th className="text-left py-3 px-4">Date Joined</th>
-                      <th className="text-left py-3 px-4">Expiry Date</th>
-                      <th className="text-left py-3 px-4">Actions</th>
+                    <tr className="border-b" style={{ background: 'linear-gradient(to right, #1034A6, #B0E0E6)' }}>
+                      <th className="text-left py-3 px-4 text-white font-semibold">Full Name</th>
+                      <th className="text-left py-3 px-4 text-white font-semibold">Membership #</th>
+                      <th className="text-left py-3 px-4 text-white font-semibold">Member Type</th>
+                      <th className="text-left py-3 px-4 text-white font-semibold">Status</th>
+                      <th className="text-left py-3 px-4 text-white font-semibold">Organization</th>
+                      <th className="text-left py-3 px-4 text-white font-semibold">Date Joined</th>
+                      <th className="text-left py-3 px-4 text-white font-semibold">Expiry Date</th>
+                      <th className="text-left py-3 px-4 text-white font-semibold">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -796,5 +821,6 @@ export default function MemberManagement() {
         </ModernModal>
       )}
     </AdminPageLayout>
+    </>
   );
 }

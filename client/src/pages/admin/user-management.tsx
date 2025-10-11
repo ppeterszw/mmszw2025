@@ -511,7 +511,7 @@ export default function UserManagement() {
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow>
+                          <TableRow style={{ background: 'linear-gradient(to right, #1034A6, #B0E0E6)' }}>
                             <TableHead className="w-12">
                               <Checkbox
                                 checked={selectedUsers.length === filteredUsers.length}
@@ -519,12 +519,12 @@ export default function UserManagement() {
                                 data-testid="select-all-users"
                               />
                             </TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Last Login</TableHead>
-                            <TableHead>Created</TableHead>
-                            <TableHead>Actions</TableHead>
+                            <TableHead className="text-white font-semibold">Email</TableHead>
+                            <TableHead className="text-white font-semibold">Role</TableHead>
+                            <TableHead className="text-white font-semibold">Status</TableHead>
+                            <TableHead className="text-white font-semibold">Last Login</TableHead>
+                            <TableHead className="text-white font-semibold">Created</TableHead>
+                            <TableHead className="text-white font-semibold">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
